@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   native-apk:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 40
     defaults:
       run:
@@ -26,6 +26,8 @@ jobs:
           distribution: temurin
           java-version: '17'
       - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools'
       - name: Install API 35
         run: |
           yes | sdkmanager --licenses >/dev/null || true
