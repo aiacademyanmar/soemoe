@@ -82,7 +82,7 @@ private fun LearningApp() {
    }
    when {
     lesson>=0 -> item {
-     LearningCard("LESSON ${module+1}.${lesson+1}","Lesson content and assessments will be imported from the full V2.1.1 source archive.",onClick={back})
+     LearningCard("LESSON ${module+1}.${lesson+1}","Lesson content and assessments will be imported from the full V2.1.1 source archive.",onClick={ back() })
     }
     module>=0 -> {
      item {Text("MODULE ${module+1} · ${modules[module]}",color=mint,fontWeight=FontWeight.Bold,fontSize=19.sp)}
