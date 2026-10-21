@@ -51,7 +51,8 @@ class MainActivity:ComponentActivity(){
        if(!allowed){message="Microphone permission denied"}
        else try{
           val f=File.createTempFile("english_speech_",".m4a",cache)
-          val r=if(Build.VERSION.SDK_INT>=31) MediaRecorder(cache) else @Suppress("DEPRECATION") MediaRecorder()
+          @Suppress("DEPRECATION")
+          val r=MediaRecorder()
           r.setAudioSource(MediaRecorder.AudioSource.MIC)
           r.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
           r.setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
