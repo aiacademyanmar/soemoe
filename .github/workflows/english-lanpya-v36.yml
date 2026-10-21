@@ -1,0 +1,63 @@
+name: English LanPya V3.6 - Real APK Build Gate
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - english-lanpya-v36-build
+    paths:
+      - 'english-lanpya/**'
+      - '.github/workflows/english-lanpya-v36.yml'
+permissions:
+  contents: read
+jobs:
+  native-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: english-lanpya
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - name: Check Android SDK and install API 35
+        run: |
+          set -euo pipefail
+          echo "ANDROID_HOME=${ANDROID_HOME:-unset}"
+          command -v sdkmanager
+          sdkmanager --version
+          sdkmanager "platforms;android-35" "build-tools;35.0.0"
+      - name: Run unit tests and assemble real debug APK
+        run: gradle --no-daemon --stacktrace :app:testDebugUnitTest :app:assembleDebug
+      - name: Verify APK and checksum
+        run: |
+          set -euo pipefail
+          APK=app/build/outputs/apk/debug/app-debug.apk
+          test -s "$APK"
+          unzip -t "$APK" >/dev/null
+          unzip -Z1 "$APK" | grep -q 'classes.dex'
+          "${ANDROID_HOME}/build-tools/35.0.0/apksigner" verify "$APK"
+          sha256sum "$APK" > app/build/outputs/apk/debug/SHA256SUMS.txt
+          printf 'SHA=%s\nRUN=%s\n' "$GITHUB_SHA" "$GITHUB_RUN_ID" > app/build/outputs/apk/debug/BUILD_INFO.txt
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: EnglishLanPya-V36-Debug-APK
+          path: |
+            english-lanpya/app/build/outputs/apk/debug/app-debug.apk
+            english-lanpya/app/build/outputs/apk/debug/SHA256SUMS.txt
+            english-lanpya/app/build/outputs/apk/debug/BUILD_INFO.txt
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: EnglishLanPya-V36-Build-Logs
+          path: |
+            english-lanpya/app/build/reports/**
+            english-lanpya/app/build/test-results/**
+          if-no-files-found: ignore
