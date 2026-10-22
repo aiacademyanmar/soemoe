@@ -119,6 +119,13 @@ internal class Phase03CloudSync(private val ctx: Context) {
         val data = request("ai/ask",JSONObject().put("question",question).put("guardian_consent",true))
         return data.getString("reply")
     }
+    suspend fun healthSummary(): String {
+        val result = request("health", token = null)
+        val installed = result.optBoolean("installed", false)
+        val connected = result.optString("database") == "connected"
+        return if(installed && connected) "Server online · MySQL connected · HTTPS check completed"
+            else "Server responded but installation is incomplete"
+    }
     fun sessionName(): String? = get("username")
     fun savedBase(): String = get("base") ?: ""
     fun bundle(): JSONObject? = get("bundle")?.let { JSONObject(it) }
