@@ -152,7 +152,7 @@ private fun AcademyApp() {
     verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.SpaceBetween){
     Column {
      Text("✦ AAII",fontSize=23.sp,fontWeight=FontWeight.Black,color=MINT)
-     Text("KID CREATOR ACADEMY • V2.3",fontSize=9.sp,color=LIGHT,letterSpacing=1.sp)
+     Text("KID CREATOR ACADEMY • V2.4 PHASE 03",fontSize=9.sp,color=LIGHT,letterSpacing=1.sp)
     }
     TextButton(onClick={index=!index}){
      Text(if(index)"Close ✕" else "28 Pages ☰",color=GOLD,fontSize=13.sp,fontWeight=FontWeight.Bold)
@@ -187,6 +187,7 @@ private fun AcademyApp() {
        item{BigAction("Let's Get Started →",{open(3)},true)}
       }
       3 -> {
+       item{Phase03SyncPanel("account")}
        item{SceneHero("Welcome Back!","This build runs in guest demo mode. No account is required.","🔐")}
        item{BigAction("Continue as Guest →",{open(4)},true)}
        item{AcademyCard("Parent / Guardian Access","Guardian consent needed for connected services","👨‍👩‍👧"){open(23)}}
@@ -198,6 +199,7 @@ private fun AcademyApp() {
        items(listOf(5,13,9,11,10,12,20,23)){n->AcademyCard(pageNames[n-1],"Tap to open this part of your creator world",emoji[n-1],accent[n%accent.size]){open(n)}}
       }
       5 -> {
+       item{Phase03SyncPanel("learn")}
        item{SceneHero("Choose Your Learning Level","3 levels • 18 modules • 72 lessons","🌱")}
        items(levels.indices.toList()){i->
         AcademyCard("Level "+(i+1)+" · "+levels[i],"6 modules • 24 lessons",listOf("🌱","🚀","👑")[i],accent[i]){level=i+1;open(6)}
@@ -296,6 +298,7 @@ private fun AcademyApp() {
        }
       }
       19 -> {
+       item{Phase03SyncPanel("status")}
        item{SceneHero("Your Learning Progress","Keep learning and creating every day!","📈")}
        item{AcademyCard("Lessons Completed",completed.toString()+" in this APK session","✅")}
        item{AcademyCard("Creator Points",(completed*50).toString()+" practice XP","🌟")}
@@ -331,6 +334,7 @@ private fun AcademyApp() {
        item{AcademyCard("Settings","Controls and accessibility","⚙"){open(25)}}
       }
       25 -> {
+       item{Phase03SyncPanel("account")}
        item{Heading("Settings & Parental Control","Comfortable and safe by design")}
        item {
         Row(Modifier.fillMaxWidth().padding(vertical=9.dp),verticalAlignment=Alignment.CenterVertically){
