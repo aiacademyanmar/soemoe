@@ -1,6 +1,9 @@
 package asia.aaii.kidcreator
 
 import android.content.Context
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -118,6 +121,12 @@ internal fun Lesson01Detailed(language:String,onPassed:(Int)->Unit) {
             }
         }
         Text(t("အပိုင်း ","Step ")+(step+1)+"/7 • "+headings[step],color=GOLD,fontWeight=FontWeight.Bold)
+        // Original user-provided Myanmar 3D reference artwork, bundled into APK.
+        Image(painter=painterResource(R.drawable.lesson11_reference),
+            contentDescription=if(my)"မြန်မာကျောင်းသား၊ ကျောင်းသူ၊ AI စက်ရုပ်နှင့် သင်ခန်းစာ ၁.၁ ရုပ်ကြွပုံ" else "Myanmar 3D cartoon Lesson 1.1 infographic",
+            modifier=Modifier.fillMaxWidth().height(410.dp),
+            contentScale=ContentScale.Fit)
+        // Native readable text and interactive buttons are provided below the artwork.
         MyanmarLessonArtwork(step, my)
         when(step){
             0 -> {
