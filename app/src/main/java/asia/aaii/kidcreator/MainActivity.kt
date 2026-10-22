@@ -11,6 +11,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -36,9 +40,9 @@ private val pageNames=listOf(
  "AI Creator Studio","My Creations","Offline Downloads","Creative Tools",
  "Interactive Exercise","Quiz & Assessment","Learning Progress","Rewards & Badges",
  "Creator Community","Notifications","Parent Dashboard","My Profile",
- "Settings & Controls","Membership Plans","My Certificates","Help & Support","AI ON CAMPUS"
+ "Settings & Controls","Membership Plans","My Certificates","Help & Support","AI ON CAMPUS","Languages"
 )
-private val emoji=listOf("🚀","✨","🔐","🏠","🌈","🧠","📖","🎬","🤖","📚","🎞","🎥","🎨","🖼","⬇","🧰","✍","🧩","📈","🏆","💗","🔔","👨‍👩‍👧","🙂","⚙","👑","🎓","🛟","🏫")
+private val emoji=listOf("🚀","✨","🔐","🏠","🌈","🧠","📖","🎬","🤖","📚","🎞","🎥","🎨","🖼","⬇","🧰","✍","🧩","📈","🏆","💗","🔔","👨‍👩‍👧","🙂","⚙","👑","🎓","🛟","🏫","🌍")
 private val modules=listOf(
  "Creator Mindset & AI Literacy","Digital Drawing & Visual Design","Storytelling & Digital Comics",
  "Video Basics & Creative Editing","Creative Coding & Mini Games","Digital Safety & Creator Showcase",
@@ -115,6 +119,8 @@ private fun InfoWarning() {
 }
 @Composable
 private fun AcademyApp() {
+ val ctx=LocalContext.current
+ var uiLanguage by remember { mutableStateOf(KidLanguages.load(ctx)) }
  var page by remember{mutableIntStateOf(4)}
  var previous by remember{mutableIntStateOf(4)}
  var index by remember{mutableStateOf(false)}
@@ -134,6 +140,7 @@ private fun AcademyApp() {
  fun open(n:Int) { previous=page;page=n;index=false }
  fun back() { if(index) index=false else if(page!=4)page=4 }
  BackHandler(index||page!=4) { back() }
+ CompositionLocalProvider(LocalLayoutDirection provides if(uiLanguage in setOf("ar","he","fa","ur","ps","sd","dv","yi","ug","ks")) LayoutDirection.Rtl else LayoutDirection.Ltr) {
  Scaffold(containerColor=NAVY,bottomBar={
   NavigationBar(containerColor=Color(0xFF142054),tonalElevation=0.dp) {
    listOf(4,5,13,10,24).forEachIndexed { i,n->
@@ -141,7 +148,7 @@ private fun AcademyApp() {
      selected=page==n || (i==1&&page in listOf(6,7,8,17,18)),
      onClick={open(n)},
      icon={Text(listOf("🏠","📖","🎨","📚","👤")[i],fontSize=20.sp)},
-     label={Text(listOf("Home","Learn","Create","Library","Profile")[i],fontSize=10.sp,maxLines=1)},
+     label={Text(listOf("home","learn","create","library","profile").map{KidLanguages.value(uiLanguage,it)}[i],fontSize=10.sp,maxLines=1)},
      alwaysShowLabel=true
     )
    }
@@ -152,10 +159,10 @@ private fun AcademyApp() {
     verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.SpaceBetween){
     Column {
      Text("✦ AAII",fontSize=23.sp,fontWeight=FontWeight.Black,color=MINT)
-     Text("KID CREATOR ACADEMY • V2.4 PHASE 05",fontSize=9.sp,color=LIGHT,letterSpacing=1.sp)
+     Text("KID CREATOR ACADEMY • V2.4 • 200 LANGUAGES",fontSize=9.sp,color=LIGHT,letterSpacing=1.sp)
     }
     TextButton(onClick={index=!index}){
-     Text(if(index)"Close ✕" else "29 Pages ☰",color=GOLD,fontSize=13.sp,fontWeight=FontWeight.Bold)
+     Text(if(index)"Close ✕" else "30 Pages ☰",color=GOLD,fontSize=13.sp,fontWeight=FontWeight.Bold)
     }
    }
    LazyColumn(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(NAVY,Color(0xFF0E1D5C),NAVY)))
@@ -171,7 +178,7 @@ private fun AcademyApp() {
        Text(emoji[page-1],fontSize=26.sp)
        Spacer(Modifier.width(9.dp))
        Column {
-        Text(pageNames[page-1],fontWeight=FontWeight.ExtraBold,fontSize=21.sp,color=LIGHT)
+        Text(when(page){4->KidLanguages.value(uiLanguage,"home");5->KidLanguages.value(uiLanguage,"learn");10->KidLanguages.value(uiLanguage,"library");13->KidLanguages.value(uiLanguage,"create");24->KidLanguages.value(uiLanguage,"profile");25->KidLanguages.value(uiLanguage,"settings");30->KidLanguages.value(uiLanguage,"languages");else->pageNames[page-1]},fontWeight=FontWeight.ExtraBold,fontSize=21.sp,color=LIGHT)
         Text("NK-"+String.format("%02d",page)+" • Native Compose UI prototype",color=SUB,fontSize=11.sp)
        }
       }
@@ -196,7 +203,7 @@ private fun AcademyApp() {
       4 -> {
        item{SceneHero("Hi, Young Creator!","Learn, imagine and make something great today!","👋")}
        item{AcademyCard("My Learning Progress", completed.toString()+" lessons completed in this APK session","🏆"){open(19)}}
-       items(listOf(5,13,9,11,10,12,29,20,23)){n->AcademyCard(pageNames[n-1],"Tap to open this part of your creator world",emoji[n-1],accent[n%accent.size]){open(n)}}
+       items(listOf(5,13,9,11,10,12,29,30,20,23)){n->AcademyCard(pageNames[n-1],"Tap to open this part of your creator world",emoji[n-1],accent[n%accent.size]){open(n)}}
       }
       5 -> {
        item{Phase03SyncPanel("learn")}
@@ -344,12 +351,14 @@ private fun AcademyApp() {
        item{AcademyCard("My Learning",(completed*50).toString()+" XP","📚"){open(19)}}
        item{AcademyCard("My Creations",projects.size.toString()+" saved project ideas","🎨"){open(14)}}
        item{AcademyCard("Certificates","Sample certificate preview","🎓"){open(27)}}
-       item{AcademyCard("Settings","Controls and accessibility","⚙"){open(25)}}
+       item{AcademyCard(KidLanguages.value(uiLanguage,"settings"),"Controls and accessibility","⚙"){open(25)}}
+       item{AcademyCard("🌍 "+KidLanguages.value(uiLanguage,"languages"),"Select from 200 languages","🌐"){open(30)}}
       }
       25 -> {
        item { Phase05ConnectionCheck() }
        item{Phase03SyncPanel("account")}
        item{Heading("Settings & Parental Control","Comfortable and safe by design")}
+       item{AcademyCard("🌍 "+KidLanguages.value(uiLanguage,"languages"),KidLanguages.displayName(uiLanguage)+" · 200 languages available","🌐"){open(30)}}
        item {
         Row(Modifier.fillMaxWidth().padding(vertical=9.dp),verticalAlignment=Alignment.CenterVertically){
          Text("🛡  Safe Learning Mode",Modifier.weight(1f),color=LIGHT)
@@ -379,6 +388,9 @@ private fun AcademyApp() {
       29 -> {
        item { CoursePromotionsPanel("campus") }
       }
+      30 -> {
+       item { KidLanguageCenter(uiLanguage) { code -> KidLanguages.save(ctx,code);uiLanguage=code } }
+      }
       28 -> {
        item{SceneHero("Help & Support","We're here to help young creators.","🛟")}
        items(listOf("How do I start learning?","How can I ask the AI Teacher?","How do I get live classes?","Where is the Google Drive library?")){s->
@@ -389,10 +401,11 @@ private fun AcademyApp() {
      }
      item {
       Spacer(Modifier.height(12.dp))
-      Text("AAII V2.4 • COURSE PROMOTIONS UPDATE",color=SUB,fontSize=10.sp,modifier=Modifier.fillMaxWidth(),textAlign=TextAlign.Center)
+      Text("AAII V2.4 • 200 LANGUAGE SETTINGS",color=SUB,fontSize=10.sp,modifier=Modifier.fillMaxWidth(),textAlign=TextAlign.Center)
      }
     }
    }
   }
+ }
  }
 }
