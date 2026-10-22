@@ -11,8 +11,8 @@ android {
         applicationId = "org.aaii.englishlanpya"
         minSdk = 26
         targetSdk = 35
-        versionCode = 273
-        versionName = "2.7.3-drive-preview"
+        versionCode = 280
+        versionName = "2.8.0-server-sync-preview"
         val api = providers.gradleProperty("lanpyaApiBaseUrl")
             .orElse("https://www.aaii.asia/edu/english/api/v1/").get()
         require(api.startsWith("https://") && api.endsWith("/")) {
