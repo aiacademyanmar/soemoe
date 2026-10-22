@@ -105,6 +105,7 @@ fun LanPyaNativeApp(){
                 item{Hero("Learn English Step by Step","အင်္ဂလိပ်စာကို နေ့စဉ် လေ့လာကြပါစို့။")}
                 item{ProgressBlock(completed.size,sampleLessons.size)}
                 item{Title("Explore Learning")}
+                item{Feature("☁","Google Drive Direct","Connect Google Account • Teachers, Topics, Courses, Let\u0027s Talk"){screen="drive"}}
                 item{QuickGrid(listOf(Triple("🎓","Courses","courses"),Triple("👩‍🏫","Teachers","teachers"),Triple("📚","Topics","topics"),Triple("💬","Let's Talk","talk"))){screen=it}}
                 item{Title("Continue Learning")}
                 item{Feature("▶","A1 • Introducing Yourself","8-step beginner lesson") {openLesson(sampleLessons.first())}}
@@ -112,6 +113,7 @@ fun LanPyaNativeApp(){
                 items(sampleLessons.take(3)){ name->RowItem("📘",name,"A1 Beginner • Original sample"){openLesson(name)}}
                 item{Info("Offline sample lessons only. Real Google Drive content requires publishing approval and secure streaming.")}
               }
+              "drive"->DirectDriveBrowser(onBack={screen="home"})
               "teachers"->Panel("Teachers","Google Drive • Teacher Sources",{screen="home"}){
                 item{SearchNote("Browse teachers • Source metadata not downloaded")}
                 items(teachers){ teacher->RowItem("👩‍🏫","Teacher $teacher","English video learning • Drive catalogue"){sourceName=teacher;screen="teacher-detail"}}
