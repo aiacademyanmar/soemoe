@@ -33,7 +33,7 @@ internal fun Lesson11Scenes(language:String,onPassed:(Int)->Unit){
   Text("LESSON 1.1 • "+(if(my)"တစ်မျက်နှာချင်း လေ့လာမယ်"else "Interactive lesson scenes"),color=Color(0xFF5AF1E3),fontWeight=FontWeight.Bold)
   LinearProgressIndicator(progress={(screen+1)/14f},modifier=Modifier.fillMaxWidth().height(8.dp),color=Color(0xFF5AF1E3),trackColor=Color(0xFF253E7B))
   Text((screen+1).toString()+" / 14",color=Color.White)
-  Image(painterResource(art[screen.coerceAtMost(8)]),contentDescription="Original Myanmar 3D cartoon lesson image",modifier=Modifier.fillMaxWidth().heightIn(min=165.dp,max=260.dp),contentScale=ContentScale.FillWidth)
+  Image(painterResource(art[screen.coerceAtMost(8)]),contentDescription="Original Myanmar 3D cartoon lesson image",modifier=Modifier.fillMaxWidth().heightIn(min=100.dp,max=220.dp),contentScale=ContentScale.Fit)
   if(screen<8){
    Text(if(my)titles[screen]else listOf("Welcome","Why learn AI?","What is AI?","People vs AI","How AI learns","AI in daily life","Writing a prompt","Stay safe")[screen],color=Color.White,fontSize=21.sp,fontWeight=FontWeight.Bold)
    Text(if(my)details[screen]else listOf("Learn with Myanmar kids and friendly robot Spark.","AI helps us write, draw and learn.","AI learns patterns from examples and makes predictions.","People have responsibilities. AI is a tool.","Examples → Patterns → Predictions. Check results.","Speech recognition, maps and art apps may use AI.","Tell AI the task, topic, audience and output length.","Never share passwords and addresses; verify answers.")[screen],color=Color(0xFFE2EAFF),lineHeight=25.sp)
