@@ -16,9 +16,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 private val sceneArt = listOf(
- R.drawable.lesson11_new01, R.drawable.lesson11_new02, R.drawable.lesson11_new03,
- R.drawable.lesson11_new04, R.drawable.lesson11_new05, R.drawable.lesson11_new06,
- R.drawable.lesson11_new07, R.drawable.lesson11_new08, R.drawable.lesson11_new09)
+ R.drawable.lesson11_new01, R.drawable.lesson11_scene02_intro, R.drawable.lesson11_scene03_ai,
+ R.drawable.lesson11_scene04_human, R.drawable.lesson11_scene05_learning, R.drawable.lesson11_scene06_daily,
+ R.drawable.lesson11_scene07_prompt, R.drawable.lesson11_scene08_safety, R.drawable.lesson11_scene09_quiz)
 private val mmTitles = listOf("AI ကမ္ဘာလေးထဲကို ကြိုဆိုပါတယ်!","AI နဲ့ ဘာတွေ လုပ်လို့ရမလဲ?","AI ဆိုတာ ဘာလဲ?","လူသားနဲ့ AI ကို နှိုင်းယှဉ်ကြည့်မယ်","AI ရဲ့ သင်ယူမှုခရီး","AI ကို ဘယ်နေရာတွေမှာ တွေ့နိုင်သလဲ?","AI ကို မေးခွန်းဘယ်လိုမေးမလဲ?","AI ကို ဘေးကင်းစွာ အသုံးပြုမယ်","သင်ခန်းစာ အနှစ်ချုပ်")
 private val enTitles = listOf("Welcome to the World of AI!","What Can AI Help Us Do?","What Is AI?","People and AI","How AI Learns","AI in Daily Life","How to Write a Prompt","Using AI Safely","Ready for the Quiz!")
 private val mmText = listOf(
