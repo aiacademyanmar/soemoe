@@ -31,7 +31,7 @@ import java.util.UUID
 private data class Source(val key:String,val title:String)
 private data class Folder(val id:String,val title:String)
 private data class Asset(val id:Long,val title:String,val mime:String)
-private data class Listing(val folders:List<Folder>,val media:List<Asset>)
+private data class ServerListing(val folders:List<Folder>,val media:List<Asset>)
 private fun safeId(s:String):Boolean=Regex("[A-Za-z0-9_-]{12,190}").matches(s)
 private fun request(api:String,method:String="GET",token:String?=null,body:JSONObject?=null):JSONObject{
   require(api.startsWith(BuildConfig.API_BASE_URL)){"Unknown API host"}
@@ -73,7 +73,7 @@ fun ServerLearningLibrary(initialSource:String="teacher",onBack:()->Unit){
   var sources by remember { mutableStateOf<List<Source>>(emptyList()) }
   var folder by remember { mutableStateOf<String?>(null) }
   var stack by remember { mutableStateOf<List<Folder>>(emptyList()) }
-  var files by remember { mutableStateOf(Listing(emptyList(),emptyList())) }
+  var files by remember { mutableStateOf(ServerListing(emptyList(),emptyList())) }
   var selected by remember { mutableStateOf<Asset?>(null) }
   fun fetchSources(token:String){
     busy=true
@@ -97,7 +97,7 @@ fun ServerLearningLibrary(initialSource:String="teacher",onBack:()->Unit){
         val p=if(parent==null)"" else "&folder_id="+URLEncoder.encode(parent,"UTF-8")
         val obj=withContext(Dispatchers.IO){request(BuildConfig.API_BASE_URL+"library/browse?source="+URLEncoder.encode(source,"UTF-8")+p,token=token)}
         val fs=obj.optJSONArray("folders");val ms=obj.optJSONArray("media")
-        files=Listing(
+        files=ServerListing(
           (0 until (fs?.length()?:0)).map{i->val o=fs!!.getJSONObject(i);Folder(o.getString("folder_id"),o.getString("folder_name"))},
           (0 until (ms?.length()?:0)).map{i->val o=ms!!.getJSONObject(i);Asset(o.getLong("id"),o.optString("display_name"),o.optString("mime_type"))}
         )
@@ -152,7 +152,7 @@ fun ServerLearningLibrary(initialSource:String="teacher",onBack:()->Unit){
     Row(Modifier.fillMaxWidth().padding(horizontal=8.dp),horizontalArrangement=Arrangement.spacedBy(3.dp)){
       sources.forEach{src->
         FilterChip(selected=selectedSource==src.key,onClick={
-          selectedSource=src.key;stack=emptyList();folder=null;files=Listing(emptyList(),emptyList())
+          selectedSource=src.key;stack=emptyList();folder=null;files=ServerListing(emptyList(),emptyList())
           authToken?.let{fetchFolder(it,src.key,null)}
         },label={Text(src.title,style=MaterialTheme.typography.labelSmall)})
       }
