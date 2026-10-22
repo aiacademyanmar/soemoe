@@ -230,6 +230,9 @@ private fun AcademyApp() {
        item{AcademyCard("Ask AI Teacher","Get a friendly scripted explanation","🤖"){open(9)}}
       }
       9 -> {
+
+      item { Phase04ConnectionPanel(if(page==9)"ai" else if(page==12)"classes" else if(page==11)"videos" else "library") }
+
        item{SceneHero("Meet Spark, your AI Friend","Friendly creative lesson guidance.","🤖")}
        item{InfoWarning()}
        item{AcademyCard("Teacher Spark",aiAnswer,"💬")}
@@ -245,16 +248,25 @@ private fun AcademyApp() {
        item{AcademyCard("Try a Quiz","Practice your learning","🧩"){open(18)}}
       }
       10 -> {
+
+      item { Phase04ConnectionPanel(if(page==9)"ai" else if(page==12)"classes" else if(page==11)"videos" else "library") }
+
        item{SceneHero("eLibrary & Videos Hub","Read · Watch · Learn · Create","📚")}
        items(listOf(11,15,7,9)){n->AcademyCard(pageNames[n-1],"Explore learning resources",emoji[n-1]){open(n)}}
        item{InfoWarning()}
       }
       11 -> {
+
+      item { Phase04ConnectionPanel(if(page==9)"ai" else if(page==12)"classes" else if(page==11)"videos" else "library") }
+
        item{SceneHero("Recorded Video Lessons","Native video player integration is planned.","🎞")}
        item{InfoWarning()}
        item{BigAction("Open Offline Lesson Instead",{open(8)})}
       }
       12 -> {
+
+      item { Phase04ConnectionPanel(if(page==9)"ai" else if(page==12)"classes" else if(page==11)"videos" else "library") }
+
        item{SceneHero("Soe Moe Live Class","Human teacher • Interactive classroom • Zoom integration pending","👨‍🏫")}
        item{InfoWarning()}
        item{AcademyCard("Join Class","No real meeting has been configured","🎥"){open(28)}}
