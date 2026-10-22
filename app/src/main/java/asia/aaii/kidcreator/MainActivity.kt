@@ -230,7 +230,7 @@ private fun AcademyApp() {
       }
       8 -> {
        if(selectedModule==0 && lessonNumber==1){
-        item { Lesson01Detailed(uiLanguage){ score -> completed += 1 } }
+        item { Lesson11Scenes(uiLanguage){ score -> completed += 1 } }
        }else{
        item{SceneHero("Learn Step by Step","Module "+(selectedModule+1)+" • Lesson "+lessonNumber+" • Step "+(step+1)+"/4","🎬")}
        item{LinearProgressIndicator(progress={ (step+1)/4f },modifier=Modifier.fillMaxWidth().padding(bottom=16.dp),color=MINT,trackColor=PANEL)}
