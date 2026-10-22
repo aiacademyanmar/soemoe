@@ -118,6 +118,7 @@ internal fun Lesson01Detailed(language:String,onPassed:(Int)->Unit) {
             }
         }
         Text(t("အပိုင်း ","Step ")+(step+1)+"/7 • "+headings[step],color=GOLD,fontWeight=FontWeight.Bold)
+        MyanmarLessonArtwork(step, my)
         when(step){
             0 -> {
                 LessonCard("🎯",t("ဒီနေ့ သင်ယူရမယ့်အရာ","Learning goals"),
