@@ -229,6 +229,9 @@ private fun AcademyApp() {
        item{BigAction("Watch Recorded Lesson (Demo)",{open(11)})}
       }
       8 -> {
+       if(selectedModule==0 && lessonNumber==1){
+        item { Lesson01Detailed(uiLanguage){ score -> completed += 1 } }
+       }else{
        item{SceneHero("Learn Step by Step","Module "+(selectedModule+1)+" • Lesson "+lessonNumber+" • Step "+(step+1)+"/4","🎬")}
        item{LinearProgressIndicator(progress={ (step+1)/4f },modifier=Modifier.fillMaxWidth().padding(bottom=16.dp),color=MINT,trackColor=PANEL)}
        item{AcademyCard(listOf("Discover Your Idea","Imagine a Solution","Create a First Draft","Improve Your Project")[step],
@@ -236,6 +239,7 @@ private fun AcademyApp() {
        item{BigAction(if(step<3)"Next Learning Step →" else "Try Exercise →",{if(step<3)step++ else open(17)},true)}
        item{AcademyCard("Ask AI Teacher","Get a friendly scripted explanation","🤖"){open(9)}}
       }
+       }
       9 -> {
 
       item { Phase04ConnectionPanel(if(page==9)"ai" else if(page==12)"classes" else if(page==11)"videos" else "library") }
