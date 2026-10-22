@@ -152,7 +152,7 @@ private fun AcademyApp() {
     verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.SpaceBetween){
     Column {
      Text("✦ AAII",fontSize=23.sp,fontWeight=FontWeight.Black,color=MINT)
-     Text("KID CREATOR ACADEMY • V2.4 PHASE 03",fontSize=9.sp,color=LIGHT,letterSpacing=1.sp)
+     Text("KID CREATOR ACADEMY • V2.4 PHASE 05",fontSize=9.sp,color=LIGHT,letterSpacing=1.sp)
     }
     TextButton(onClick={index=!index}){
      Text(if(index)"Close ✕" else "28 Pages ☰",color=GOLD,fontSize=13.sp,fontWeight=FontWeight.Bold)
@@ -346,6 +346,7 @@ private fun AcademyApp() {
        item{AcademyCard("Settings","Controls and accessibility","⚙"){open(25)}}
       }
       25 -> {
+       item { Phase05ConnectionCheck() }
        item{Phase03SyncPanel("account")}
        item{Heading("Settings & Parental Control","Comfortable and safe by design")}
        item {
