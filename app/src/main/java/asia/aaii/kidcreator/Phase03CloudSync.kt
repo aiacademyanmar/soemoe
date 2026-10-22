@@ -65,8 +65,8 @@ internal class Phase03CloudSync(private val ctx: Context) {
         }
         return url.toExternalForm().trimEnd('/') + "/api.php?route="
     }
-    private suspend fun request(route: String, payload: JSONObject? = null, token: String? = get("token"), base: String = get("base") ?: ""): JSONObject = withContext(Dispatchers.IO) {
-        val full = endpoint(base) + URLEncoder.encode(route, "UTF-8")
+    private suspend fun request(route: String, payload: JSONObject? = null, token: String? = get("token"), base: String = get("base") ?: "", query: Map<String,String> = emptyMap()): JSONObject = withContext(Dispatchers.IO) {
+        val full = endpoint(base) + URLEncoder.encode(route, "UTF-8") + query.entries.joinToString("") { "&" + URLEncoder.encode(it.key, "UTF-8") + "=" + URLEncoder.encode(it.value, "UTF-8") }
         val connection = URL(full).openConnection() as HttpURLConnection
         try {
             connection.instanceFollowRedirects = false
@@ -107,6 +107,17 @@ internal class Phase03CloudSync(private val ctx: Context) {
         put("username", username)
         put("token", response.getString("token"))
         "Signed in as " + username
+    }
+    fun hasCloudSession(): Boolean = get("token") != null
+    suspend fun approvedMedia(): JSONArray = request("media/catalog").getJSONArray("items")
+    suspend fun upcomingClasses(): JSONArray = request("classes").getJSONArray("classes")
+    suspend fun joinClass(classId:Int): String =
+        request("class/join", query=mapOf("id" to classId.toString())).getString("join_url")
+    suspend fun aiAvailability(): Boolean = request("ai/status").optBoolean("enabled",false)
+    suspend fun aiAsk(question:String, consent:Boolean):String {
+        require(consent) { "Guardian consent must be confirmed" }
+        val data = request("ai/ask",JSONObject().put("question",question).put("guardian_consent",true))
+        return data.getString("reply")
     }
     fun sessionName(): String? = get("username")
     fun savedBase(): String = get("base") ?: ""
