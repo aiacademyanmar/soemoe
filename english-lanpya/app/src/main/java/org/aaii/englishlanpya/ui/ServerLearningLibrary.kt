@@ -84,7 +84,7 @@ fun ServerLearningLibrary(initialSource:String="teacher",onBack:()->Unit){
         val list=(0 until (arr?.length()?:0)).map{i->val o=arr!!.getJSONObject(i);Source(o.getString("source_key"),o.optString("display_name",o.getString("source_key")))}
         sources=list
         if(list.none{it.key==selectedSource} && list.isNotEmpty())selectedSource=list.first().key
-        if(list.isNotEmpty())fetchFolder(token,selectedSource,null)
+        if(list.isNotEmpty())notice="Select a source to load approved folders."
         else notice="No approved server sources. Admin must complete Drive Sync + Source/Media Rights Review."
       }catch(e:Exception){notice=e.message?:"Unable to load sources"}
       finally{busy=false}
