@@ -10,8 +10,8 @@ android {
     applicationId = "asia.aaii.kidcreator.buildtest"
     minSdk = 26
     targetSdk = 35
-    versionCode = 2400
-    versionName = "2.4.0-integration-starter"
+    versionCode = 2402
+    versionName = "2.4.2-scene-only"
   }
   buildTypes { release { isMinifyEnabled = false } }
   compileOptions {
