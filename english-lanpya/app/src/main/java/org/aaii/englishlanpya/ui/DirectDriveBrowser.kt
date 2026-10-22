@@ -176,7 +176,7 @@ fun DirectDriveBrowser(initialSource:String="Teachers",onBack:()->Unit){
         Column(Modifier.padding(18.dp),verticalArrangement=Arrangement.spacedBy(12.dp)){
           Text("Connect your Google Account",style=MaterialTheme.typography.titleLarge)
           Text("Read-only Google Drive access is required to list the four English LanPya source folders. Google consent and Android OAuth setup are required.",style=MaterialTheme.typography.bodyMedium)
-          Button(onClick={connect},modifier=Modifier.fillMaxWidth()){Text("Connect Google Drive")}
+          Button(onClick={connect()},modifier=Modifier.fillMaxWidth()){Text("Connect Google Drive")}
           Text("No passwords, service-account keys or bearer tokens are bundled in the APK.",style=MaterialTheme.typography.bodySmall)
           TextButton(onClick={activity.startActivity(Intent(Intent.ACTION_VIEW,Uri.parse("https://drive.google.com/drive/folders/${source.id}")))}){Text("Open this folder in Google Drive instead →")}
         }
