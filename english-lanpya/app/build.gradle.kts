@@ -11,8 +11,8 @@ android {
         applicationId = "org.aaii.englishlanpya"
         minSdk = 26
         targetSdk = 35
-        versionCode = 272
-        versionName = "2.7.2-native-preview"
+        versionCode = 273
+        versionName = "2.7.3-drive-preview"
         val api = providers.gradleProperty("lanpyaApiBaseUrl")
             .orElse("https://www.aaii.asia/edu/english/api/v1/").get()
         require(api.startsWith("https://") && api.endsWith("/")) {
@@ -38,6 +38,9 @@ dependencies {
     implementation("androidx.core:core-ktx:1.16.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+    implementation("com.google.android.gms:play-services-auth:21.3.0")
+    implementation("androidx.media3:media3-exoplayer:1.6.1")
+    implementation("androidx.media3:media3-ui:1.6.1")
     debugImplementation("androidx.compose.ui:ui-tooling")
     testImplementation("junit:junit:4.13.2")
 }
