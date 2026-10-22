@@ -109,6 +109,10 @@ internal class Phase03CloudSync(private val ctx: Context) {
         "Signed in as " + username
     }
     fun hasCloudSession(): Boolean = get("token") != null
+    suspend fun coursePromotions(kind: String): JSONArray {
+        require(kind == "online" || kind == "campus")
+        return request("promotions", query = mapOf("kind" to kind)).getJSONArray("items")
+    }
     suspend fun approvedMedia(): JSONArray = request("media/catalog").getJSONArray("items")
     suspend fun upcomingClasses(): JSONArray = request("classes").getJSONArray("classes")
     suspend fun joinClass(classId:Int): String =
