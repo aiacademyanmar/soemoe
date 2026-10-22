@@ -1,0 +1,25 @@
+name: Refresh Lesson Graphics
+on:
+  workflow_dispatch:
+  push:
+    paths: [".github/workflows/refresh-lesson-graphics.yml"]
+permissions:
+  contents: write
+jobs:
+  refresh:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download scene one
+        env:
+          SOURCE: "https://media.canva.com/v2/image-resize/format:PNG/height:150/quality:100/uri:ifs%3A%2F%2FM%2F633fd49f-b317-45be-8a7d-bcc88366bba0/watermark:F/width:200?csig=AAAAAAAAAAAAAAAAAAAAAAcCUO_INGuVVbcQZFPQjDegv8Ga92Gcc_VSjHlRZxGG&exp=1792714866&osig=AAAAAAAAAAAAAAAAAAAAAAvXiMIlZ2Db2yYwhD_Ox_zrBjll0RpKeJx_eIzhbm96&signer=media-rpc&token=AAIAAU0AJDYzM2ZkNDlmLWIzMTctNDViZS04YTdkLWJjYzg4MzY2YmJhMAAAAAABoWYh_VDRAgWwFEbJncJcoQ7Cb32hfJbD9xLHHbuXKCs2vbaWFg&x-canva-quality=thumbnail"
+        run: |
+          curl -fLsS --max-time 30 "$SOURCE" -o app/src/main/res/drawable-nodpi/lesson11_new01.png
+          file app/src/main/res/drawable-nodpi/lesson11_new01.png
+      - name: Save asset
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/src/main/res/drawable-nodpi/lesson11_new01.png
+          git commit -m "asset: new lesson drawing" || exit 0
+          git push
