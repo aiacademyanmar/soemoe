@@ -36,9 +36,9 @@ private val pageNames=listOf(
  "AI Creator Studio","My Creations","Offline Downloads","Creative Tools",
  "Interactive Exercise","Quiz & Assessment","Learning Progress","Rewards & Badges",
  "Creator Community","Notifications","Parent Dashboard","My Profile",
- "Settings & Controls","Membership Plans","My Certificates","Help & Support"
+ "Settings & Controls","Membership Plans","My Certificates","Help & Support","AI ON CAMPUS"
 )
-private val emoji=listOf("🚀","✨","🔐","🏠","🌈","🧠","📖","🎬","🤖","📚","🎞","🎥","🎨","🖼","⬇","🧰","✍","🧩","📈","🏆","💗","🔔","👨‍👩‍👧","🙂","⚙","👑","🎓","🛟")
+private val emoji=listOf("🚀","✨","🔐","🏠","🌈","🧠","📖","🎬","🤖","📚","🎞","🎥","🎨","🖼","⬇","🧰","✍","🧩","📈","🏆","💗","🔔","👨‍👩‍👧","🙂","⚙","👑","🎓","🛟","🏫")
 private val modules=listOf(
  "Creator Mindset & AI Literacy","Digital Drawing & Visual Design","Storytelling & Digital Comics",
  "Video Basics & Creative Editing","Creative Coding & Mini Games","Digital Safety & Creator Showcase",
@@ -155,7 +155,7 @@ private fun AcademyApp() {
      Text("KID CREATOR ACADEMY • V2.4 PHASE 05",fontSize=9.sp,color=LIGHT,letterSpacing=1.sp)
     }
     TextButton(onClick={index=!index}){
-     Text(if(index)"Close ✕" else "28 Pages ☰",color=GOLD,fontSize=13.sp,fontWeight=FontWeight.Bold)
+     Text(if(index)"Close ✕" else "29 Pages ☰",color=GOLD,fontSize=13.sp,fontWeight=FontWeight.Bold)
     }
    }
    LazyColumn(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(NAVY,Color(0xFF0E1D5C),NAVY)))
@@ -196,7 +196,7 @@ private fun AcademyApp() {
       4 -> {
        item{SceneHero("Hi, Young Creator!","Learn, imagine and make something great today!","👋")}
        item{AcademyCard("My Learning Progress", completed.toString()+" lessons completed in this APK session","🏆"){open(19)}}
-       items(listOf(5,13,9,11,10,12,20,23)){n->AcademyCard(pageNames[n-1],"Tap to open this part of your creator world",emoji[n-1],accent[n%accent.size]){open(n)}}
+       items(listOf(5,13,9,11,10,12,29,20,23)){n->AcademyCard(pageNames[n-1],"Tap to open this part of your creator world",emoji[n-1],accent[n%accent.size]){open(n)}}
       }
       5 -> {
        item{Phase03SyncPanel("learn")}
@@ -264,6 +264,7 @@ private fun AcademyApp() {
        item{BigAction("Open Offline Lesson Instead",{open(8)})}
       }
       12 -> {
+       item { CoursePromotionsPanel("online") }
 
       item { Phase04ConnectionPanel(if(page==9)"ai" else if(page==12)"classes" else if(page==11)"videos" else "library") }
 
@@ -375,6 +376,9 @@ private fun AcademyApp() {
        item{AcademyCard("AAII Creator Certificate","SAMPLE • Certificate is not valid until issued by an administrator","🏅")}
        item{InfoWarning()}
       }
+      29 -> {
+       item { CoursePromotionsPanel("campus") }
+      }
       28 -> {
        item{SceneHero("Help & Support","We're here to help young creators.","🛟")}
        items(listOf("How do I start learning?","How can I ask the AI Teacher?","How do I get live classes?","Where is the Google Drive library?")){s->
@@ -385,7 +389,7 @@ private fun AcademyApp() {
      }
      item {
       Spacer(Modifier.height(12.dp))
-      Text("AAII V2.3 • UI & UX PROTOTYPE ONLY",color=SUB,fontSize=10.sp,modifier=Modifier.fillMaxWidth(),textAlign=TextAlign.Center)
+      Text("AAII V2.4 • COURSE PROMOTIONS UPDATE",color=SUB,fontSize=10.sp,modifier=Modifier.fillMaxWidth(),textAlign=TextAlign.Center)
      }
     }
    }
