@@ -221,7 +221,7 @@ private fun AcademyApp() {
       }
       8 -> {
        item{SceneHero("Learn Step by Step","Module "+(selectedModule+1)+" • Lesson "+lessonNumber+" • Step "+(step+1)+"/4","🎬")}
-       item{LinearProgressIndicator(progress={(step+1)/4f,modifier=Modifier.fillMaxWidth().padding(bottom=16.dp),color=MINT,trackColor=PANEL)}
+       item{LinearProgressIndicator(progress={ (step+1)/4f },modifier=Modifier.fillMaxWidth().padding(bottom=16.dp),color=MINT,trackColor=PANEL)}
        item{AcademyCard(listOf("Discover Your Idea","Imagine a Solution","Create a First Draft","Improve Your Project")[step],
           listOf("Find something interesting you want to explore.","Think of at least two ideas for your creation.","Use drawing, writing or a simple prototype.","Show your work and make one thoughtful improvement.")[step],"💡")}
        item{BigAction(if(step<3)"Next Learning Step →" else "Try Exercise →",{if(step<3)step++ else open(17)},true)}
