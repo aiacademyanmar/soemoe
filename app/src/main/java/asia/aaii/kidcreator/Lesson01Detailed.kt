@@ -121,12 +121,7 @@ internal fun Lesson01Detailed(language:String,onPassed:(Int)->Unit) {
             }
         }
         Text(t("အပိုင်း ","Step ")+(step+1)+"/7 • "+headings[step],color=GOLD,fontWeight=FontWeight.Bold)
-        // Original user-provided Myanmar 3D reference artwork, bundled into APK.
-        Image(painter=painterResource(R.drawable.lesson11_reference),
-            contentDescription=if(my)"မြန်မာကျောင်းသား၊ ကျောင်းသူ၊ AI စက်ရုပ်နှင့် သင်ခန်းစာ ၁.၁ ရုပ်ကြွပုံ" else "Myanmar 3D cartoon Lesson 1.1 infographic",
-            modifier=Modifier.fillMaxWidth().height(410.dp),
-            contentScale=ContentScale.Fit)
-        // Native readable text and interactive buttons are provided below the artwork.
+        // Full-page poster removed: screen-based lesson uses only individual crops.
         MyanmarLessonArtwork(step, my)
         when(step){
             0 -> {
