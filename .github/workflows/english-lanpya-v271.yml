@@ -6,6 +6,7 @@ on:
     branches:
       - english-lanpya-v271
       - english-lanpya-native-v272
+      - english-lanpya-drive-v273
     paths:
       - 'english-lanpya/**'
       - '.github/workflows/english-lanpya-v271.yml'
