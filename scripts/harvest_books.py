@@ -10,7 +10,7 @@ ROOTURL='https://www.dhammadownload.com/'
 SEEDS=[ROOTURL+'eBook-Myanmar.htm', ROOTURL+'eBookInEnglish.htm', ROOTURL+'eBook-English.htm', ROOTURL+'Pahtan-eBookInMyanmar.htm',ROOTURL+'The-Ministry-Of-Religious-Affairs-eBookInMyanmar.htm']
 allowed={'dhammadownload.com','www.dhammadownload.com','ftp.dhammadownload.com'}
 PDF_EXT=('.pdf','.epub','.mobi','.doc','.docx','.zip','.rar')
-RETRY=2;MAX_PAGES=240;MAX_LINKS=12000
+RETRY=1;MAX_PAGES=70;MAX_LINKS=3000
 stopwords={'eBook','PDF','Download','download','Click Here','Click to Download','Image','to download in PDF file','PDF File'}
 client=requests.Session();client.headers.update({'User-Agent':'DAMA-Library/1.0 (educational catalog of existing public download links; https://github.com/aiacademyanmar/soemoe)','Accept-Language':'my,en;q=0.7'})
 books={};queue=deque((x,'General Books',0) for x in SEEDS);visited=set();errors=[];parents={}
@@ -56,7 +56,7 @@ for attempt in range(1):
   response=None
   for tr in range(RETRY):
    try:
-    response=client.get(url,timeout=(7,23));response.raise_for_status()
+    response=client.get(url,timeout=(5,9));response.raise_for_status()
     if len(response.content)>7_000_000:raise ValueError('Page too big')
     break
    except Exception as e:
