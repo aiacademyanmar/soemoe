@@ -1,0 +1,14 @@
+plugins { id 'com.android.application' }
+android {
+ namespace 'asia.aaii.sukhapanya'
+ compileSdk 35
+ defaultConfig {
+    applicationId 'asia.aaii.sukhapanya'
+    minSdk 26
+    targetSdk 35
+    versionCode 9
+    versionName '8.0.0'
+ }
+ compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+ buildTypes { release { minifyEnabled false } }
+}
