@@ -1,0 +1,21 @@
+name: Inspect Sukha V82 Sources
+on:
+  push:
+    branches: [sukha-v83-medical-library-update]
+    paths: ['.github/workflows/sukha-v83-inspect.yml']
+permissions: {contents: read}
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect android source without building
+        run: |
+          unzip -q sukha-v82/source.zip -d /tmp/oldv82
+          find /tmp/oldv82/android/app/src/main -maxdepth 9 -type f | grep -v '/assets/' | head -80
+          echo "---- JAVA ----"
+          find /tmp/oldv82/android/app/src/main/java -name "*.java" -exec sh -c 'echo FILE:$1; head -120 "$1"' _ {} \;
+          echo "---- MANIFEST ----"
+          cat /tmp/oldv82/android/app/src/main/AndroidManifest.xml
+          echo "---- GRADLE ----"
+          cat /tmp/oldv82/android/app/build.gradle
