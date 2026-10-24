@@ -1,0 +1,57 @@
+name: DAMA APP V3 RADIO and LIBRARY APK
+on:
+  push:
+    branches: ["dama-library-v3"]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 70
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - uses: gradle/actions/setup-gradle@v4
+        with: {gradle-version: '8.9'}
+      - name: Android SDK 35
+        run: |
+          SDKM=$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | head -1)
+          test -x "$SDKM"
+          yes | "$SDKM" --licenses >/dev/null || true
+          "$SDKM" "platforms;android-35" "build-tools;35.0.0"
+      - name: Install Python scraper dependencies
+        run: python3 -m pip install --quiet requests beautifulsoup4 pillow
+      - name: Harvest publisher-linked books
+        run: python3 -u scripts/harvest_books.py
+      - name: Harvest MP3 catalog
+        run: python3 -u scripts/harvest_catalog.py
+        continue-on-error: true
+      - name: Fetch documented Wikimedia portraits
+        run: python3 -u scripts/fetch_licensed_portraits.py
+        continue-on-error: true
+      - name: Compile APK
+        run: gradle --no-daemon assembleDebug
+      - name: Verify catalog
+        run: |
+          python3 - <<'PY'
+          import os,json,zipfile
+          with zipfile.ZipFile('app/build/outputs/apk/debug/app-debug.apk') as z:
+              assert z.testzip() is None
+              count=len(json.loads(z.read('assets/books_catalog.json')))
+              report=json.load(open('books_build_report.json'))
+              assert count==report['unique_book_links']
+              print('VERIFIED BOOK LINKS',count)
+              if count < 1000: print('NOT 1000+ yet')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: DAMA-APP-V3-LIBRARY-APK-CATALOG
+          path: |
+            app/build/outputs/apk/debug/*.apk
+            books_build_report.json
+            book_links_export.csv
+            photo_license_report.json
+            catalog_build_report.json
