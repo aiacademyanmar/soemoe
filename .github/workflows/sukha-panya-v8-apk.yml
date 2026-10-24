@@ -26,8 +26,10 @@ jobs:
           gradle-version: '8.9'
       - name: SDK
         run: |
-          yes | sdkmanager --licenses >/dev/null || true
-          sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | sort -V | tail -1)"
+          test -n "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" 'platforms;android-35' 'build-tools;35.0.0'
       - name: Build debug APK
         working-directory: sukha-panya-v8
         run: gradle --no-daemon :app:assembleDebug --stacktrace
