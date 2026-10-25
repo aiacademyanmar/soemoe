@@ -48,6 +48,13 @@ jobs:
           assert data[:3]==bytes([255,216,255]) and data[-2:]==bytes([255,217]), 'Invalid JPEG markers'
           print('Portrait JPEG restored; sha256:',corrected)
           PY
+      - name: Validate Full HD V4.7 artwork
+        run: |
+          set -e
+          printf '%s  %s\n' \
+            '1a57bd33984c6f53a3add24c66f0d9b375bcecd6de801bf8620f36f813a47004' 'aaii-learning/app/src/main/res/drawable-nodpi/aaii_logo_v47.webp' \
+            'ec879d397c1457e85f680cf30c0697489982b067d06213079de02149ef046ef8' 'aaii-learning/app/src/main/res/drawable-nodpi/aaii_splash_v47.webp' \
+            '0f525e479874a5bdeca79d9688c7500b385df4a4b4a8217ec06da6e88dd6a7d1' 'aaii-learning/app/src/main/res/drawable-nodpi/soe_moe_v47_hd.webp' | sha256sum -c -
       - name: Compile real native APK
         run: gradle -p aaii-learning --no-daemon --stacktrace :app:assembleDebug
       - name: Verify APK Signature
@@ -60,7 +67,7 @@ jobs:
           sha256sum "$APK" > aaii-learning/app/build/outputs/apk/debug/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: AAII-Learning-V3-Installable-APK
+          name: AAII-Learning-V4.7-FullHD-Installable-APK
           path: |
             aaii-learning/app/build/outputs/apk/debug/app-debug.apk
             aaii-learning/app/build/outputs/apk/debug/SHA256SUMS.txt

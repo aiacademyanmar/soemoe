@@ -14,7 +14,7 @@ public class SplashActivity extends Activity {
     super.onCreate(b);
     getWindow().setStatusBarColor(Color.rgb(1,9,30));getWindow().setNavigationBarColor(Color.rgb(1,9,30));
     FrameLayout root=new FrameLayout(this);root.setBackgroundColor(Color.rgb(1,9,30));
-    ImageView art=new ImageView(this);art.setImageResource(R.drawable.aaii_splash_v45);
+    ImageView art=new ImageView(this);art.setImageResource(R.drawable.aaii_splash_v47);
     art.setScaleType(ImageView.ScaleType.FIT_CENTER);
     root.addView(art,new FrameLayout.LayoutParams(-1,-1));
     TextView bottom=new TextView(this);bottom.setText("AAII LEARNING  •  GLOBAL PROFESSIONAL EDUCATION");
