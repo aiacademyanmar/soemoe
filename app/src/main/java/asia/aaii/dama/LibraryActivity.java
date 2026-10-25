@@ -81,10 +81,41 @@ public class LibraryActivity extends Activity {
         if(sortMode.equals("AUTHOR"))Collections.sort(visible,(a,b)->{int k=a.author.compareToIgnoreCase(b.author);return k!=0?k:a.title.compareToIgnoreCase(b.title);});
         if(sortMode.equals("CATEGORY"))Collections.sort(visible,(a,b)->{int k=a.category.compareTo(b.category);return k!=0?k:a.title.compareToIgnoreCase(b.title);});
         list.removeAllViews();rendered=0;counter.setText("စာအုပ် "+visible.size()+" အုပ် • "+category+(authorFilter.isEmpty()?"":" • "+authorFilter));showMore();}
-    void showMore(){int end=Math.min(visible.size(),rendered+35);for(int i=rendered;i<end;i++){Book b=visible.get(i);LinearLayout line=row();line.setPadding(dp(8),dp(8),dp(8),dp(8));line.setBackground(shape(CARD,13,0));LinearLayout.LayoutParams itemParams=new LinearLayout.LayoutParams(-1,-2);itemParams.setMargins(0,0,0,dp(9));
-        android.widget.FrameLayout icon=new android.widget.FrameLayout(this);icon.setBackground(shape(new int[]{0xff70572f,0xff8b3f32,0xff28594c,0xff3e5260}[i%4],8,GOLD));TextView glyph=t("☸",31,GOLD,true);glyph.setGravity(Gravity.CENTER);icon.addView(glyph,new android.widget.FrameLayout.LayoutParams(-1,-1));line.addView(icon,new LinearLayout.LayoutParams(dp(58),dp(77)));
-        LinearLayout txt=vert();txt.setPadding(dp(12),dp(1),dp(5),0);TextView ttl=t(b.title,13,IVORY,true);ttl.setMaxLines(2);txt.addView(ttl);TextView auth=t(b.author,11,MUTED,false);auth.setMaxLines(1);txt.addView(auth);txt.addView(t((b.pdf()?"PDF":"DOC")+" · "+b.category+(local(b).exists()?" · Offline ✓":"")+" · "+stateLabel(b),10,GOLD,false));line.addView(txt,new LinearLayout.LayoutParams(0,-2,1));TextView open=t("›",28,GOLD,true);line.addView(open);list.addView(line,itemParams);line.setOnClickListener(v->details(b));}rendered=end;
-        if(rendered<visible.size()){TextView more=btn("နောက်ထပ် စာအုပ်များ "+(visible.size()-rendered)+" ›",()->{list.removeViewAt(list.getChildCount()-1);showMore();});list.addView(more);}}
+    // Quick actions are visible on every card: tap Read to download-then-open in this app;
+    // tap Save to download without leaving the Library screen.
+    void showMore(){
+        int end=Math.min(visible.size(),rendered+35);
+        for(int i=rendered;i<end;i++) {
+            Book b=visible.get(i);
+            LinearLayout holder=vert();holder.setPadding(dp(8),dp(7),dp(8),dp(8));
+            holder.setBackground(shape(CARD,13,0));
+            LinearLayout.LayoutParams itemParams=new LinearLayout.LayoutParams(-1,-2);itemParams.setMargins(0,0,0,dp(9));
+            LinearLayout line=row();
+            android.widget.FrameLayout icon=new android.widget.FrameLayout(this);
+            icon.setBackground(shape(new int[]{0xff70572f,0xff8b3f32,0xff28594c,0xff3e5260}[i%4],8,GOLD));
+            TextView glyph=t("☸",31,GOLD,true);glyph.setGravity(Gravity.CENTER);
+            icon.addView(glyph,new android.widget.FrameLayout.LayoutParams(-1,-1));
+            line.addView(icon,new LinearLayout.LayoutParams(dp(54),dp(70)));
+            LinearLayout words=vert();words.setPadding(dp(12),dp(1),dp(5),0);
+            TextView title=t(b.title,13,IVORY,true);title.setMaxLines(2);words.addView(title);
+            TextView author=t(b.author,11,MUTED,false);author.setMaxLines(1);words.addView(author);
+            words.addView(t((b.pdf()?"PDF":"DOC")+" · "+b.category+(local(b).exists()?" · Offline ✓":"")+" · "+stateLabel(b),10,GOLD,false));
+            line.addView(words,new LinearLayout.LayoutParams(0,-2,1));
+            line.addView(btn("⋮",()->details(b)));
+            holder.addView(line);line.setOnClickListener(v->details(b));
+            LinearLayout actions=row();actions.setPadding(0,dp(5),0,0);
+            TextView readNow=btn(b.pdf()?"📖 တန်းဖတ်ရန်":"↗ DOC ဖွင့်ရန်",()->{if(b.pdf())openOrDownload(b,true);else open(b.url);});
+            TextView save=btn(local(b).exists()?"✓ သိမ်းပြီး":"↓ Download",()->{if(b.pdf())openOrDownload(b,false);else open(b.url);});
+            LinearLayout.LayoutParams l=new LinearLayout.LayoutParams(0,-2,1);l.setMargins(0,0,dp(6),0);
+            actions.addView(readNow,l);actions.addView(save,new LinearLayout.LayoutParams(0,-2,1));
+            holder.addView(actions);list.addView(holder,itemParams);
+        }
+        rendered=end;
+        if(rendered<visible.size()){
+            TextView more=btn("နောက်ထပ် စာအုပ်များ "+(visible.size()-rendered)+" ›",()->{list.removeViewAt(list.getChildCount()-1);showMore();});
+            list.addView(more);
+        }
+    }
     String linkState(Book b){return prefs.getString("link_"+b.id,"UNCHECKED");}
     String stateLabel(Book b){String v=linkState(b);if(v.equals("OK"))return "✓ Verified on this device";if(v.equals("MISSING"))return "✕ Link missing";if(v.equals("INVALID"))return "! Not expected document";if(v.equals("BLOCKED"))return "? Access blocked";return "? Not verified";}
     void chooseAuthor(){
@@ -119,12 +150,119 @@ public class LibraryActivity extends Activity {
        }catch(Exception ex){info=ex.getClass().getSimpleName()+": "+ex.getMessage();}finally{if(c!=null)c.disconnect();}
        final String s=state,desc=info;prefs.edit().putString("link_"+b.id,s).apply();runOnUiThread(()->{msg(stateLabel(b)+" · "+desc);filter();});
     }).start();}
-    File local(Book b){File dir=new File(getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS),"DAMA-Library");if(!dir.exists())dir.mkdirs();return new File(dir,b.id+".pdf");}
-    void details(Book b){String fav=favorites.contains(b.id)?"♥ Favorites မှ ဖယ်ရှား":"♡ Favorites ထဲသိမ်း";String[] options={"📖 မူရင်းစာအုပ်လင့်ခ်",b.pdf()?"↓ PDF Download (Offline)":"↗ Word DOC မူရင်းလင့်ခ်",local(b).exists()?"📚 Offline PDF ဖတ်ရန်":"📚 PDF မသိမ်းရသေး",fav,"🔎 Link အလုပ်လုပ်မှုစစ်ရန်","↗ မူရင်း Website"};new AlertDialog.Builder(this).setTitle(b.title).setMessage(b.author+"\n"+b.category+" · "+b.format+"\n"+b.status).setItems(options,(d,i)->{if(i==0)open(b.url);else if(i==1){if(b.pdf())download(b);else open(b.url);}else if(i==2){if(local(b).exists())read(b);else msg("Download မလုပ်ရသေးပါ");}else if(i==3){if(!favorites.add(b.id))favorites.remove(b.id);prefs.edit().putStringSet("saved",new HashSet<>(favorites)).apply();filter();}else if(i==4)checkLink(b);else open(b.listUrl.isEmpty()?b.url:b.listUrl);}).show();}
+    void details(Book b) {
+        String fav=favorites.contains(b.id)?"♥ Favorites မှ ဖယ်ရှား":"♡ Favorites ထဲသိမ်း";
+        String[] options={b.pdf()?"📖 Native APK ထဲ တန်းဖတ်မည်":"↗ Word DOC ဖွင့်ရန်",
+            b.pdf()?"↓ PDF Download လုပ်မည်":"↗ DOC မူရင်းလင့်ခ်",
+            local(b).exists()?"📚 Offline သိမ်းထားသော PDF ဖတ်ရန်":"📚 Offline PDF မရှိသေး",
+            fav,"🔎 Link အလုပ်လုပ်မှုစစ်ရန်","↗ မူရင်း Website"};
+        new AlertDialog.Builder(this).setTitle(b.title)
+            .setMessage(b.author+"\n"+b.category+" · "+b.format+"\n"+b.status)
+            .setItems(options,(d,i)->{
+                if(i==0){if(b.pdf())openOrDownload(b,true);else open(b.url);}
+                else if(i==1){if(b.pdf())openOrDownload(b,false);else open(b.url);}
+                else if(i==2){if(local(b).exists())read(b);else msg("PDF မသိမ်းရသေးပါ");}
+                else if(i==3){if(!favorites.add(b.id))favorites.remove(b.id);
+                    prefs.edit().putStringSet("saved",new HashSet<>(favorites)).apply();filter();}
+                else if(i==4)checkLink(b);
+                else open(b.listUrl.isEmpty()?b.url:b.listUrl);
+            }).show();
+    }
     void open(String url){try{startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse(url)));}catch(Exception ex){msg("Link ဖွင့်မရပါ");}}
-    void read(Book b){Intent i=new Intent(this,PdfReaderActivity.class);i.putExtra("path",local(b).getAbsolutePath());i.putExtra("title",b.title);startActivity(i);}
-    void download(Book b){if(!b.pdf()){open(b.url);return;}if(local(b).exists()){read(b);return;}
-        new AlertDialog.Builder(this).setTitle("Download for Offline Reading").setMessage("စာအုပ်ကို မူရင်း Website မှ ကိုယ်ပိုင်ဖုန်းသို့ Download လုပ်ပါမည်။ ဖိုင်ကြီးနိုင်ပြီး မူရင်းထုတ်ဝေသူ၏ အသုံးပြုခွင့်စည်းမျဉ်းများကို လိုက်နာပါ။").setNegativeButton("Cancel",null).setPositiveButton("Download",(d,w)->{msg("PDF Download စတင်ပါပြီ");new Thread(()->{File dst=local(b),tmp=new File(dst.getPath()+".part");String err=null;
-            try{URL u=new URL(b.url);if(!u.getProtocol().equals("https"))throw new IOException("HTTPS required");HttpURLConnection c=(HttpURLConnection)u.openConnection();c.setConnectTimeout(13000);c.setReadTimeout(30000);c.setInstanceFollowRedirects(true);if(c.getResponseCode()!=200)throw new IOException("HTTP "+c.getResponseCode());if(c.getContentLengthLong()>100L*1024*1024)throw new IOException("PDF >100MB");try(InputStream in=c.getInputStream();FileOutputStream out=new FileOutputStream(tmp)){byte[] buf=new byte[16384];int n;long count=0;while((n=in.read(buf))!=-1){count+=n;if(count>100L*1024*1024)throw new IOException("Too large");out.write(buf,0,n);}if(count<500)throw new IOException("Too small");}try(FileInputStream f=new FileInputStream(tmp)){byte[] magic=new byte[5];if(f.read(magic)!=5||!Arrays.equals(magic,"%PDF-".getBytes(StandardCharsets.US_ASCII)))throw new IOException("Not a PDF");}if(!tmp.renameTo(dst))throw new IOException("Cannot save file");}catch(Exception e){tmp.delete();err=e.getMessage();}
-            final String error=err;runOnUiThread(()->{if(error==null){msg("PDF Download ပြီးပါပြီ");filter();read(b);}else msg("Download မအောင်မြင်: "+error);});}).start();}).show();}
+    void read(Book b){
+        File pdf=local(b);
+        if(!pdf.isFile()){msg("PDF ကို Download လုပ်ရန် လိုအပ်ပါသည်");return;}
+        Intent i=new Intent(this,PdfReaderActivity.class);
+        i.putExtra("path",pdf.getAbsolutePath());i.putExtra("title",b.title);startActivity(i);
+    }
+    File local(Book b){
+        File folder=getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS);
+        if(folder==null)folder=getFilesDir();
+        File dir=new File(folder,"DAMA-Library");if(!dir.exists())dir.mkdirs();
+        return new File(dir,b.id+".pdf");
+    }
+    private volatile boolean downloading=false;
+    void openOrDownload(Book b,boolean openAfter) {
+        if(!b.pdf()){open(b.url);return;}
+        File dst=local(b);
+        if(dst.isFile()){
+            if(openAfter)read(b);else msg("ဤ PDF ကို Offline သိမ်းထားပြီးပါပြီ");
+            return;
+        }
+        if(downloading){msg("အခြားစာအုပ်တစ်အုပ် Download လုပ်နေပါသည်");return;}
+        // Downloads are an explicit user action; only the selected title is fetched.
+        final java.util.concurrent.atomic.AtomicBoolean cancelled=new java.util.concurrent.atomic.AtomicBoolean(false);
+        LinearLayout panel=vert();panel.setPadding(dp(19),dp(11),dp(19),dp(10));
+        TextView label=t(b.title,13,DEEP,true);panel.addView(label);
+        ProgressBar progress=new ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal);
+        progress.setMax(100);progress.setIndeterminate(true);panel.addView(progress);
+        TextView desc=t("မူရင်း Website မှ PDF ရယူနေသည်…",12,DEEP,false);desc.setPadding(0,dp(10),0,0);panel.addView(desc);
+        AlertDialog dialog=new AlertDialog.Builder(this)
+            .setTitle(openAfter?"PDF ရယူပြီး Native Reader ဖြင့်ဖတ်ရန်":"PDF Offline Download")
+            .setView(panel).setNegativeButton("Cancel",(d,w)->cancelled.set(true)).create();
+        dialog.setOnCancelListener(d->cancelled.set(true));
+        dialog.show();downloading=true;
+        new Thread(()->{
+            File part=new File(dst.getAbsolutePath()+".part");String error=null;
+            HttpURLConnection connection=null;
+            try {
+                URL url=new URL(b.url);
+                if(!"https".equalsIgnoreCase(url.getProtocol()))throw new IOException("HTTPS လင့်ခ် လိုအပ်သည်");
+                connection=(HttpURLConnection)url.openConnection();
+                connection.setConnectTimeout(15000);connection.setReadTimeout(35000);
+                connection.setInstanceFollowRedirects(true);
+                connection.setRequestProperty("User-Agent","Mozilla/5.0 (Android; DAMA-Library/5.0)");
+                int response=connection.getResponseCode();
+                if(response!=200)throw new IOException("Website HTTP "+response);
+                if(!"https".equalsIgnoreCase(connection.getURL().getProtocol()))throw new IOException("Unsafe redirect");
+                long total=connection.getContentLengthLong();
+                final long maxSize=120L*1024*1024;
+                if(total>maxSize)throw new IOException("PDF 120MB ထက်ကြီးသည်");
+                long count=0,lastUpdate=0;int priorPercent=-1;
+                try(InputStream in=connection.getInputStream();FileOutputStream out=new FileOutputStream(part)) {
+                    byte[] bytes=new byte[32768];int n;
+                    while((n=in.read(bytes))!=-1){
+                        if(cancelled.get())throw new IOException("Download cancelled");
+                        count+=n;
+                        if(count>maxSize)throw new IOException("PDF size exceeds 120MB");
+                        out.write(bytes,0,n);
+                        long now=android.os.SystemClock.elapsedRealtime();
+                        int percent=total>0?(int)Math.min(100,(count*100)/total):-1;
+                        if(now-lastUpdate>=350 || (percent>=0&&percent!=priorPercent&&percent%5==0)){
+                            final int pct=percent;final long bytesNow=count;
+                            runOnUiThread(()->{
+                                if(isFinishing()||isDestroyed())return;
+                                if(pct>=0){progress.setIndeterminate(false);progress.setProgress(pct);
+                                    desc.setText(pct+"% · "+(bytesNow/1024)+" KB Downloaded");}
+                                else desc.setText((bytesNow/1024)+" KB Downloaded");
+                            });
+                            lastUpdate=now;priorPercent=percent;
+                        }
+                    }
+                    out.getFD().sync();
+                }
+                if(count<8)throw new IOException("Empty PDF response");
+                try(FileInputStream fin=new FileInputStream(part)){
+                    byte[] magic=new byte[5];
+                    if(fin.read(magic)!=5 || !java.util.Arrays.equals(magic,"%PDF-".getBytes(StandardCharsets.US_ASCII)))
+                        throw new IOException("Website returned HTML, not a PDF");
+                }
+                if(cancelled.get())throw new IOException("Download cancelled");
+                if(!part.renameTo(dst))throw new IOException("Cannot save PDF");
+            } catch(Exception e){error=e.getMessage();part.delete();}
+            finally{if(connection!=null)connection.disconnect();}
+            final String failure=error;
+            runOnUiThread(()->{
+                downloading=false;
+                try{dialog.dismiss();}catch(Exception ignored){}
+                if(failure==null){msg("PDF Download အောင်မြင်ပါပြီ — Offline ဖတ်နိုင်ပါသည်");filter();if(openAfter)read(b);}
+                else if(!cancelled.get()){
+                    new AlertDialog.Builder(this).setTitle("PDF မရရှိပါ")
+                        .setMessage(failure+"\n\nမူရင်း Website မှ ဖိုင်လင့်ခ် ပြောင်းထားနိုင်သည်။")
+                        .setPositiveButton("မူရင်း Website",(d,w)->open(b.listUrl.isEmpty()?b.url:b.listUrl))
+                        .setNegativeButton("ပိတ်ရန်",null).show();
+                }
+            });
+        },"DAMA-Book-Download").start();
+    }
 }
