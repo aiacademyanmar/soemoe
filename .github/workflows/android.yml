@@ -41,6 +41,8 @@ jobs:
           assert all(x['link_status']=='not_live_checked' for x in b)
           print('CATALOG OK: 1894 URLs, 1849 PDF, 45 DOC, unique author filters')
           PY
+      - name: Remove superseded uncompressed asset
+        run: rm -f app/src/main/assets/books_catalog.json
       - name: Build installable debug APK
         run: gradle --no-daemon assembleDebug
       - name: Verify embedded data and APK consistency
