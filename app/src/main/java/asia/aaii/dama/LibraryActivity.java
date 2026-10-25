@@ -29,11 +29,11 @@ public class LibraryActivity extends Activity {
     static final int BG=0xff041e1c,DEEP=0xff001613,CARD=0xff11362e,GOLD=0xffe4b767,IVORY=0xfffff8e7,MUTED=0xffa6b3a5;
     final ArrayList<Book> books=new ArrayList<>(),visible=new ArrayList<>();
     Set<String> favorites=new HashSet<>(); SharedPreferences prefs;
-    LinearLayout page,list,main; TextView counter,ebookSyncLabel; ProgressBar ebookSyncProgress;
+    LinearLayout page,list,main; ScrollView libraryScroll; TextView counter,ebookSyncLabel; ProgressBar ebookSyncProgress;
     EditText search;
     volatile boolean syncingBooks=false;
     int ebookSyncDone=0,ebookSyncTotal=1;
-    String query="",category="အားလုံး",authorFilter="",fileFilter="ALL",statusFilter="ALL",sortMode="DEFAULT"; boolean favoritesOnly=false,offlineOnly=false;int rendered=0;
+    String sayadawKey="",query="",category="အားလုံး",authorFilter="",fileFilter="ALL",statusFilter="ALL",sortMode="DEFAULT"; boolean favoritesOnly=false,offlineOnly=false;int rendered=0;
     final String[] categories={"အားလုံး","ပဋ္ဌာန်း","အဘိဓမ္မာ","ပိဋကတ်သုံးပုံ","ဝိပဿနာ","ဝန်ကြီးဌာန","ပရိတ်/ဝတ်ရွတ်","ပါဠိ","ဓမ္မစာအုပ်"};
     static class Book {String title,author,category,format,url,listUrl, status,id,authorType;
         Book(JSONObject x){title=x.optString("title","စာအုပ်").replaceAll("\\s+"," ").trim(); author=x.optString("author", "အမည်မသိ").replaceAll("\\s+"," ").trim();category=x.optString("category","ဓမ္မစာအုပ်");format=x.optString("format","PDF");url=x.optString("url");listUrl=x.optString("listing_url");status=x.optString("link_status");id=x.optString("id",Integer.toHexString(url.hashCode()));authorType=x.optString("author_type","person_label");}
@@ -138,6 +138,33 @@ public class LibraryActivity extends Activity {
         tile.setOnClickListener(v->click.run());
     }
 
+    void showSayadawBooks(int monkIndex){
+        // Match BOOK AUTHOR, not merely a keyword occurring in an unrelated title.
+        String[] keys={"မိုးကုတ်","မဟာစည်","နန္ဒမာလာ"};
+        String[] names={"မိုးကုတ်ဆရာတော်","မဟာစည်ဆရာတော်","နန္ဒမာလာဘိဝံသဆရာတော်"};
+        if(monkIndex<0||monkIndex>=keys.length)return;
+        sayadawKey=keys[monkIndex];
+        authorFilter="";category="အားလုံး";fileFilter="ALL";statusFilter="ALL";
+        favoritesOnly=false;offlineOnly=false;query="";
+        if(search!=null)search.setText("");
+        filter();
+        if(libraryScroll!=null&&counter!=null)libraryScroll.post(()->libraryScroll.smoothScrollTo(0,
+            Math.max(0,counter.getTop()-dp(85))));
+        if(visible.isEmpty()){
+            msg("ဤဆရာတော်၏ စာအုပ်ကို လက်ရှိ Catalog တွင် မတွေ့ရသေးပါ");
+        }else{msg(names[monkIndex]+" — စာအုပ် "+visible.size()+" အုပ်");}
+    }
+    void donatePopup(){
+        LinearLayout panel=vert();panel.setPadding(dp(19),dp(13),dp(19),dp(6));
+        TextView heading=t("🙏  ဓမ္မအလှူ ပံ့ပိုးကူညီရန်",18,GOLD,true);
+        panel.addView(heading);
+        TextView msg=t("ဓမ္မစာပေ၊ တရားတော်အသံနှင့် ဗုဒ္ဓဘာသာပညာများကို အများပြည်သူ လေ့လာနိုင်ရေးအတွက် AAII.ASIA မှ ပံ့ပိုးကူညီထားပါသည်။\n\nဤစီမံကိန်းကို ဆက်လက်တိုးတက်အောင် ကူညီလိုပါက အောက်ပါ ဝက်ဘ်ဆိုက်များတွင် အသေးစိတ်ကြည့်ရှုနိုင်ပါသည်။\n\nအလှူငွေပေးရန် မဖြစ်မနေမလိုအပ်ပါ။",13,IVORY,false);
+        msg.setPadding(0,dp(12),0,dp(14));panel.addView(msg);
+        panel.addView(btn("🌐  DONATE BY AAII.ASIA",()->open("https://aaii.asia/")));
+        panel.addView(btn("🌐  SOEMOE.AAII.ASIA",()->open("https://soemoe.aaii.asia/")));
+        new AlertDialog.Builder(this).setView(panel)
+            .setNegativeButton("ပိတ်မည်",null).show();
+    }
     void featuredSayadaws(){
         TextView title=t("✦  FEATURED SAYADAWS",16,GOLD,true);
         title.setPadding(dp(2),dp(18),0,dp(9));page.addView(title);
@@ -157,7 +184,8 @@ public class LibraryActivity extends Activity {
             name.setGravity(Gravity.CENTER);tile.addView(name,new LinearLayout.LayoutParams(dp(102),dp(42)));
             LinearLayout.LayoutParams margin=new LinearLayout.LayoutParams(dp(124),dp(151));
             margin.setMargins(0,0,dp(9),0);gallery.addView(tile,margin);
-            PremiumMedia.tap(tile,()->openAuthorDirectory());
+            final int monkIndex=i;
+            PremiumMedia.tap(tile,()->showSayadawBooks(monkIndex));
         }
         horizontal.addView(gallery);page.addView(horizontal);
         TextView note=t("ဆရာတော်ပုံများ — Wikimedia Commons မူရင်းများ (Credit ပါဝင်သည်)။",10,MUTED,false);
@@ -212,7 +240,7 @@ public class LibraryActivity extends Activity {
         TextView readerShortcut=btn("▣  READER",()->startActivity(new Intent(this,ReaderShelfActivity.class)));
         readerShortcut.setBackground(shape(0xff285547,13,0xffbb9254));
         hdr.addView(readerShortcut);main.addView(hdr);
-        ScrollView scroll=new ScrollView(this);main.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));page=vert();page.setPadding(dp(12),dp(14),dp(12),dp(12));scroll.addView(page);
+        ScrollView scroll=new ScrollView(this);libraryScroll=scroll;main.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));page=vert();page.setPadding(dp(12),dp(14),dp(12),dp(12));scroll.addView(page);
         android.widget.FrameLayout hero=new android.widget.FrameLayout(this);hero.setBackground(shape(CARD,20,GOLD));hero.setClipToOutline(true);ImageView cover=new ImageView(this);cover.setImageResource(R.drawable.dama_library_v12_hero);cover.setScaleType(ImageView.ScaleType.CENTER_CROP);hero.addView(cover,new android.widget.FrameLayout.LayoutParams(-1,dp(157)));LinearLayout words=vert();words.setPadding(dp(10),dp(10),dp(6),dp(6));words.setBackground(new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,new int[]{0xe900201b,0x9000201b,0x00102018}));words.addView(t("DAMA LIBRARY",24,GOLD,true));words.addView(t("ဓမ္မစာအုပ်များ စုစည်းရာ",15,IVORY,true));words.addView(t("Read • Learn • Keep",10,IVORY,false));/* DAMA Library original branded art includes its own typography. */page.addView(hero,new LinearLayout.LayoutParams(-1,dp(185)));
         LinearLayout overview=row();
         java.util.HashSet<String> authorNames=new java.util.HashSet<>();
@@ -227,6 +255,8 @@ public class LibraryActivity extends Activity {
         addPremiumStat(overview,String.valueOf(offlineCount),"OFFLINE PDFs");
         page.addView(overview);
         featuredSayadaws();
+        TextView donateBtn=btn("♡  ဓမ္မအလှူ ပံ့ပိုးကူညီရန်  ·  DONATE BY AAII.ASIA",()->donatePopup());
+        page.addView(donateBtn,new LinearLayout.LayoutParams(-1,dp(51)));
         featuredBooks();
         categoryBookCounts();
         TextView tagline=t("Discover · Read · Remember",15,GOLD,true);
@@ -274,7 +304,7 @@ public class LibraryActivity extends Activity {
         authorscroll.addView(authorrow);page.addView(authorscroll);
         LinearLayout selectors=row();selectors.setPadding(0,dp(5),0,dp(6));
         selectors.addView(btn("☷ စာရေးသူ Profile ၆၄ ခု",()->openAuthorDirectory()),new LinearLayout.LayoutParams(0,-2,1));
-        selectors.addView(btn("✕ Filter ဖယ်ရှား",()->{authorFilter="";category="အားလုံး";fileFilter="ALL";statusFilter="ALL";favoritesOnly=false;offlineOnly=false;query="";search.setText("");filter();}),new LinearLayout.LayoutParams(0,-2,1));
+        selectors.addView(btn("✕ Filter ဖယ်ရှား",()->{authorFilter="";sayadawKey="";category="အားလုံး";fileFilter="ALL";statusFilter="ALL";favoritesOnly=false;offlineOnly=false;query="";search.setText("");filter();}),new LinearLayout.LayoutParams(0,-2,1));
         page.addView(selectors);
         LinearLayout orderFilters=row();orderFilters.setPadding(0,0,0,dp(7));
         orderFilters.addView(btn("Format: "+(fileFilter.equals("ALL")?"PDF / DOC":fileFilter),()->chooseFormat()),new LinearLayout.LayoutParams(0,-2,1));
@@ -293,7 +323,7 @@ public class LibraryActivity extends Activity {
     }
     void filter(){if(list==null)return;visible.clear();String q=query.toLowerCase(Locale.ROOT).trim();for(Book b:books){if(!category.equals("အားလုံး")&&!b.category.equals(category))continue;
           if(!fileFilter.equals("ALL")&&!(fileFilter.equals("PDF")?b.pdf():!b.pdf()))continue;
-          if(!statusFilter.equals("ALL")&&!linkState(b).equals(statusFilter))continue;if(!authorFilter.isEmpty()&&!b.author.equals(authorFilter))continue;if(favoritesOnly&&!favorites.contains(b.id))continue;if(offlineOnly&&!local(b).isFile())continue;if(!q.isEmpty()&&!(b.title+" "+b.author+" "+b.category).toLowerCase(Locale.ROOT).contains(q))continue;visible.add(b);}
+          if(!statusFilter.equals("ALL")&&!linkState(b).equals(statusFilter))continue;if(!authorFilter.isEmpty()&&!b.author.equals(authorFilter))continue;if(!sayadawKey.isEmpty()&&!b.author.contains(sayadawKey))continue;if(favoritesOnly&&!favorites.contains(b.id))continue;if(offlineOnly&&!local(b).isFile())continue;if(!q.isEmpty()&&!(b.title+" "+b.author+" "+b.category).toLowerCase(Locale.ROOT).contains(q))continue;visible.add(b);}
         if(sortMode.equals("TITLE"))Collections.sort(visible,(a,b)->a.title.compareToIgnoreCase(b.title));
         if(sortMode.equals("AUTHOR"))Collections.sort(visible,(a,b)->{int k=a.author.compareToIgnoreCase(b.author);return k!=0?k:a.title.compareToIgnoreCase(b.title);});
         if(sortMode.equals("CATEGORY"))Collections.sort(visible,(a,b)->{int k=a.category.compareTo(b.category);return k!=0?k:a.title.compareToIgnoreCase(b.title);});

@@ -1,7 +1,7 @@
-name: DAMA APP V17 - Premium Library and TV Covers
+name: DAMA APP V18 - Sayadaw Books and Donation Popup
 on:
   push:
-    branches: ["dama-premium-lib-tv-v17"]
+    branches: ["dama-library-sayadaw-donate-v18"]
   workflow_dispatch:
 permissions:
   contents: read
@@ -284,7 +284,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: DAMA-APP-V17-Premium-Library-TV-APK
+          name: DAMA-APP-V18-Sayadaw-Donate-APK
           path: |
             app/build/outputs/apk/debug/*.apk
             photo_license_report.json
