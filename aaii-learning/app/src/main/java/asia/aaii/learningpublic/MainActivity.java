@@ -20,6 +20,7 @@ public class MainActivity extends Activity {
   private SharedPreferences prefs;
   private LinearLayout root,body,footer;
   private int page=0,detailType=0,detailIndex=0,limit=35;
+  private String bookingDate="ရက်ရွေးပါ", bookingTime="အချိန်ရွေးပါ";
   private String search="",category="အားလုံး";
   private int dp(int v){return (int)(v*getResources().getDisplayMetrics().density+0.5f);}
   private GradientDrawable shape(int color,int radius){GradientDrawable d=new GradientDrawable();d.setColor(color);d.setCornerRadius(dp(radius));return d;}
@@ -82,17 +83,51 @@ public class MainActivity extends Activity {
     if(s.contains("teach")||s.contains("educat"))return "Learning Objective၊ Activity၊ Quiz၊ Rubric ပါဝင်သော 30-minute Lesson Plan ရေးပါ။";
     return "အဓိကအသုံးအနှုန်း ၅ ခုကို သတ်မှတ်ပြီး ကိုယ်ပိုင်လုပ်ငန်းခွင်ဥပမာတစ်ခုနှင့် ရှင်းပြပါ။";
   }
+  
+  private void saveLocalDraft(String kind,String subject){
+    try{
+      String key="aaii_request_drafts";
+      JSONArray arr=new JSONArray(prefs.getString(key,"[]"));
+      JSONObject obj=new JSONObject();
+      obj.put("type",kind);obj.put("subject",subject);obj.put("state","Local draft • not submitted");
+      obj.put("date",new java.text.SimpleDateFormat("yyyy-MM-dd",Locale.US).format(new Date()));
+      arr.put(obj);
+      if(arr.length()>100){
+        JSONArray trimmed=new JSONArray();for(int i=Math.max(0,arr.length()-100);i<arr.length();i++)trimmed.put(arr.getJSONObject(i));arr=trimmed;
+      }
+      prefs.edit().putString(key,arr.toString()).apply();
+    }catch(Exception ex){android.util.Log.w("AAII","Draft not saved",ex);}
+  }
+  private JSONArray drafts(){
+    try{return new JSONArray(prefs.getString("aaii_request_drafts","[]"));}catch(Exception e){return new JSONArray();}
+  }
+  private int reviewedCourses(){
+    int n=0;for(int i=0;i<courses.length();i++)if(prefs.getBoolean("course_"+i,false))n++;return n;
+  }
+  private void progressStrip(LinearLayout parent,String label,int count,int total){
+    LinearLayout card=card(parent);
+    line(card,label+"   "+count+" / "+total,14,INK,true);
+    ProgressBar bar=new ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal);
+    bar.setMax(Math.max(1,total));bar.setProgress(count);card.addView(bar,new LinearLayout.LayoutParams(-1,dp(6)));
+  }
   private void render(){
     root=vertical();root.setBackgroundColor(BG);root.setFitsSystemWindows(true);setContentView(root);
     LinearLayout head=vertical();head.setPadding(dp(16),dp(8),dp(16),dp(8));head.setBackgroundColor(NAVY);root.addView(head);
     line(head,"AAII LEARNING   •   COURSERA ROADMAP",11,GOLD,true);
     line(head,"ပညာရေး  •  Training with Soe Moe",16,WHITE,true);
+    LinearLayout links=new LinearLayout(this);links.setOrientation(0);head.addView(links);
+    TextView learningLink=txt("◉ My Learning",12,GOLD,true);links.addView(learningLink,new LinearLayout.LayoutParams(0,dp(36),1));
+    learningLink.setOnClickListener(v->openTab(12));
+    TextView requestLink=txt("▤ Requests",12,WHITE,true);links.addView(requestLink,new LinearLayout.LayoutParams(0,dp(36),1));
+    requestLink.setOnClickListener(v->openTab(13));
+    TextView profileLink=txt("⚙ Profile",12,WHITE,true);links.addView(profileLink,new LinearLayout.LayoutParams(0,dp(36),1));
+    profileLink.setOnClickListener(v->openTab(11));
     ScrollView scroll=new ScrollView(this);scroll.setFillViewport(false);root.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
     body=vertical();body.setPadding(dp(13),dp(12),dp(13),dp(14));scroll.addView(body);
-    if(page==0)home();else if(page==1)courseList();else if(page==2)programList("Specialization");else if(page==3)programList("Professional Certificate");else if(page==4)teacher();else if(page==5)wallet();else if(page==7)enrollmentService();else if(page==8)hireTeacherService();else detail();
+    if(page==0)home();else if(page==1)courseList();else if(page==2)programList("Specialization");else if(page==3)programList("Professional Certificate");else if(page==4)teacher();else if(page==5)wallet();else if(page==7)enrollmentService();else if(page==8)hireTeacherService();else if(page==9)teacherProfile();else if(page==10)bookingForm();else if(page==11)settingsPage();else if(page==12)myLearning();else if(page==13)myRequests();else detail();
     footer=new LinearLayout(this);footer.setOrientation(LinearLayout.HORIZONTAL);footer.setBackgroundColor(WHITE);
     footer.setPadding(dp(2),dp(3),dp(2),dp(5));
-    int highlight=(page==7||page==8)?0:(page==6?(detailType==1?1:detailType==2?2:detailType==3?3:4):page);
+    int highlight=(page==7||page==8||page==11||page==12||page==13)?0:(page==9||page==10?4:(page==6?(detailType==1?1:detailType==2?2:detailType==3?3:4):page));
     for(int i=0;i<5;i++){final int tab=i;LinearLayout item=vertical();item.setGravity(Gravity.CENTER);
       if(highlight==i)item.setBackground(shape(0xffedf8f8,12));
       TextView icon=txt(ICONS[i],20,i==highlight?TEAL:MUTED,true);icon.setGravity(Gravity.CENTER);item.addView(icon);
@@ -116,6 +151,11 @@ public class MainActivity extends Activity {
     line(hiring,"02  HIRE A TEACHER • ဆရာငှားရမ်းရန်",15,TEAL,true);
     line(hiring,"ဘာသာရပ်၊ Online/Offline၊ အတန်းအဆင့်၊ အချိန်ဇယားနှင့် Budget အလိုက် ဆရာရှာဖွေရန် Request ပြုလုပ်နိုင်သည်။ ဆရာ/ကျောင်းသား Matching ကို AAII က သီးခြားအတည်ပြုပေးရမည်။",13,INK,false);
     button(hiring,"ဆရာငှားရန် Request တင်မည်",()->openTab(8),true);
+    button(hiring,"Teacher Soe Moe — Profile နှင့် Booking",()->openTab(9),false);
+    LinearLayout personal=card(body);line(personal,"My Learning • Certificate Wallet • Requests",17,NAVY,true);
+    line(personal,"သင်ယူပြီးစီးမှု၊ ပညာရေးလက်မှတ်များနှင့် ကိုယ်တိုင်ပေးပို့ရန် ပြင်ထားသော Service Request Draft များကို ဖုန်းထဲမှာ ကြည့်နိုင်သည်။",13,INK,false);
+    button(personal,"My Learning Dashboard",()->openTab(12),false);
+    button(personal,"Profile & Settings",()->openTab(11),false);
     sectionHome("01","COURSE / သင်တန်း","ဘာသာရပ်တစ်ခုချင်းကို သီးခြားလေ့လာခြင်း၊ အကြောင်းအရာ၊ Practical Task၊ Coursera Link",()->openTab(1));
     sectionHome("02","SPECIALIZATION / အထူးပြု","ဆက်စပ်ဘာသာရပ်အစုံကို လေ့လာ၍ Project နှင့် နည်းပညာဆိုင်ရာအထူးပြုကျွမ်းကျင်မှု တည်ဆောက်ခြင်း",()->openTab(2));
     sectionHome("03","PROFESSIONAL CERTIFICATE","အလုပ်အကိုင်အတွက် Skill Pathway၊ Project၊ လေ့ကျင့်ခန်းနှင့် Official Program Link",()->openTab(3));
@@ -210,6 +250,8 @@ public class MainActivity extends Activity {
     LinearLayout service=card(body);line(service,"ဆရာလိုအပ်နေပါသလား?",17,NAVY,true);
     line(service,"Online / Offline ဆရာငှားရန် AAII Teacher Matching Request တင်နိုင်ပါသည်။",13,INK,false);
     button(service,"Hire a Teacher • ဆရာရှာမည်",()->openTab(8),true);
+    button(service,"Teacher Soe Moe — Profile Detail",()->openTab(9),false);
+    button(service,"Teacher Booking Request Form",()->openTab(10),false);
     LinearLayout x=card(body);line(x,"TEACHER CAREER ROADMAP",19,NAVY,true);
     line(x,"01  Teaching Foundations — သင်ယူသူနှင့် သင်ကြားနည်း သီအိုရီ\n02  Lesson Planning — ရည်မှန်းချက်၊ သင်ခန်းစာအစီအစဉ်\n03  Classroom Management — တက်ကြွစွာပါဝင်မှု\n04  Digital Teaching — Zoom, LMS, Digital Activities\n05  Assessment — Quiz, Rubric, Feedback\n06  Teaching Portfolio — Lesson Plan, Video, Sample Work\n07  Official Course / TESOL Certificate ကို သင်တန်းပေးသူထံမှ ရယူခြင်း\n08  Teacher License လိုပါက နိုင်ငံအလိုက် အစိုးရအသိအမှတ်ပြု လမ်းကြောင်းသီးခြား စစ်ဆေးခြင်း",14,INK,false);
     line(x,"Coursera/TESOL Certificate ရရှိရုံဖြင့် နိုင်ငံအလိုက် Teacher License အလိုအလျောက် မရပါ။",13,0xffa3471b,true);
@@ -255,6 +297,7 @@ public class MainActivity extends Activity {
           Intent send=new Intent(Intent.ACTION_SEND);send.setType("text/plain");
           send.putExtra(Intent.EXTRA_SUBJECT,title);
           send.putExtra(Intent.EXTRA_TEXT,title+"\n\n"+summary+"\n\nContact: "+contact+"\n\nShared voluntarily by learner via AAII Learning.");
+          saveLocalDraft(title,summary.length()>160?summary.substring(0,160):summary);
           startActivity(Intent.createChooser(send,"AAII Request ကို မည်သည့် App သို့ ပို့မည်နည်း"));
         }catch(Exception e){
           Toast.makeText(this,"Sharing App မရှိပါ။ Request ကို Copy/Share နည်းဖြင့် ပို့ပါ။",Toast.LENGTH_LONG).show();
@@ -308,6 +351,144 @@ public class MainActivity extends Activity {
     },true);
     line(form,"ယခု Version သည် Request Draft / Share UI ဖြစ်သည်။ Teacher Database, Admin Approval, Booking Confirmation နှင့် Online Payment မချိတ်ရသေးပါ။",12,MUTED,false);
     button(form,"← Home",()->openTab(0),false);
+  }
+
+  
+  private void teacherProfile(){
+    heading("Teacher Soe Moe • ဆရာ စိုးမိုး","AAII Learning Mentor • Course Guidance, Portfolio Support");
+    LinearLayout bio=card(body);bio.setBackground(shape(0xffe9f5ff,18));
+    line(bio,"SOE MOE • TEACHER PROFILE",21,NAVY,true);
+    line(bio,"AI • Data Science • Python • IT • Digital Education • Business",14,TEAL,true);
+    line(bio,"AAII သင်ကြားရေး Mentor အဖြစ် Course ရွေးချယ်မှု၊ လေ့လာမည့်အစီအစဉ်၊ Project Design နှင့် Learning Portfolio တည်ဆောက်မှုကို ကူညီဆောင်ရွက်နိုင်ရန် ရည်ရွယ်ပါသည်။",14,INK,false);
+    line(bio,"Verification: ကိုယ်ပိုင် Coursera Program Certificates ကို ဖုန်း၏ Private Wallet မှသာ လင့်ခ်ဖြင့်စစ်ဆေးနိုင်သည်။ မျက်နှာပြင်တွင် ပြသထားသည့်လက်မှတ်များကို Teacher License ဟု မယူဆပါနှင့်။",12,MUTED,false);
+    button(bio,"View Private Certificate Wallet",()->openTab(5),false);
+    LinearLayout topics=card(body);line(topics,"Teaching Subjects • သင်ကြားနိုင်သော ဘာသာရပ်များ",17,NAVY,true);
+    String[] subjects={"Artificial Intelligence / Prompt Engineering","Python Programming","Data Science & Analytics","Project Management","IT & Digital Skills","Digital Teaching & Portfolio"};
+    for(int i=0;i<subjects.length;i++)line(topics,(i+1)+". "+subjects[i],14,INK,false);
+    LinearLayout modes=card(body);line(modes,"Learning Modes • သင်ကြားမှုပုံစံ",17,NAVY,true);
+    line(modes,"Online (Zoom / Google Meet အစရှိသည်)\nOffline (ညှိနှိုင်းအတည်ပြုရန်)\nIndividual / Group / Project Mentoring",14,INK,false);
+    line(modes,"ဆရာ၏ လစ်လပ်ချိန်၊ သင်တန်းကြေးနှင့် အရည်အချင်းအတည်ပြုမှုကို Request လက်ခံပြီးမှ ထပ်မံစစ်ဆေးရန် လိုပါသည်။",12,MUTED,false);
+    LinearLayout p=card(body);line(p,"Teaching Portfolio • Learning Journey",17,NAVY,true);
+    line(p,"① Skills Assessment → ② Course & Lesson Plan → ③ Live Coaching → ④ Practical Project → ⑤ Portfolio Review",14,INK,false);
+    button(p,"Request Booking with Soe Moe",()->openTab(10),true);
+    button(p,"Browse Courses with Mentor Support",()->openTab(1),false);
+  }
+  private void bookingForm(){
+    heading("Teacher Booking Request","ဆရာ စိုးမိုးနှင့် သင်တန်းညှိနှိုင်းရန် (လက်ရှိ Draft/Share ဝန်ဆောင်မှု)");
+    LinearLayout head=card(body);
+    line(head,"Teacher Soe Moe • AAII Learning Mentor",17,NAVY,true);
+    line(head,"ဘာသာရပ်အလိုက် Online / Offline သင်ကြားမှုနှင့် Project Coaching ကို ညှိနှိုင်းနိုင်ပါသည်။",13,INK,false);
+    LinearLayout steps=card(body);line(steps,"1. Choose Subject   →   2. Pick Schedule   →   3. Send Request",13,TEAL,true);
+    LinearLayout f=card(body);
+    Spinner subject=requestSelect(f,"သင်ကြားလိုသော Subject *",new String[]{
+      "AI & Data Science","Python Programming","Machine Learning","IT & Computer",
+      "Digital Education","Project Management","Business","English for IT","Other"});
+    Spinner level=requestSelect(f,"Learning Level",new String[]{"Beginner","Intermediate","Advanced","Professional"});
+    Spinner mode=requestSelect(f,"Online / Offline",new String[]{"Online","Offline","Hybrid"});
+    EditText name=requestInput(f,"Student Full Name *","Your name");
+    EditText contact=requestInput(f,"Contact Email / Phone *","How AAII can contact you");
+    EditText location=requestInput(f,"Location (for offline class)","Yangon / Mandalay / Other");
+    TextView date=txt("Date: "+bookingDate,14,INK,true);f.addView(date);
+    button(f,"Select Preferred Date",()->{
+      java.util.Calendar c=java.util.Calendar.getInstance();
+      android.app.DatePickerDialog dialog=new android.app.DatePickerDialog(this,(view,y,m,d)->{
+        bookingDate=String.format(Locale.US,"%04d-%02d-%02d",y,m+1,d);date.setText("Date: "+bookingDate);
+      },c.get(java.util.Calendar.YEAR),c.get(java.util.Calendar.MONTH),c.get(java.util.Calendar.DAY_OF_MONTH));
+      dialog.getDatePicker().setMinDate(System.currentTimeMillis()-1000L);dialog.show();
+    },false);
+    TextView time=txt("Time: "+bookingTime,14,INK,true);f.addView(time);
+    button(f,"Select Preferred Time",()->{
+      java.util.Calendar c=java.util.Calendar.getInstance();
+      new android.app.TimePickerDialog(this,(v,h,min)->{
+        bookingTime=String.format(Locale.US,"%02d:%02d",h,min);time.setText("Time: "+bookingTime);
+      },c.get(java.util.Calendar.HOUR_OF_DAY),0,false).show();
+    },false);
+    EditText budget=requestInput(f,"Budget (MMK) • Optional","e.g. 50000 MMK per course");
+    EditText notes=requestInput(f,"Learning Goals / Other Notes","What would you like to learn?");
+    CheckBox agree=new CheckBox(this);agree.setText("Booking Request ပေးပို့ခြင်းသာဖြစ်ပြီး ဆရာ၏အချိန်နှင့်ကြေးနှုန်းကို AAII အတည်ပြုမှ Booking Confirm ဖြစ်ပါမည်။");
+    agree.setTextSize(12);f.addView(agree);
+    button(f,"Request Booking • Share with AAII",()->{
+      if(name.getText().toString().trim().isEmpty()||bookingDate.equals("ရက်ရွေးပါ")||bookingTime.equals("အချိန်ရွေးပါ")){
+        Toast.makeText(this,"Student Name, Date, Time ဖြည့်ပါ",Toast.LENGTH_LONG).show();return;
+      }
+      if(!agree.isChecked()){Toast.makeText(this,"Request သဘောတူချက်ကို အတည်ပြုပါ",Toast.LENGTH_LONG).show();return;}
+      String summary="Teacher: Soe Moe\nSubject: "+subject.getSelectedItem()+
+        "\nLevel: "+level.getSelectedItem()+"\nMode: "+mode.getSelectedItem()+
+        "\nStudent: "+name.getText().toString()+"\nDate: "+bookingDate+" Time: "+bookingTime+
+        "\nLocation: "+location.getText().toString()+"\nBudget: "+budget.getText().toString()+"\nGoals: "+notes.getText().toString();
+      shareRequest("AAII Teacher Booking — Soe Moe",summary,contact.getText().toString());
+    },true);
+    line(f,"No live scheduling API or payment is connected. Availability is NOT confirmed. Request only.",12,MUTED,false);
+    button(f,"View My Local Request Drafts",()->openTab(13),false);
+  }
+  private void myLearning(){
+    heading("My Learning • သင်ယူမှုမှတ်တမ်း","ဤဖုန်းမှာ ကိုယ်တိုင်နှိပ်ထားသော Study Progress ကိုသာ သိမ်းထားပါသည်။");
+    progressStrip(body,"ကိုယ်ပိုင် Course Review",reviewedCourses(),courses.length());
+    LinearLayout intro=card(body);
+    line(intro,"Learning Dashboard",19,NAVY,true);
+    line(intro,"Course Catalog: "+courses.length()+" • Specializations: 37 • Professional: 18",13,TEAL,true);
+    line(intro,"ကိုယ်တိုင်လေ့လာပြီးကြောင်း မှတ်သားထားသည့် Course များကို အောက်တွင်ပြထားပါသည်။ Coursera Official Completion မဟုတ်ပါ။",13,INK,false);
+    button(intro,"Browse Courses",()->openTab(1),true);
+    int displayed=0;
+    for(int i=0;i<courses.length();i++){
+      if(!prefs.getBoolean("course_"+i,false))continue;
+      JSONObject c=courses.optJSONObject(i);if(c==null)continue;
+      LinearLayout x=card(body);line(x,c.optString("title"),15,NAVY,true);
+      line(x,c.optString("provider")+" • Self-reviewed on device",12,MUTED,false);
+      final int id=i;button(x,"Course Details",()->inspect(1,id),false);displayed++;
+      if(displayed>=60)break;
+    }
+    if(displayed==0)line(intro,"No course reviews marked yet.",13,MUTED,false);
+    button(intro,"Certificate Wallet",()->openTab(5),false);
+  }
+  private void myRequests(){
+    heading("My Service Requests","Local request drafts • Not sent to an AAII server");
+    LinearLayout notice=card(body);
+    line(notice,"Important: Local drafts ≠ AAII Booking Confirmation",16,NAVY,true);
+    line(notice,"ဖုန်း၏ Share Menu ကနေ မိမိကိုယ်တိုင် ပို့ပြီး AAII မှ ပြန်လည်အတည်ပြုပြီးမှသာ လျှောက်ထားမှု / Booking အတည်ဖြစ်ပါသည်။",13,INK,false);
+    JSONArray a=drafts();line(notice,"Saved request drafts: "+a.length(),15,TEAL,true);
+    for(int i=a.length()-1;i>=0;i--){
+      JSONObject obj=a.optJSONObject(i);if(obj==null)continue;
+      LinearLayout row=card(body);line(row,obj.optString("type"),16,NAVY,true);
+      line(row,obj.optString("date")+" • "+obj.optString("state"),12,MUTED,false);
+      line(row,obj.optString("subject"),12,INK,false);
+    }
+    if(a.length()==0)line(notice,"No local requests saved yet.",13,MUTED,false);
+    button(notice,"New Coursera Enrollment Request",()->openTab(7),false);
+    button(notice,"New Teacher Booking Request",()->openTab(10),false);
+    button(notice,"Clear Local Request Drafts",()->new AlertDialog.Builder(this)
+      .setTitle("Clear request drafts from this phone?")
+      .setPositiveButton("Clear",(d,w)->{prefs.edit().remove("aaii_request_drafts").apply();render();})
+      .setNegativeButton("Cancel",null).show(),false);
+  }
+  private void settingsPage(){
+    heading("Profile & Settings • ကိုယ်ရေးအချက်အလက်","AAII Learning Native Android • Offline-first preferences");
+    LinearLayout profile=card(body);line(profile,"Teacher Soe Moe • ဆရာ စိုးမိုး",20,NAVY,true);
+    line(profile,"AAII Course Guidance & Teaching Mentor Profile",13,TEAL,true);
+    button(profile,"View Teacher Profile",()->openTab(9),false);
+    LinearLayout learning=card(body);line(learning,"My Learning & Progress",17,NAVY,true);
+    line(learning,"Self-reviewed Courses: "+reviewedCourses()+" / "+courses.length(),14,INK,false);
+    button(learning,"Open Learning Dashboard",()->openTab(12),false);
+    LinearLayout cert=card(body);line(cert,"My Certificates",17,NAVY,true);
+    line(cert,"Imported private certificates: "+certs.length(),13,INK,false);
+    button(cert,"Open Private Wallet",()->openTab(5),false);
+    LinearLayout services=card(body);line(services,"Enrollment & Teacher Booking Requests",17,NAVY,true);
+    line(services,"Local drafts: "+drafts().length(),13,INK,false);
+    button(services,"View Request Drafts",()->openTab(13),false);
+    LinearLayout language=card(body);line(language,"Language Preference • ဘာသာစကား",17,NAVY,true);
+    line(language,"သင်ယူမှုအထောက်အကူပြု preferred language သာဖြစ်ပြီး App UI တစ်ခုလုံး Localization မပြီးသေးပါ။",12,MUTED,false);
+    Spinner spinner=requestSelect(language,"Preferred Learning Language",new String[]{"Myanmar (မြန်မာ)","English"});
+    spinner.setSelection("en".equals(prefs.getString("study_lang","my"))?1:0);
+    button(language,"Save Language Preference",()->{
+      prefs.edit().putString("study_lang",spinner.getSelectedItemPosition()==1?"en":"my").apply();
+      Toast.makeText(this,"Language preference saved locally",Toast.LENGTH_SHORT).show();
+    },true);
+    LinearLayout account=card(body);line(account,"Account & Privacy",17,NAVY,true);
+    line(account,"No server login, payments, live teacher calendar or notifications are connected to this build. Private credentials stay on this device.",13,INK,false);
+    button(account,"Clear My Local Course Progress",()->new AlertDialog.Builder(this).setTitle("Clear course reviews on this phone?")
+      .setPositiveButton("Clear",(d,w)->{SharedPreferences.Editor edit=prefs.edit();for(int i=0;i<courses.length();i++)edit.remove("course_"+i);edit.apply();render();})
+      .setNegativeButton("Cancel",null).show(),false);
+    button(account,"View Request Drafts",()->openTab(13),false);
   }
 
   private void wallet(){
