@@ -63,7 +63,7 @@ jobs:
           grep -q "AAII LEARNING V4.9" "$APP"
           grep -q "openCertificatesPortal()" "$APP"
           grep -q "profilePopup()" "$APP"
-          grep -q "view.postDelayed(task,145)" "$APP"
+          grep -q "view.postDelayed(" "$APP"
           grep -q "Test Pop Animation + Sound" "$APP"
           test -s aaii-learning/app/src/main/res/raw/aaii_click.wav
       - name: Validate provider category screens and logo assets
@@ -90,7 +90,7 @@ jobs:
           sha256sum "$APK" > aaii-learning/app/build/outputs/apk/debug/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: AAII-Learning-V5.0-Providers-APK
+          name: AAII-Learning-V5.1-Feedback-APK
           path: |
             aaii-learning/app/build/outputs/apk/debug/app-debug.apk
             aaii-learning/app/build/outputs/apk/debug/SHA256SUMS.txt

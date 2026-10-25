@@ -43,7 +43,7 @@ public class MainActivity extends Activity {
     LinearLayout box=vertical();box.setPadding(dp(10),dp(11),dp(10),dp(11));box.setBackground(shape(tint,15));
     TextView icon=txt(bigIcon,25,NAVY,true);box.addView(icon);
     line(box,title,14,NAVY,true);line(box,subtitle,11,INK,false);
-    parent.addView(box,new LinearLayout.LayoutParams(0,-2,1));box.setOnClickListener(v->action.run());
+    parent.addView(box,new LinearLayout.LayoutParams(0,-2,1));tap(box,action);
   }
   private void dashboardTile(LinearLayout row,String symbol,String headline,String note,int c,Runnable action){
     LinearLayout tile=vertical();tile.setPadding(dp(8),dp(13),dp(8),dp(12));
@@ -74,13 +74,13 @@ public class MainActivity extends Activity {
     try{certs=new JSONArray(prefs.getString("personal_credentials","[]"));}catch(Exception ignored){}render();
   }
   private LinearLayout vertical(){LinearLayout x=new LinearLayout(this);x.setOrientation(1);return x;}
-  private void tap(View v,Runnable task){v.setOnClickListener(view->{
+  private void tap(View v,Runnable task){v.setSoundEffectsEnabled(false);v.setClickable(true);v.setOnClickListener(view->{
     view.animate().cancel();view.setScaleX(1);view.setScaleY(1);
     view.animate().scaleX(0.94f).scaleY(0.94f).setDuration(65).withEndAction(
       ()->view.animate().scaleX(1).scaleY(1).setDuration(120).start()).start();
     if(clickPool!=null&&clickId!=0&&prefs.getBoolean("click_enabled",true))
       clickPool.play(clickId,0.65f,0.65f,1,0,1);
-    view.postDelayed(task,145);
+    view.postDelayed(()->{if(!isFinishing()&&!isDestroyed())task.run();},155);
   });}
   private void openCertificatesPortal(){
     new AlertDialog.Builder(this).setTitle("Coursera Organization Certificates")
@@ -254,12 +254,12 @@ public class MainActivity extends Activity {
     logo.setScaleType(ImageView.ScaleType.CENTER_CROP);
     LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(dp(44),dp(44));lp.setMargins(0,0,dp(8),0);
     brand.addView(logo,lp);brand.addView(txt("AAII Learning",23,GOLD,true));
-    line(head,"YOUR PATH TO GLOBAL LEARNING  •  V5.0",11,0xffcfe8fe,false);
+    line(head,"YOUR PATH TO GLOBAL LEARNING  •  V5.1",11,0xffcfe8fe,false);
     LinearLayout links=new LinearLayout(this);links.setOrientation(0);head.addView(links);
     TextView learningLink=txt("◉ My Learning",12,GOLD,true);links.addView(learningLink,new LinearLayout.LayoutParams(0,dp(36),1));
-    learningLink.setOnClickListener(v->openTab(12));
+    tap(learningLink,()->openTab(12));
     TextView requestLink=txt("▤ Requests",12,WHITE,true);links.addView(requestLink,new LinearLayout.LayoutParams(0,dp(36),1));
-    requestLink.setOnClickListener(v->openTab(13));
+    tap(requestLink,()->openTab(13));
     TextView profileLink=txt("⚙ Profile",12,WHITE,true);links.addView(profileLink,new LinearLayout.LayoutParams(0,dp(36),1));
     tap(profileLink,()->profilePopup());
     ScrollView scroll=new ScrollView(this);scroll.setFillViewport(false);root.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
@@ -281,6 +281,13 @@ public class MainActivity extends Activity {
     root.addView(footer,new LinearLayout.LayoutParams(-1,dp(77)));
   }
     private void home(){
+    LinearLayout feedbackBanner=coloredCard(body,0xff0b3158,0xff0e5e98);
+    line(feedbackBanner,"✨ V5.1 • Pop Animation + Click Sound",17,GOLD,true);
+    line(feedbackBanner,"Button • Footer • Menu • Category • Course & Provider Card",12,WHITE,false);
+    button(feedbackBanner,"🔊 Test Click Sound & Pop",()->new AlertDialog.Builder(this)
+      .setTitle("Tap Feedback V5.1").setMessage("Pop Animation နှင့် Click Sound စမ်းသပ်နိုင်ပါသည်။ Media Volume နှင့် Settings ကို စစ်ဆေးပါ။")
+      .setPositiveButton("OK",null).show(),true);
+    button(feedbackBanner,"⚙ Click Sound Settings",()->openTab(11),false);
     LinearLayout partners=coloredCard(body,0xff082b53,0xff125c9c);
     line(partners,"🎓 PROVIDER CATEGORIES • CORPORATE & UNIVERSITY",16,GOLD,true);
     line(partners,"171 Corporate Courses   •   143 University Courses   •   23 Learning Partner Courses",13,WHITE,false);
