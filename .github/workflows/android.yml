@@ -80,19 +80,6 @@ jobs:
           assert len({v['id'] for v in records})==3264
           print('3264 unique YouTube video IDs bundled as offline metadata')
           PY
-      - name: Decode DAMA TV catalog and image
-        run: |
-          base64 -d app/src/main/assets/tv_catalog.json.gz.b64 > app/src/main/assets/tv_catalog.json.gz
-          base64 -d app/src/main/res/drawable-nodpi/tv_banner.jpg.b64 > app/src/main/res/drawable-nodpi/tv_banner.jpg
-          rm app/src/main/assets/tv_catalog.json.gz.b64 app/src/main/res/drawable-nodpi/tv_banner.jpg.b64
-      - name: Verify 3264 distinct YouTube video IDs
-        run: |
-          python3 - <<'PY'
-          import json,gzip
-          p=json.loads(gzip.open('app/src/main/assets/tv_catalog.json.gz','rb').read())
-          assert len(p)==3264 and len(set(v['id'] for v in p))==3264
-          print('3264 DAMA TV videos bundled in APK for offline metadata browsing')
-          PY
       - name: Build installable debug APK
         run: gradle --no-daemon assembleDebug
       - name: Verify embedded data and APK consistency
