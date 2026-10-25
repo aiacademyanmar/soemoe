@@ -96,7 +96,14 @@ public class MainActivity extends Activity {
   JSONArray assetArray(String file){try(InputStream stream=getAssets().open(file);ByteArrayOutputStream out=new ByteArrayOutputStream()){byte[] b=new byte[8192];int n;while((n=stream.read(b))!=-1)out.write(b,0,n);return new JSONArray(out.toString("UTF-8"));}catch(Exception ex){return new JSONArray();}}
   void initData(){settings=getSharedPreferences("dama_radio_preferences",MODE_PRIVATE);favorites.addAll(settings.getStringSet("favorites",new HashSet<>()));try{JSONArray x=new JSONArray(settings.getString("recent","[]"));for(int i=0;i<x.length();i++)recent.add(x.optString(i));}catch(Exception ignored){}
     JSONArray people=assetArray("monks.json");for(int i=0;i<people.length();i++){JSONObject m=people.optJSONObject(i);if(m!=null)monks.add(new Monk(m));}
-    for(String f:new String[]{"seed_tracks.json","full_catalog.json"}){JSONArray rows=assetArray(f);for(int i=0;i<rows.length();i++){JSONObject j=rows.optJSONObject(i);if(j!=null)addCatalog(new Track(j));}}
+    for(String f:new String[]{"seed_tracks.json"}){JSONArray rows=assetArray(f);for(int i=0;i<rows.length();i++){JSONObject j=rows.optJSONObject(i);if(j!=null)addCatalog(new Track(j));}}
+    // V10: full 12,973-link catalog bundled offline, no network needed to populate UI.
+    try(InputStream asset=getAssets().open("radio_catalog.dat");java.util.zip.GZIPInputStream zip=new java.util.zip.GZIPInputStream(asset);ByteArrayOutputStream buffer=new ByteArrayOutputStream()){
+      byte[] block=new byte[65536];int n;
+      while((n=zip.read(block))!=-1){if(buffer.size()+n>20000000)throw new IOException("Catalog too large");buffer.write(block,0,n);}
+      JSONArray entries=new JSONArray(buffer.toString("UTF-8"));
+      for(int i=0;i<entries.length();i++){JSONObject x=entries.optJSONObject(i);if(x!=null)addCatalog(new Track(x));}
+    }catch(Exception ex){android.util.Log.e("DAMA","Offline radio catalog unavailable",ex);}
     File cache=new File(getFilesDir(),CACHE_FILE);if(cache.exists())try(FileInputStream in=new FileInputStream(cache);ByteArrayOutputStream out=new ByteArrayOutputStream()){byte[] b=new byte[8192];int n;while((n=in.read(b))!=-1)out.write(b,0,n);JSONArray rows=new JSONArray(out.toString("UTF-8"));for(int i=0;i<rows.length();i++){JSONObject j=rows.optJSONObject(i);if(j!=null)addCatalog(new Track(j));}}catch(Exception ignored){}
   }
   @Override public void onCreate(Bundle b){super.onCreate(b);getWindow().setStatusBarColor(DEEP);getWindow().setNavigationBarColor(DEEP);initData();audioManager=(AudioManager)getSystemService(Context.AUDIO_SERVICE);lastPlayerError=settings.getString("last_player_error","");show("Home");}
@@ -637,9 +644,74 @@ public class MainActivity extends Activity {
   void bottomBar(){FooterNav.attach(this,outer,"Radio");}
   void open(String url){try{startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse(url)));}catch(Exception ex){toast("Website မဖွင့်နိုင်ပါ");}}
   void saveCache(){File out=new File(getFilesDir(),CACHE_FILE),tmp=new File(getFilesDir(),CACHE_FILE+".tmp");try(FileOutputStream f=new FileOutputStream(tmp)){JSONArray a=new JSONArray();synchronized(catalog){for(Track t:catalog.values())a.put(t.json());}f.write(a.toString().getBytes(StandardCharsets.UTF_8));f.getFD().sync();if(!tmp.renameTo(out))throw new IOException("rename failed");}catch(Exception e){android.util.Log.e("DAMA","Unable to cache catalog",e);}}
-  String fetch(String ref)throws Exception{URL url=new URL(ref);String host=url.getHost().toLowerCase(Locale.ROOT);if(!host.equals("dhammadownload.com")&&!host.equals("www.dhammadownload.com"))throw new IOException("host not allowed");HttpURLConnection conn=(HttpURLConnection)url.openConnection();conn.setConnectTimeout(16000);conn.setReadTimeout(26000);conn.setRequestProperty("User-Agent","DAMA-RADIO/2.0 Audio link index (no audio downloaded)");try{if(conn.getResponseCode()!=200)throw new IOException("HTTP "+conn.getResponseCode());ByteArrayOutputStream b=new ByteArrayOutputStream();try(InputStream in=conn.getInputStream()){byte[] array=new byte[8192];int n;while((n=in.read(array))!=-1){if(b.size()+n>5_000_000)throw new IOException("HTML too large");b.write(array,0,n);}}String enc=conn.getContentEncoding();String contentType=conn.getContentType();if(contentType!=null&&contentType.toLowerCase(Locale.ROOT).contains("charset=")){String ch=contentType.replaceAll("(?i).*charset=\\s*([A-Za-z0-9_-]+).*","$1");try{return b.toString(ch);}catch(Exception ignored){}}return b.toString("UTF-8");}finally{conn.disconnect();}}
-  void sync(){if(syncing){toast("Sync လုပ်နေဆဲပါ");return;}syncing=true;toast("ဆရာတော် MP3 စာရင်း Sync စတင်နေပါပြီ");background.execute(()->{int ok=0,errors=0,count=0;for(Monk m:monks){try{String html=fetch(m.source);List<Track> added=CatalogParser.parse(html,m.source,m.id,m.name);int previous=catalog.size();for(Track t:added){t.category=group(t.title);addCatalog(t);}count+=catalog.size()-previous;ok++;}catch(Exception e){errors++;}final int progress=ok+errors;handler.post(()->{if(information!=null&&screen.equals("Radio"))information.setText("Sync "+progress+"/"+monks.size()+" · "+catalog.size()+" MP3 Links");});try{Thread.sleep(800);}catch(Exception ignored){}}
-    saveCache();syncing=false;final int add=count,fail=errors;handler.post(()->{toast("Sync ပြီးပါပြီ · MP3 "+catalog.size()+" · အသစ် "+add+" · Page Errors "+fail);show("Radio");});});}
+  String fetch(String ref)throws Exception{
+    URL initial=new URL(ref);
+    if(!"https".equalsIgnoreCase(initial.getProtocol()))throw new IOException("HTTPS required");
+    String host=initial.getHost().toLowerCase(Locale.ROOT);
+    if(!(host.equals("dhammadownload.com")||host.equals("www.dhammadownload.com")))throw new IOException("Untrusted host");
+    HttpURLConnection c=(HttpURLConnection)initial.openConnection();
+    c.setConnectTimeout(14000);c.setReadTimeout(22000);
+    c.setRequestProperty("User-Agent","Mozilla/5.0 (Android; DAMA Radio Catalog)");
+    c.setRequestProperty("Accept","text/html,application/xhtml+xml");
+    c.setRequestProperty("Accept-Encoding","identity");
+    try{
+      int status=c.getResponseCode();if(status!=200)throw new IOException("HTTP "+status);
+      URL landed=c.getURL();String landedHost=landed.getHost().toLowerCase(Locale.ROOT);
+      if(!(landedHost.equals("dhammadownload.com")||landedHost.equals("www.dhammadownload.com")))throw new IOException("Redirect host not allowed");
+      ByteArrayOutputStream buffer=new ByteArrayOutputStream();
+      try(InputStream in=c.getInputStream()){
+        byte[] data=new byte[16384];int n;
+        while((n=in.read(data))!=-1){
+          if(buffer.size()+n>12_000_000)throw new IOException("HTML exceeds 12 MB");
+          buffer.write(data,0,n);
+        }
+      }
+      String type=c.getContentType();
+      if(type!=null&&type.toLowerCase(Locale.ROOT).contains("charset=")){
+        String charset=type.replaceAll("(?i).*charset=\\s*([A-Za-z0-9_-]+).*","$1");
+        try{return buffer.toString(charset);}catch(Exception ignored){}
+      }
+      return buffer.toString("UTF-8");
+    }finally{c.disconnect();}
+  }
+  void sync(){
+    if(syncing){toast("Sync လုပ်နေဆဲပါ");return;}
+    syncing=true;
+    toast("MP3 Catalog "+catalog.size()+" ပုဒ် Offline ပါရှိပြီးပါပြီ · Website ကို စစ်နေသည်");
+    background.execute(()->{
+      int okay=0,failed=0,added=0;
+      ArrayList<String> faults=new ArrayList<>();
+      for(Monk monk:monks){
+        try{
+          String html=fetch(monk.source);
+          List<Track> found=CatalogParser.parse(html,monk.source,monk.id,monk.name);
+          int old; synchronized(catalog){old=catalog.size();}
+          for(Track t:found){t.category=group(t.title);addCatalog(t);}
+          synchronized(catalog){added+=catalog.size()-old;}
+          okay++;
+        }catch(Exception ex){
+          failed++;
+          if(faults.size()<7)faults.add(monk.name+": "+ex.getClass().getSimpleName()+" "+ex.getMessage());
+        }
+        final int progress=okay+failed,total=monks.size(),failCount=failed,count;
+        synchronized(catalog){count=catalog.size();}
+        handler.post(()->{
+          if(information!=null&&screen.equals("Radio"))information.setText(
+            "Sync "+progress+"/"+total+"  •  MP3 "+count+"  •  Errors "+failCount);
+        });
+      }
+      if(added>0)saveCache();
+      syncing=false;
+      final int successes=okay,errors=failed,newTracks=added;
+      handler.post(()->{
+        String message="Offline MP3 စာရင်း "+catalog.size()+" ပုဒ်\\nWebsite Pages: "+successes+" OK, "+errors+" failed\\nNew links: "+newTracks;
+        if(!faults.isEmpty())message+="\\n\\nErrors:\\n"+android.text.TextUtils.join("\\n",faults);
+        new AlertDialog.Builder(this).setTitle("DAMA RADIO • Sync Result").setMessage(message)
+          .setPositiveButton("OK",null).setNeutralButton("Website",(d,w)->open("https://www.dhammadownload.com/AudioInMyanmar.htm")).show();
+        if(screen.equals("Radio"))show("Radio");
+      });
+    });
+  }
   @Override public void onDestroy(){
   if(ticker!=null)handler.removeCallbacks(ticker);
   if(sleepJob!=null)handler.removeCallbacks(sleepJob);
