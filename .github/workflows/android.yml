@@ -139,7 +139,7 @@ jobs:
           src=Path('app/src/main/java/asia/aaii/dama/MainActivity.java').read_text()
           play=src.split('  void play(Track track){',1)[1].split('  void openPlayerPreview(){',1)[0]
           assert play.index('show("Playing")') < play.index('prepareTrackAsync(')
-          assert 'list.setOnItemClickListener((p,v,index,id)->play(results.get(index)))' in src
+          assert 'card.setOnClickListener(v->play(track))' in src
           assert 'dama_test_player_ui' in src
           assert 'FooterNav.attach' in src
           print('PLAYER UI FIRST, row-tap-to-play and footer navigation verified')
