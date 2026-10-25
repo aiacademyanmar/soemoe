@@ -106,8 +106,8 @@ jobs:
             b=json.loads(gzip.decompress(z.read('assets/library_catalog.dat')))
             assert len(b)==1894
             assert 'classes.dex' in z.namelist()
-            assert 'assets/tv_catalog.json.gz' in z.namelist()
-            vids=json.loads(gzip.decompress(z.read('assets/tv_catalog.json.gz')))
+            assert 'assets/tv_catalog.json' in z.namelist()
+            vids=json.loads(z.read('assets/tv_catalog.json'))
             assert len(vids)==3264
           print('APK OK; catalog',len(b),'bytes',os.stat(path).st_size)
           PY
