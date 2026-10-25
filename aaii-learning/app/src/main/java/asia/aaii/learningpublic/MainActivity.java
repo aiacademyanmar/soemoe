@@ -363,26 +363,88 @@ public class MainActivity extends Activity {
     parent.addView(spinner,new LinearLayout.LayoutParams(-1,dp(49)));
     return spinner;
   }
+  private static final String VIBER_PHONE="+959252566954";
+  private static final String LINE_PHONE="+66930409759";
+  private static final String TELEGRAM_LINK="https://t.me/myanmardata";
+  private void clip(String caption,String message){
+    android.content.ClipboardManager cb=(android.content.ClipboardManager)getSystemService(Context.CLIPBOARD_SERVICE);
+    if(cb!=null)cb.setPrimaryClip(android.content.ClipData.newPlainText(caption,message));
+  }
+  private void channel(int choice,String draft){
+    try{
+      if(choice==0){
+        if(draft!=null)clip("AAII Viber Request",draft);
+        Intent go=new Intent(Intent.ACTION_VIEW,Uri.parse("viber://chat?number=%2B959252566954"));
+        go.setPackage("com.viber.voip");startActivity(go);
+        if(draft!=null)Toast.makeText(this,"Viber: Request copied • Paste into chat and tap Send",Toast.LENGTH_LONG).show();
+      }else if(choice==1){
+        if(draft!=null){
+          clip("AAII LINE Request",draft);
+          startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse("https://line.me/R/share?text="+Uri.encode(draft))));
+          Toast.makeText(this,"LINE: Select the AAII recipient and tap Send",Toast.LENGTH_LONG).show();
+        }else{
+          clip("AAII LINE Phone",LINE_PHONE);
+          startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse("https://line.me/R/nv/addFriends")));
+          Toast.makeText(this,"LINE: Add friend by searching +66 9 30409759",Toast.LENGTH_LONG).show();
+        }
+      }else if(choice==2){
+        if(draft!=null)clip("AAII Telegram Request",draft);
+        startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse(TELEGRAM_LINK)));
+        if(draft!=null)Toast.makeText(this,"Telegram: Paste request into @myanmardata chat, then Send",Toast.LENGTH_LONG).show();
+      }else if(choice==3){
+        clip("AAII LINE Phone",LINE_PHONE);
+        startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse("https://line.me/R/nv/addFriends")));
+        Toast.makeText(this,"LINE: Search for +66 9 30409759",Toast.LENGTH_LONG).show();
+      }
+    }catch(android.content.ActivityNotFoundException ex){
+      String id=choice==0?VIBER_PHONE:(choice==1||choice==3?LINE_PHONE:"@myanmardata");
+      clip("AAII Contact",id);
+      new AlertDialog.Builder(this).setTitle("Messaging app not available")
+        .setMessage("App ကို Install လုပ်ပါ။ Contact ကို Copy လုပ်ထားသည်: "+id+"\n\nRequest ကို အလိုအလျောက် မပေးပို့ပါ။")
+        .setPositiveButton("OK",null).show();
+    }catch(Exception ex){
+      Toast.makeText(this,"Messaging app မဖွင့်နိုင်ပါ။ အခြား Share နည်းလမ်းရွေးပါ။",Toast.LENGTH_LONG).show();
+    }
+  }
+  private void genericShare(String title,String message){
+    try{
+      Intent send=new Intent(Intent.ACTION_SEND);send.setType("text/plain");
+      send.putExtra(Intent.EXTRA_SUBJECT,title);send.putExtra(Intent.EXTRA_TEXT,message);
+      startActivity(Intent.createChooser(send,"Share AAII Request"));
+    }catch(Exception ex){Toast.makeText(this,"No supported sharing app found",Toast.LENGTH_LONG).show();}
+  }
+  private void contactButtons(LinearLayout parent){
+    LinearLayout c=card(parent);
+    line(c,"AAII CONTACT • ဆက်သွယ်ရန်",17,NAVY,true);
+    line(c,"Viber +95 9 252566954 • LINE +66 9 30409759 • Telegram @myanmardata",12,INK,false);
+    button(c,"☏ Viber • Open App",()->channel(0,null),false);
+    button(c,"◉ LINE • Add Friends",()->channel(1,null),false);
+    button(c,"➤ Telegram • Open Chat",()->channel(2,null),false);
+    line(c,"Request Form ဖြည့်ပြီးမှ Channel ရွေးလျှင် စာသားကို Copy/Share လုပ်နိုင်သည်။ Auto-send မရှိပါ။",12,MUTED,false);
+  }
   private void shareRequest(String title,String summary,String contact){
     if(summary==null||summary.trim().length()<2||contact==null||contact.trim().length()<3){
       new AlertDialog.Builder(this).setTitle("အချက်အလက်လိုအပ်သည်")
-        .setMessage("လိုအပ်သော ဘာသာရပ်/သင်တန်းနှင့် ပြန်ဆက်သွယ်ရန် အချက်အလက်ကို ဖြည့်ပါ။")
+        .setMessage("သင်တန်း/ဘာသာရပ်နှင့် ဆက်သွယ်ရန်ဖုန်း/အီးမေးလ်ကို ဖြည့်ပါ။")
         .setPositiveButton("OK",null).show();return;
     }
-    new AlertDialog.Builder(this).setTitle("AAII Service Request")
-      .setMessage("နောက်တစ်ဆင့်မှာ ဖုန်းရဲ့ Share Menu ကနေ သင်ကိုယ်တိုင် စာပို့ရမှာ ဖြစ်ပါတယ်။\n\nApp ထဲကနေ အလိုအလျောက် Booking/Payment မပြုလုပ်ပါ။ Coursera Password, OTP, Bank PIN မပို့ပါနှင့်။")
-      .setNegativeButton("Cancel",null)
-      .setPositiveButton("Share Request",(d,w)->{
-        try{
-          Intent send=new Intent(Intent.ACTION_SEND);send.setType("text/plain");
-          send.putExtra(Intent.EXTRA_SUBJECT,title);
-          send.putExtra(Intent.EXTRA_TEXT,title+"\n\n"+summary+"\n\nContact: "+contact+"\n\nShared voluntarily by learner via AAII Learning.");
-          saveLocalDraft(title,summary.length()>160?summary.substring(0,160):summary);
-          startActivity(Intent.createChooser(send,"AAII Request ကို မည်သည့် App သို့ ပို့မည်နည်း"));
-        }catch(Exception e){
-          Toast.makeText(this,"Sharing App မရှိပါ။ Request ကို Copy/Share နည်းဖြင့် ပို့ပါ။",Toast.LENGTH_LONG).show();
-        }
-      }).show();
+    String payload=title+"\n\n"+summary+"\n\nContact: "+contact+
+      "\n\nAAII Learning (user-initiated request)";
+    new AlertDialog.Builder(this).setTitle("Request ပို့ရန် App ရွေးပါ")
+      .setMessage("Viber: +95 9 252566954\nLINE: +66 9 30409759\nTelegram: @myanmardata\n\nPassword, OTP, Bank PIN မပို့ပါနှင့်။ Message ကို သင်ကိုယ်တိုင် Send နှိပ်ရပါမည်။")
+      .setItems(new String[]{
+        "Viber • +95 9 252566954",
+        "LINE • Share Request",
+        "Telegram • @myanmardata",
+        "Other Apps • Share Menu",
+        "LINE • Add Friend via Phone"
+      },(dialog,which)->{
+        saveLocalDraft(title,summary.length()>160?summary.substring(0,160):summary);
+        if(which==0||which==1||which==2)channel(which,payload);
+        else if(which==3)genericShare(title,payload);
+        else if(which==4)channel(3,null);
+      })
+      .setNegativeButton("Cancel",null).show();
   }
   private void servicesHub(){
     screenLabel("AAII LEARNING SERVICES","Learn • Enroll • Hire Teacher • Track Requests");
@@ -401,6 +463,7 @@ public class MainActivity extends Activity {
     LinearLayout d=card(body);line(d,"04  REQUEST HISTORY",17,NAVY,true);
     line(d,"Saved local drafts: "+drafts().length()+". Booking အတည်ပြုမှု သို့မဟုတ် Coursera Enrollment အတည်ပြုမှု မဟုတ်သေးပါ။",13,MUTED,false);
     button(d,"My Request Drafts",()->openTab(13),false);
+    contactButtons(body);
     line(d,"AAII Enrollment Assistance သည် Coursera ၏ Official Agency မဟုတ်ပါ။ Account Password/OTP မမျှဝေပါနှင့်။",12,MUTED,false);
   }
 
@@ -419,13 +482,14 @@ public class MainActivity extends Activity {
     EditText contact=requestInput(form,"ဖုန်း / Email / ဆက်သွယ်ရန် *","ဆက်သွယ်ရန် သင်ရွေးချယ်သည့်နည်း");
     CheckBox agree=new CheckBox(this);agree.setText("AAII သည် Coursera ၏ တရားဝင်ကိုယ်စားလှယ် မဟုတ်ကြောင်း နားလည်ပါသည်။ Password, OTP နှင့် ငွေပေးချေမှုအချက်အလက်များ မမျှဝေပါ။");
     agree.setTextSize(12);form.addView(agree);
-    button(form,"Request စာကို Share လုပ်မည်",()->{
+    button(form,"Request → Viber / LINE / Telegram",()->{
       if(!agree.isChecked()){Toast.makeText(this,"အသိပေးချက်ကို ဦးစွာဖတ်ပြီး အတည်ပြုပါ",Toast.LENGTH_LONG).show();return;}
       String bodyText="Requested Course: "+topic.getText().toString()+"\nProgram Type: "+String.valueOf(type.getSelectedItem())+"\nGoal: "+purpose.getText().toString();
       shareRequest("AAII Coursera Enrollment Assistance",bodyText,contact.getText().toString());
     },true);
     line(form,"Submit လုပ်ပြီးကြောင်း မဆိုလိုပါ။ Share Menu မှ သင်ရွေးချယ်သည့်ဆက်သွယ်ရေး App ဖြင့် ကိုယ်တိုင်ပေးပို့ရန် လိုပါသည်။",12,MUTED,false);
     button(form,"← Home",()->openTab(0),false);
+    contactButtons(body);
   }
   private void hireTeacherService(){
     screenLabel("HIRE A TEACHER","Find a learning mentor • Online / Offline Request");
@@ -446,7 +510,7 @@ public class MainActivity extends Activity {
     EditText contact=requestInput(form,"ဖုန်း / Email / ဆက်သွယ်ရန် *","ဆက်သွယ်ရန် သင်ရွေးချယ်သည့်နည်း");
     CheckBox agree=new CheckBox(this);agree.setText("AAII က ဆရာကို စိစစ်ပြီး အတည်ပြုမှ Matching/Booking ဖြစ်ကြောင်းနှင့် ကြေးနှုန်းကို သီးခြားသဘောတူရန် လိုကြောင်း နားလည်ပါသည်။");
     agree.setTextSize(12);form.addView(agree);
-    button(form,"ဆရာငှားရန် Request ကို Share လုပ်မည်",()->{
+    button(form,"Teacher Request → Viber / LINE / Telegram",()->{
       if(!agree.isChecked()){Toast.makeText(this,"Matching အချက်အလက်ကို ဖတ်ပြီး အတည်ပြုပါ",Toast.LENGTH_LONG).show();return;}
       String bodyText="Subject: "+subject.getText().toString()+"\nLearning Mode: "+String.valueOf(format.getSelectedItem())+
       "\nLevel: "+String.valueOf(level.getSelectedItem())+"\nSchedule: "+schedule.getText().toString()+
@@ -455,6 +519,7 @@ public class MainActivity extends Activity {
     },true);
     line(form,"ယခု Version သည် Request Draft / Share UI ဖြစ်သည်။ Teacher Database, Admin Approval, Booking Confirmation နှင့် Online Payment မချိတ်ရသေးပါ။",12,MUTED,false);
     button(form,"← Home",()->openTab(0),false);
+    contactButtons(body);
   }
 
   
@@ -521,7 +586,7 @@ public class MainActivity extends Activity {
     EditText notes=requestInput(f,"Learning Goals / Other Notes","What would you like to learn?");
     CheckBox agree=new CheckBox(this);agree.setText("Booking Request ပေးပို့ခြင်းသာဖြစ်ပြီး ဆရာ၏အချိန်နှင့်ကြေးနှုန်းကို AAII အတည်ပြုမှ Booking Confirm ဖြစ်ပါမည်။");
     agree.setTextSize(12);f.addView(agree);
-    button(f,"Request Booking • Share with AAII",()->{
+    button(f,"Booking Request → Viber / LINE / Telegram",()->{
       if(name.getText().toString().trim().isEmpty()||bookingDate.equals("ရက်ရွေးပါ")||bookingTime.equals("အချိန်ရွေးပါ")){
         Toast.makeText(this,"Student Name, Date, Time ဖြည့်ပါ",Toast.LENGTH_LONG).show();return;
       }
@@ -534,6 +599,7 @@ public class MainActivity extends Activity {
     },true);
     line(f,"No live scheduling API or payment is connected. Availability is NOT confirmed. Request only.",12,MUTED,false);
     button(f,"View My Local Request Drafts",()->openTab(13),false);
+    contactButtons(body);
   }
   private void myLearning(){
     screenLabel("MY LEARNING","Course review progress • local offline dashboard");

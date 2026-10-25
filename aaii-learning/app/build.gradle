@@ -2,7 +2,7 @@ plugins { id 'com.android.application' }
 android {
   namespace 'asia.aaii.learningpublic'
   compileSdk 35
-  defaultConfig { applicationId 'asia.aaii.learningpublic.buildtest'; minSdk 24; targetSdk 35; versionCode 43; versionName '4.3.0-seven-tab-ui' }
+  defaultConfig { applicationId 'asia.aaii.learningpublic.buildtest'; minSdk 24; targetSdk 35; versionCode 44; versionName '4.4.0-contact-channels' }
   buildTypes { release { minifyEnabled false } }
   compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
 }
