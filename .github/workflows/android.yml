@@ -43,6 +43,8 @@ jobs:
           PY
       - name: Remove superseded uncompressed asset
         run: rm -f app/src/main/assets/books_catalog.json
+      - name: Rename compressed catalog to Android-packaged asset
+        run: mv app/src/main/assets/books_catalog.json.gz app/src/main/assets/library_catalog.dat
       - name: Build installable debug APK
         run: gradle --no-daemon assembleDebug
       - name: Verify embedded data and APK consistency
@@ -52,7 +54,7 @@ jobs:
           path='app/build/outputs/apk/debug/app-debug.apk'
           with zipfile.ZipFile(path) as z:
             assert z.testzip() is None
-            b=json.loads(gzip.decompress(z.read('assets/books_catalog.json.gz')))
+            b=json.loads(gzip.decompress(z.read('assets/library_catalog.dat')))
             assert len(b)==1894
             assert 'classes.dex' in z.namelist()
           print('APK OK; catalog',len(b),'bytes',os.stat(path).st_size)
