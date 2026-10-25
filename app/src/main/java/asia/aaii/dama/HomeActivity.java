@@ -1,0 +1,124 @@
+package asia.aaii.dama;
+
+import android.app.Activity;
+import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
+import android.os.Bundle;
+import android.view.Gravity;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ScrollView;
+import android.widget.TextView;
+
+/**
+ * DAMA V8 launcher. Three independent native modules: RADIO V7, LIBRARY V7, TV V6.
+ * Catalog metadata is bundled offline; streaming requires connection.
+ */
+public final class HomeActivity extends Activity {
+  private static final int NIGHT=0xff061e1d, DEEP=0xff082b28,
+      GOLD=0xffedc375, WHITE=0xfffff5dd, SOFT=0xffbfcec0, PANEL=0xff143d36;
+  private LinearLayout root;
+  private int d(float n){return Math.round(n*getResources().getDisplayMetrics().density);}
+  private LinearLayout vertical(){LinearLayout v=new LinearLayout(this);v.setOrientation(1);return v;}
+  private LinearLayout horizontal(){LinearLayout r=new LinearLayout(this);r.setOrientation(0);r.setGravity(Gravity.CENTER_VERTICAL);return r;}
+  private LinearLayout.LayoutParams size(int w,int h){return new LinearLayout.LayoutParams(w<0?w:d(w),h<0?h:d(h));}
+  private TextView label(String words,int pts,int color,boolean bold){
+    TextView t=new TextView(this);t.setText(words);t.setTextColor(color);t.setTextSize(pts);
+    if(bold)t.setTypeface(Typeface.DEFAULT,Typeface.BOLD);return t;
+  }
+  private GradientDrawable fill(int color,int radius,int stroke){
+    GradientDrawable b=new GradientDrawable();b.setColor(color);b.setCornerRadius(d(radius));
+    if(stroke!=0)b.setStroke(d(1),stroke);return b;
+  }
+  private void padding(View v,int x,int y){v.setPadding(d(x),d(y),d(x),d(y));}
+  @Override public void onCreate(Bundle b){
+    super.onCreate(b);
+    getWindow().setStatusBarColor(NIGHT);getWindow().setNavigationBarColor(NIGHT);
+    showHome();
+  }
+  private void showHome(){
+    root=vertical();root.setBackgroundColor(NIGHT);setContentView(root);
+    if(android.os.Build.VERSION.SDK_INT>=35){root.setOnApplyWindowInsetsListener((v,insets)->{android.graphics.Insets safe=insets.getInsets(android.view.WindowInsets.Type.systemBars());v.setPadding(safe.left,safe.top,safe.right,safe.bottom);return insets;});}
+    LinearLayout bar=horizontal();bar.setBackgroundColor(NIGHT);bar.setPadding(d(21),d(12),d(18),d(13));
+    TextView mark=label("☸",32,GOLD,true);mark.setGravity(Gravity.CENTER);bar.addView(mark,size(45,47));
+    LinearLayout identity=vertical();identity.setPadding(d(10),0,0,0);
+    identity.addView(label("DAMA  APP",23,GOLD,true));
+    identity.addView(label("Dhamma for a Better Life",11,SOFT,false));
+    bar.addView(identity,new LinearLayout.LayoutParams(0,-2,1));
+    TextView index=label("V8",12,GOLD,true);index.setGravity(Gravity.CENTER);
+    index.setBackground(fill(PANEL,11,0xff755d35));bar.addView(index,size(43,34));
+    root.addView(bar,size(-1,78));
+
+    ScrollView sv=new ScrollView(this);sv.setVerticalScrollBarEnabled(false);
+    root.addView(sv,new LinearLayout.LayoutParams(-1,0,1));
+    LinearLayout content=vertical();content.setPadding(d(17),d(10),d(17),d(18));
+    sv.addView(content);
+
+    FrameLayout hero=new FrameLayout(this);hero.setBackground(fill(DEEP,20,0xff85663a));hero.setClipToOutline(true);
+    ImageView backdrop=new ImageView(this);backdrop.setImageResource(R.drawable.dama_header);
+    backdrop.setScaleType(ImageView.ScaleType.CENTER_CROP);hero.addView(backdrop,new FrameLayout.LayoutParams(-1,-1));
+    View shade=new View(this);shade.setBackground(new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,
+       new int[]{0xf5082625,0xcf092a28,0x55082a2a}));
+    hero.addView(shade,new FrameLayout.LayoutParams(-1,-1));
+    LinearLayout h=vertical();h.setPadding(d(21),d(18),d(14),d(14));
+    h.addView(label("WELCOME TO DAMA",10,GOLD,true));
+    h.addView(label("ဓမ္မနှင့်အတူ\nနေ့သစ်တစ်နေ့",23,WHITE,true));
+    TextView kicker=label("LISTEN · READ · WATCH",10,GOLD,true);kicker.setPadding(0,d(8),0,0);h.addView(kicker);
+    hero.addView(h,new FrameLayout.LayoutParams(-1,-1));
+    content.addView(hero,size(-1,154));
+
+    TextView header=label("သင်လေ့လာလိုသော ဓမ္မကဏ္ဍကို ရွေးပါ",15,WHITE,true);
+    header.setPadding(d(3),d(21),0,d(12));content.addView(header);
+
+    addModule(content,"01","DAMA RADIO","ဆရာတော်ကြီးများ၏ တရားတော် MP3\nနားထောင်ရန် • Player • Favorites",
+      "MP3 Streaming · Offline Link Catalog",R.drawable.radio_hero,MainActivity.class,"♫");
+    addModule(content,"02","DAMA LIBRARY","ဓမ္မစာအုပ်၊ ပိဋကတ်နှင့် PDF များ\nစာရေးသူအလိုက်ရှာရန် • Offline Reader",
+      "1,894+ Book Links · Native PDF",R.drawable.radio_pattana,LibraryActivity.class,"▣");
+    addModule(content,"03","DAMA TV","YouTube တရားတော်ဗီဒီယိုများ\nဆရာတော်၊ Category၊ Playlist ရွေးကြည့်ရန်",
+      "3,264 Video Links · In-App Player",R.drawable.tv_banner,TvActivity.class,"▶");
+
+    LinearLayout note=vertical();note.setBackground(fill(PANEL,13,0xff526b54));padding(note,15,14);
+    note.addView(label("✦   DAMA Learning Collection",13,GOLD,true));
+    TextView explanation=label("စာအုပ်နှင့် ဗီဒီယိုလင့်ခ်စာရင်းများကို Offline ကြည့်ရှုနိုင်သည်။ အသံ/ဗီဒီယို Stream လုပ်ရန် Internet လိုအပ်ပါသည်။",11,SOFT,false);
+    explanation.setPadding(0,d(7),0,0);note.addView(explanation);
+    LinearLayout.LayoutParams np=size(-1,-2);np.topMargin=d(13);content.addView(note,np);
+
+    LinearLayout nav=horizontal();nav.setPadding(d(3),d(7),d(3),d(9));
+    nav.setBackground(fill(DEEP,0,0));
+    String[] icons={"⌂","♫","▣","▶"};String[] names={"Home","Radio","Library","TV"};
+    for(int i=0;i<4;i++){final int n=i;LinearLayout cell=vertical();cell.setGravity(Gravity.CENTER);
+      TextView ic=label(icons[i],23,i==0?GOLD:SOFT,true);ic.setGravity(Gravity.CENTER);cell.addView(ic);
+      TextView title=label(names[i],11,i==0?GOLD:SOFT,i==0);title.setGravity(Gravity.CENTER);cell.addView(title);
+      nav.addView(cell,new LinearLayout.LayoutParams(0,d(55),1));
+      cell.setOnClickListener(v->go(n));
+    }
+    root.addView(nav,size(-1,73));
+  }
+  private void addModule(LinearLayout into,String number,String title,String explanation,
+      String footer,int background,Class<?> target,String glyph){
+    FrameLayout frame=new FrameLayout(this);frame.setBackground(fill(PANEL,17,0xff8c744c));frame.setClipToOutline(true);
+    ImageView art=new ImageView(this);art.setImageResource(background);art.setScaleType(ImageView.ScaleType.CENTER_CROP);
+    frame.addView(art,new FrameLayout.LayoutParams(-1,-1));
+    View overlay=new View(this);overlay.setBackground(new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,
+      new int[]{0xfb062c2b,0xe509302c,0x6a164337}));frame.addView(overlay,new FrameLayout.LayoutParams(-1,-1));
+    LinearLayout info=vertical();info.setPadding(d(18),d(12),d(12),d(9));
+    info.addView(label(number+"   "+glyph+"   "+title,17,GOLD,true));
+    TextView body=label(explanation,12,WHITE,false);body.setLineSpacing(d(3),1f);body.setPadding(0,d(7),0,d(3));info.addView(body);
+    TextView sub=label(footer,10,SOFT,false);sub.setPadding(0,d(5),0,0);info.addView(sub);
+    frame.addView(info,new FrameLayout.LayoutParams(-1,-1));
+    LinearLayout.LayoutParams fp=size(-1,144);fp.bottomMargin=d(12);into.addView(frame,fp);
+    frame.setOnClickListener(v->startActivity(new Intent(this,target)));
+    frame.setContentDescription(title+" ဖွင့်ရန်");
+  }
+  private void go(int index){
+    if(index==1)startActivity(new Intent(this,MainActivity.class));
+    else if(index==2)startActivity(new Intent(this,LibraryActivity.class));
+    else if(index==3)startActivity(new Intent(this,TvActivity.class));
+    else showHome();
+  }
+}
