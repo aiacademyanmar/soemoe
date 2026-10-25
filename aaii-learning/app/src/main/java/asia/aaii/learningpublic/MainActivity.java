@@ -23,6 +23,8 @@ public class MainActivity extends Activity {
   private int page=0,detailType=0,detailIndex=0,limit=35;
   private String bookingDate="ရက်ရွေးပါ", bookingTime="အချိန်ရွေးပါ";
   private String search="",category="အားလုံး";
+  private int certPage=0;
+  private String certQuery="";
   private int dp(int v){return (int)(v*getResources().getDisplayMetrics().density+0.5f);}
   private GradientDrawable shape(int color,int radius){GradientDrawable d=new GradientDrawable();d.setColor(color);d.setCornerRadius(dp(radius));return d;}
   private GradientDrawable gradient(int a,int b,int r){GradientDrawable d=new GradientDrawable(GradientDrawable.Orientation.TL_BR,new int[]{a,b});d.setCornerRadius(dp(r));return d;}
@@ -161,12 +163,45 @@ public class MainActivity extends Activity {
     row.addView(bodyText,new LinearLayout.LayoutParams(0,-2,1));
     line(bodyText,headline,18,NAVY,true);
     line(bodyText,description,12,INK,false);
-    target.addView(row);
+    target.addView(row);row.setOnClickListener(v->openTab(9));
+  }
+  private void openSoeMoeWebsite(){try{startActivity(new Intent(this,ProfileWebActivity.class));}
+    catch(Exception e){Toast.makeText(this,"Website မဖွင့်နိုင်ပါ",Toast.LENGTH_LONG).show();}}
+  private void roadmapGraphic(LinearLayout host){
+    LinearLayout c=card(host);line(c,"LEARNING ROADMAP • လေ့လာမှု ၄ ဆင့်",16,NAVY,true);
+    LinearLayout r=new LinearLayout(this);r.setOrientation(0);c.addView(r);
+    String[] steps={"①\nFOUNDATIONS","②\nPRACTICE","③\nPROJECT","④\nPORTFOLIO"};
+    int[] color={0xffe0efff,0xffffeacc,0xffdef7ee,0xffeee2ff};
+    for(int i=0;i<4;i++){TextView v=txt(steps[i],10,NAVY,true);v.setGravity(Gravity.CENTER);v.setMinHeight(dp(75));
+      v.setBackground(shape(color[i],11));LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(0,-2,1);
+      lp.setMargins(dp(2),dp(4),dp(2),dp(2));r.addView(v,lp);}
+    line(c,"Learn → Practice → Build → Show Skills",12,MUTED,false);
+  }
+  private void certificateTeasers(LinearLayout target,String term,int limit){
+    if(certs.length()==0){LinearLayout c=card(target);line(c,"Coursera Certificate Portfolio",16,NAVY,true);
+      line(c,"Certificate Links များကို Private JSON မှ Import လုပ်ပြီးမှ ကြည့်နိုင်ပါမည်။",12,MUTED,false);
+      button(c,"Import Certificate File",()->openTab(5),false);return;}
+    int hits=0;String needle=term==null?"":term.toLowerCase(Locale.ROOT);
+    for(int i=0;i<certs.length()&&hits<limit;i++){
+      JSONObject x=certs.optJSONObject(i);if(x==null)continue;String title=x.optString("title");
+      String url=x.optString("certificateUrl");if(!url.startsWith("https://www.coursera.org/account/accomplishments/"))continue;
+      if(!needle.isEmpty()&&!title.toLowerCase(Locale.ROOT).contains(needle)&&
+        !x.optString("program").toLowerCase(Locale.ROOT).contains(needle))continue;
+      LinearLayout c=card(target);line(c,"✦ "+title,14,NAVY,true);
+      line(c,x.optString("publisher")+" • "+x.optString("type"),12,MUTED,false);
+      button(c,"Verify on Coursera ↗",()->browse(url),false);hits++;
+    }
+    if(hits==0){LinearLayout c=card(target);line(c,"Matching Certificate Not Found",13,MUTED,false);
+      button(c,"View All Certificate Links",()->openTab(5),false);}
   }
   private void render(){
     root=vertical();root.setBackgroundColor(BG);root.setFitsSystemWindows(true);setContentView(root);
     LinearLayout head=vertical();head.setPadding(dp(16),dp(8),dp(16),dp(8));head.setBackgroundColor(NAVY);root.addView(head);
-    line(head,"✦  AAII Learning",23,GOLD,true);
+    LinearLayout brand=new LinearLayout(this);brand.setGravity(Gravity.CENTER_VERTICAL);
+    head.addView(brand);ImageView logo=new ImageView(this);logo.setImageResource(R.drawable.aaii_splash_v45);
+    logo.setScaleType(ImageView.ScaleType.CENTER_CROP);
+    LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(dp(44),dp(44));lp.setMargins(0,0,dp(8),0);
+    brand.addView(logo,lp);brand.addView(txt("AAII Learning",23,GOLD,true));
     line(head,"LEARN TODAY • BUILD TOMORROW",10,0xffcfe8fe,false);
     LinearLayout links=new LinearLayout(this);links.setOrientation(0);head.addView(links);
     TextView learningLink=txt("◉ My Learning",12,GOLD,true);links.addView(learningLink,new LinearLayout.LayoutParams(0,dp(36),1));
@@ -201,6 +236,11 @@ public class MainActivity extends Activity {
     line(hero,"Coursera ၏ သင်တန်းစာမျက်နှာများဆီသို့ တိုက်ရိုက်သွားရောက်လေ့လာနိုင်ပြီး AAII မှ မြန်မာဘာသာဖြင့် အကြောင်းအရာများကို ရှင်းပြထားသည်။",14,0xffe3f2f2,false);
     line(hero,"Explore • Learn • Practice • Build your career",13,GOLD,true);
     button(hero,"🔎  Courses / Skills ရှာဖွေလေ့လာမည်",()->openTab(1),true);
+    LinearLayout visual=card(body);visual.setBackground(shape(0xffe7f2ff,17));
+    line(visual,"GLOBAL PROFESSIONAL LEARNING • INFOGRAPHIC",13,NAVY,true);
+    ImageView banner=new ImageView(this);banner.setImageResource(R.drawable.aaii_splash_v45);
+    banner.setScaleType(ImageView.ScaleType.FIT_CENTER);
+    visual.addView(banner,new LinearLayout.LayoutParams(-1,dp(115)));roadmapGraphic(body);
     statTiles(body);
     LinearLayout quickServices=new LinearLayout(this);quickServices.setOrientation(0);
     LinearLayout.LayoutParams q=new LinearLayout.LayoutParams(-1,-2);q.setMargins(0,dp(12),0,dp(8));body.addView(quickServices,q);
@@ -210,7 +250,9 @@ public class MainActivity extends Activity {
     LinearLayout teacherHero=card(body);
     portraitCard(teacherHero,"Teacher Soe Moe • ဆရာ စိုးမိုး","Original portrait • Coursera learning guidance • AI, Data, Business, IT");
     line(teacherHero,"AI • Data Science • Python • IT • Business • Digital Education",12,TEAL,true);
+    teacherHero.setOnClickListener(v->openTab(9));
     button(teacherHero,"Teacher Profile & Portfolio",()->openTab(9),false);
+    button(teacherHero,"View soemoe.aaii.asia • Live Profile",()->openSoeMoeWebsite(),false);
     heading("SERVICES • AAII ဝန်ဆောင်မှုများ","Enrollment Help  •  Hire a Teacher");
     pillRow(body,new String[]{"Enrollment Assistance","Hire Teacher","My Certificates","My Learning"},new int[]{7,8,5,12});
     LinearLayout enrollment=card(body);
@@ -292,6 +334,8 @@ public class MainActivity extends Activity {
       String key="course_"+detailIndex;CheckBox done=new CheckBox(this);done.setText("ကိုယ်ပိုင်လေ့ကျင့်ခန်း ပြီးဆုံးပြီ");done.setChecked(prefs.getBoolean(key,false));
       x.addView(done);done.setOnCheckedChangeListener((b,checked)->prefs.edit().putBoolean(key,checked).apply());
       button(x,"Coursera.org မှ မူရင်း Course ဖွင့်မည်",()->browse(c.optString("url")),true);
+      button(x,"Teacher Soe Moe • Profile & Support",()->openTab(9),false);
+      certificateTeasers(body,c.optString("title"),2);
       line(x,"မှတ်ချက် — ဤမြန်မာလိုအကြောင်းအရာများသည် AAII ၏ သင်ကြားရေးရှင်းလင်းချက်ဖြစ်ပြီး Official Coursera သင်ရိုးကို စာလုံးချင်း ပြန်ထုတ်ထားခြင်း မဟုတ်ပါ။",12,MUTED,false);
       button(x,"Offline AI Study Support",()->new AlertDialog.Builder(this).setTitle("AAII Study Guidance")
         .setMessage("သင်ခန်းစာ: "+c.optString("title")+"\n\n"+overview(c.optString("category"),c.optString("title"))+"\n\nလေ့ကျင့်ရန်: "+exercise(c.optString("category"),c.optString("title"))+"\n\nLive AI API မချိတ်ထားသေးပါ။")
@@ -534,10 +578,18 @@ public class MainActivity extends Activity {
     LinearLayout bio=card(body);bio.setBackground(shape(0xffe9f5ff,18));
     portraitCard(bio,"SOE MOE • ဆရာ စိုးမိုး","AAII Learning Mentor • Original Portrait");
     line(bio,"TEACHER PROFILE",21,NAVY,true);
+    button(bio,"soemoe.aaii.asia • Live Website ↗",()->openSoeMoeWebsite(),true);
+    line(bio,"Website ကို App အတွင်း ဖွင့်ကြည့်နိုင်သည်။ Site မရသေးပါက Profile Card နှင့် Course Mentorship ကို ကြည့်နိုင်ပါသည်။",12,MUTED,false);
     line(bio,"AI • Data Science • Python • IT • Digital Education • Business",14,TEAL,true);
     line(bio,"AAII သင်ကြားရေး Mentor အဖြစ် Course ရွေးချယ်မှု၊ လေ့လာမည့်အစီအစဉ်၊ Project Design နှင့် Learning Portfolio တည်ဆောက်မှုကို ကူညီဆောင်ရွက်နိုင်ရန် ရည်ရွယ်ပါသည်။",14,INK,false);
     line(bio,"Verification: ကိုယ်ပိုင် Coursera Program Certificates ကို ဖုန်း၏ Private Wallet မှသာ လင့်ခ်ဖြင့်စစ်ဆေးနိုင်သည်။ မျက်နှာပြင်တွင် ပြသထားသည့်လက်မှတ်များကို Teacher License ဟု မယူဆပါနှင့်။",12,MUTED,false);
     button(bio,"View Private Certificate Wallet",()->openTab(5),false);
+    LinearLayout credentials=card(body);
+    line(credentials,"Certificate Verification Portfolio",17,NAVY,true);
+    line(credentials,"Program Certificate 55 နှင့် Course Certificate 298 တို့ကို Private JSON Import ပြုလုပ်ပြီးမှ Coursera Link များ ဖွင့်နိုင်သည်။ Certificate သည် Teaching Licence မဟုတ်ပါ။",13,INK,false);
+    line(credentials,"Imported Certificates: "+certs.length(),13,TEAL,true);
+    button(credentials,"All Certificates • Search & Verify",()->openTab(5),true);
+    if(certs.length()>0)certificateTeasers(body,"",5);
     LinearLayout topics=card(body);line(topics,"Teaching Subjects • သင်ကြားနိုင်သော ဘာသာရပ်များ",17,NAVY,true);
     String[] subjects={"Artificial Intelligence / Prompt Engineering","Python Programming","Data Science & Analytics","Project Management","IT & Digital Skills","Digital Teaching & Portfolio"};
     for(int i=0;i<subjects.length;i++)line(topics,(i+1)+". "+subjects[i],14,INK,false);
@@ -546,6 +598,7 @@ public class MainActivity extends Activity {
     line(modes,"ဆရာ၏ လစ်လပ်ချိန်၊ သင်တန်းကြေးနှင့် အရည်အချင်းအတည်ပြုမှုကို Request လက်ခံပြီးမှ ထပ်မံစစ်ဆေးရန် လိုပါသည်။",12,MUTED,false);
     LinearLayout p=card(body);line(p,"Teaching Portfolio • Learning Journey",17,NAVY,true);
     line(p,"① Skills Assessment → ② Course & Lesson Plan → ③ Live Coaching → ④ Practical Project → ⑤ Portfolio Review",14,INK,false);
+    roadmapGraphic(body);
     button(p,"Request Booking with Soe Moe",()->openTab(10),true);
     button(p,"Browse Courses with Mentor Support",()->openTab(1),false);
   }
@@ -681,11 +734,23 @@ public class MainActivity extends Activity {
     line(x,"ကိုယ်ပိုင် programs.json ကို ဖုန်းအတွင်း၌သာ ထည့်သွင်းနိုင်ပြီး GitHub Public Source ထဲ မတင်ပါ။ Coursera ကသာ Official Certificate ထုတ်ပေးပါသည်။",14,INK,false);
     button(x,"Private JSON Import",()->{Intent intent=new Intent(Intent.ACTION_OPEN_DOCUMENT);intent.setType("*/*");intent.addCategory(Intent.CATEGORY_OPENABLE);startActivityForResult(intent,404);},true);
     line(x,"Imported Certificates: "+certs.length(),13,TEAL,true);
-    for(int i=0;i<certs.length()&&i<100;i++){JSONObject c=certs.optJSONObject(i);if(c==null)continue;String url=c.optString("certificateUrl");
-      if(!url.startsWith("https://www.coursera.org/account/accomplishments/"))continue;LinearLayout y=card(body);
-      line(y,c.optString("title",c.optString("name")),16,NAVY,true);String link=url;
-      button(y,"Certificate Verify",()->browse(link),false);
+    EditText q=new EditText(this);q.setSingleLine(true);q.setHint("Find certificate / program");q.setText(certQuery);
+    x.addView(q,new LinearLayout.LayoutParams(-1,dp(50)));
+    button(x,"Search Certificates",()->{certQuery=q.getText().toString();certPage=0;render();},false);
+    String filter=certQuery.toLowerCase(Locale.ROOT);int total=0,shown=0,skip=certPage*24;
+    for(int i=0;i<certs.length();i++){
+      JSONObject c=certs.optJSONObject(i);if(c==null)continue;
+      String url=c.optString("certificateUrl"),title=c.optString("title",c.optString("name"));
+      if(!url.startsWith("https://www.coursera.org/account/accomplishments/"))continue;
+      if(!filter.isEmpty()&&!(title+" "+c.optString("publisher")+" "+c.optString("program")).toLowerCase(Locale.ROOT).contains(filter))continue;
+      if(total++<skip)continue;if(shown++>=24)continue;
+      LinearLayout row=card(body);line(row,"✦ "+title,15,NAVY,true);
+      line(row,c.optString("publisher")+" • "+c.optString("type"),12,MUTED,false);
+      button(row,"Coursera Verify ↗",()->browse(url),false);
     }
+    line(x,"Matching: "+total+" • Page "+(certPage+1),13,TEAL,true);
+    if(certPage>0)button(x,"← Previous",()->{certPage--;render();},false);
+    if((certPage+1)*24<total)button(x,"Next 24 →",()->{certPage++;render();},false);
     button(x,"Imported Records ဖျက်မည်",()->new AlertDialog.Builder(this).setTitle("Clear imported credentials?")
       .setPositiveButton("Clear",(d,w)->{prefs.edit().remove("personal_credentials").apply();certs=new JSONArray();render();})
       .setNegativeButton("Cancel",null).show(),false);
@@ -696,9 +761,9 @@ public class MainActivity extends Activity {
     try(InputStream in=getContentResolver().openInputStream(data.getData())){
       if(in==null)throw new Exception("File not available");ByteArrayOutputStream out=new ByteArrayOutputStream();byte[] b=new byte[8192];int n;
       while((n=in.read(b))!=-1){out.write(b,0,n);if(out.size()>1000000)throw new Exception("File too large");}
-      JSONArray imported=new JSONArray(out.toString("UTF-8"));if(imported.length()>150)throw new Exception("Too many records");
+      JSONArray imported=new JSONArray(out.toString("UTF-8"));if(imported.length()>500)throw new Exception("Too many records");
       for(int i=0;i<imported.length();i++){JSONObject p=imported.optJSONObject(i);if(p==null||!p.optString("certificateUrl").startsWith("https://www.coursera.org/account/accomplishments/"))throw new Exception("Unrecognized certificate URL");}
-      prefs.edit().putString("personal_credentials",imported.toString()).apply();certs=imported;render();
+      prefs.edit().putString("personal_credentials",imported.toString()).apply();certs=imported;certPage=0;certQuery="";render();
     }catch(Exception ex){new AlertDialog.Builder(this).setTitle("Import error").setMessage(ex.getMessage()).setPositiveButton("OK",null).show();}
   }
   @Override public void onBackPressed(){if(page==6)openTab(detailType==1?1:detailType==2?2:3);else if(page!=0)openTab(0);else super.onBackPressed();}
