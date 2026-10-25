@@ -269,10 +269,10 @@ jobs:
           popup=(root/'SayadawProfilePopup.java').read_text()
           assert 'radio_catalog.dat' in popup and 'tv_catalog.json' in popup
           assert 'dama_profile_monk_id' in popup and 'dama_profile_sayadaw_key' in popup
-          assert 'showSayadawProfile(monkIndex)' in (root/'LibraryActivity.java').read_text()
+          assert 'SayadawDirectoryActivity.class' in (root/'LibraryActivity.java').read_text()
           assert 'dama_profile_monk_id' in (root/'MainActivity.java').read_text()
           assert 'dama_profile_sayadaw_key' in (root/'TvActivity.java').read_text()
-          print('V19 profile-to-books/radio/TV links validated')
+          print('V20 directory-to-books/radio/TV links validated')
           PY
       - name: Install offline Sayadaw gallery assets
         run: |
