@@ -112,7 +112,13 @@ public class MainActivity extends Activity {
     }catch(Exception ex){android.util.Log.e("DAMA","Offline radio catalog unavailable",ex);}
     File cache=new File(getFilesDir(),CACHE_FILE);if(cache.exists())try(FileInputStream in=new FileInputStream(cache);ByteArrayOutputStream out=new ByteArrayOutputStream()){byte[] b=new byte[8192];int n;while((n=in.read(b))!=-1)out.write(b,0,n);JSONArray rows=new JSONArray(out.toString("UTF-8"));for(int i=0;i<rows.length();i++){JSONObject j=rows.optJSONObject(i);if(j!=null)addCatalog(new Track(j));}}catch(Exception ignored){}
   }
-  @Override public void onCreate(Bundle b){super.onCreate(b);getWindow().setStatusBarColor(DEEP);getWindow().setNavigationBarColor(DEEP);initData();audioManager=(AudioManager)getSystemService(Context.AUDIO_SERVICE);lastPlayerError=settings.getString("last_player_error","");if(getIntent().getBooleanExtra("dama_test_player_ui",false)){openPlayerPreview();}else show("Home");}
+  @Override public void onCreate(Bundle b){super.onCreate(b);getWindow().setStatusBarColor(DEEP);getWindow().setNavigationBarColor(DEEP);initData();audioManager=(AudioManager)getSystemService(Context.AUDIO_SERVICE);lastPlayerError=settings.getString("last_player_error","");int profileId=getIntent().getIntExtra("dama_profile_monk_id",-1);
+        if(profileId>0){
+            monkFilter=0;
+            for(int i=0;i<monks.size();i++){if(monks.get(i).id==profileId){monkFilter=i+1;break;}}
+            categoryFilter=0;query="";show("Radio");
+        }else if(getIntent().getBooleanExtra("dama_test_player_ui",false)){openPlayerPreview();}
+        else show("Home");}
   void show(String next){if(next.equals("Menu")&&!screen.equals("Menu"))priorScreen=screen;screen=next;outer=vert();outer.setBackgroundColor(BG);setContentView(outer);applySafeInsets(outer);
     createTop(); ScrollView scroll=new ScrollView(this);scroll.setFillViewport(false);scroll.setVerticalScrollBarEnabled(false);outer.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));body=vert();body.setPadding(dp(15),dp(13),dp(15),dp(14));scroll.addView(body);
     if(next.equals("Home"))home();else if(next.equals("Radio"))browse();else if(next.equals("Playing"))nowPlaying();else if(next.equals("Collection"))collection();else if(next.equals("Menu"))menuScreen();else if(next.equals("Library")){startActivity(new Intent(this,LibraryActivity.class));screen="Home";home();}else if(next.equals("TV")){startActivity(new Intent(this,TvActivity.class));screen="Home";home();}else if(next.equals("Worship"))other("DAILY WORSHIP","✿ နေ့စဉ်ဝတ်ပြုခြင်း", "https://www.dhammadownload.com/");

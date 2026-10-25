@@ -138,6 +138,21 @@ public class LibraryActivity extends Activity {
         tile.setOnClickListener(v->click.run());
     }
 
+    void showSayadawProfile(int monkIndex){
+        if(monkIndex<0||monkIndex>=SayadawProfilePopup.KEYS.length)return;
+        int bookCount=0;
+        String authorKey=SayadawProfilePopup.KEYS[monkIndex];
+        for(Book b:books)if(b.author.contains(authorKey))bookCount++;
+        final int selected=monkIndex;
+        SayadawProfilePopup.open(this,selected,bookCount,()->showSayadawBooks(selected));
+    }
+    int bookListScrollTop(){
+        if(counter==null||page==null)return 0;
+        android.graphics.Rect r=new android.graphics.Rect();
+        counter.getDrawingRect(r);
+        page.offsetDescendantRectToMyCoords(counter,r);
+        return Math.max(0,r.top-dp(15));
+    }
     void showSayadawBooks(int monkIndex){
         // Match BOOK AUTHOR, not merely a keyword occurring in an unrelated title.
         String[] keys={"မိုးကုတ်","မဟာစည်","နန္ဒမာလာ"};
@@ -149,7 +164,7 @@ public class LibraryActivity extends Activity {
         if(search!=null)search.setText("");
         filter();
         if(libraryScroll!=null&&counter!=null)libraryScroll.post(()->libraryScroll.smoothScrollTo(0,
-            Math.max(0,counter.getTop()-dp(85))));
+            Math.max(0,bookListScrollTop())));
         if(visible.isEmpty()){
             msg("ဤဆရာတော်၏ စာအုပ်ကို လက်ရှိ Catalog တွင် မတွေ့ရသေးပါ");
         }else{msg(names[monkIndex]+" — စာအုပ် "+visible.size()+" အုပ်");}
@@ -185,7 +200,7 @@ public class LibraryActivity extends Activity {
             LinearLayout.LayoutParams margin=new LinearLayout.LayoutParams(dp(124),dp(151));
             margin.setMargins(0,0,dp(9),0);gallery.addView(tile,margin);
             final int monkIndex=i;
-            PremiumMedia.tap(tile,()->showSayadawBooks(monkIndex));
+            PremiumMedia.tap(tile,()->showSayadawProfile(monkIndex));
         }
         horizontal.addView(gallery);page.addView(horizontal);
         TextView note=t("ဆရာတော်ပုံများ — Wikimedia Commons မူရင်းများ (Credit ပါဝင်သည်)။",10,MUTED,false);

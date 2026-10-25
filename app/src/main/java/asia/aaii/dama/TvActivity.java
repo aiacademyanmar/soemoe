@@ -84,7 +84,12 @@ public class TvActivity extends Activity {
     @Override public void onCreate(Bundle b){super.onCreate(b);getWindow().setStatusBarColor(BG);getWindow().setNavigationBarColor(BG);
         prefs=getSharedPreferences("dama_tv_v6",MODE_PRIVATE);favorites.addAll(prefs.getStringSet("favorites",Collections.emptySet()));
         try{JSONArray a=new JSONArray(prefs.getString("recent","[]"));for(int i=0;i<a.length();i++)recent.add(a.optString(i));}catch(Exception ignored){}
-        loadCatalog();showBrowse();}
+        loadCatalog();
+        String profileKey=getIntent().getStringExtra("dama_profile_sayadaw_key");
+        if(profileKey!=null&&!profileKey.trim().isEmpty()){
+            query=profileKey.trim();section="All";monkIndex=0;categoryIndex=0;sourceIndex=0;
+        }
+        showBrowse();}
     private void loadCatalog(){
         try(InputStream gzip=getAssets().open("tv_catalog.json");ByteArrayOutputStream output=new ByteArrayOutputStream()){
             byte[] buffer=new byte[8192];int n;while((n=gzip.read(buffer))!=-1)output.write(buffer,0,n);
