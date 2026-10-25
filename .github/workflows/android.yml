@@ -69,8 +69,7 @@ jobs:
       - name: Decode DAMA TV assets
         run: |
           base64 -d app/src/main/assets/tv_catalog.json.gz.b64 > app/src/main/assets/tv_catalog.json.gz
-          base64 -d app/src/main/res/drawable-nodpi/tv_banner.jpg.b64 > app/src/main/res/drawable-nodpi/tv_banner.jpg
-          rm -f app/src/main/assets/tv_catalog.json.gz.b64 app/src/main/res/drawable-nodpi/tv_banner.jpg.b64
+          rm -f app/src/main/assets/tv_catalog.json.gz.b64
       - name: Verify DAMA TV video catalog
         run: |
           python3 - <<'PY'
