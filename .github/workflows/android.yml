@@ -147,10 +147,6 @@ jobs:
               except Exception as e:
                   print('MP3 CHECK',item['id'],'NOT REACHABLE',repr(e)[:250])
           PY
-      - name: Decode premium DAMA Library artwork
-        run: |
-          base64 -d app/src/main/res/drawable-nodpi/dama_library_v12_hero.jpg.b64 > app/src/main/res/drawable-nodpi/dama_library_v12_hero.jpg
-          rm app/src/main/res/drawable-nodpi/dama_library_v12_hero.jpg.b64
       - name: Verify premium Library UI and unified Footer
         run: |
           python3 - <<'PY'
