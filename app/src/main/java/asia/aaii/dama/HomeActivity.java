@@ -50,7 +50,7 @@ public final class HomeActivity extends Activity {
     identity.addView(label("DAMA  APP",23,GOLD,true));
     identity.addView(label("Dhamma for a Better Life",11,SOFT,false));
     bar.addView(identity,new LinearLayout.LayoutParams(0,-2,1));
-    TextView index=label("V14",12,GOLD,true);index.setGravity(Gravity.CENTER);
+    TextView index=label("V20",12,GOLD,true);index.setGravity(Gravity.CENTER);
     index.setBackground(fill(PANEL,11,0xff755d35));bar.addView(index,size(43,34));
     root.addView(bar,size(-1,78));
 
@@ -85,6 +85,7 @@ public final class HomeActivity extends Activity {
     addModule(content,"04","DAILY DAMA VOICE","နေ့စဉ် ဓမ္မအခြေပြု စိတ်ခွန်အားပေး Reflection ၃၆၅ ပုဒ်\nToday’s Voice • Calendar • Offline TTS",
       "365 Days · Offline Reading · Burmese TTS",R.drawable.radio_pattana,DailyVoiceActivity.class,"☀");
 
+    addModule(content,"05","SAYADAW GALLERY","ဆရာတော် ၂၂ ပါး • Photo / Illustration\nProfile • စာအုပ် • MP3 • TV", "22 Profiles · 3 Source Photos · 19 Illustration Slots",R.drawable.radio_meditation,SayadawDirectoryActivity.class,"☸");
     LinearLayout note=vertical();note.setBackground(fill(PANEL,13,0xff526b54));padding(note,15,14);
     note.addView(label("✦   DAMA Learning Collection",13,GOLD,true));
     TextView explanation=label("စာအုပ်နှင့် ဗီဒီယိုလင့်ခ်စာရင်းများကို Offline ကြည့်ရှုနိုင်သည်။ အသံ/ဗီဒီယို Stream လုပ်ရန် Internet လိုအပ်ပါသည်။",11,SOFT,false);

@@ -80,7 +80,7 @@ public class LibraryActivity extends Activity {
     }
 
     JSONArray load(String p){try(InputStream original=getAssets().open(p);InputStream in=p.endsWith(".dat")?new java.util.zip.GZIPInputStream(original):original){ByteArrayOutputStream out=new ByteArrayOutputStream();byte[] b=new byte[65536];int n;while((n=in.read(b))>0)out.write(b,0,n);return new JSONArray(out.toString("UTF-8"));}catch(Exception e){return new JSONArray();}}
-    @Override public void onCreate(Bundle b){super.onCreate(b);getWindow().setStatusBarColor(DEEP);getWindow().setNavigationBarColor(DEEP);prefs=getSharedPreferences("dama_books",0);favorites=new HashSet<>(prefs.getStringSet("saved",new HashSet<>())); LinkedHashMap<String,Book> uniq=new LinkedHashMap<>(); for(String f:new String[]{"library_catalog.dat","ebook_catalog_updates.json"}){JSONArray x=f.equals("ebook_catalog_updates.json")?EbookSync.readSaved(this):load(f);for(int i=0;i<x.length();i++){JSONObject j=x.optJSONObject(i);if(j==null)continue;Book v=new Book(j);if(v.url.startsWith("http"))uniq.putIfAbsent(v.url,v);}}books.addAll(uniq.values());draw();}
+    @Override public void onCreate(Bundle b){super.onCreate(b);getWindow().setStatusBarColor(DEEP);getWindow().setNavigationBarColor(DEEP);prefs=getSharedPreferences("dama_books",0);favorites=new HashSet<>(prefs.getStringSet("saved",new HashSet<>())); LinkedHashMap<String,Book> uniq=new LinkedHashMap<>(); for(String f:new String[]{"library_catalog.dat","ebook_catalog_updates.json"}){JSONArray x=f.equals("ebook_catalog_updates.json")?EbookSync.readSaved(this):load(f);for(int i=0;i<x.length();i++){JSONObject j=x.optJSONObject(i);if(j==null)continue;Book v=new Book(j);if(v.url.startsWith("http"))uniq.putIfAbsent(v.url,v);}}books.addAll(uniq.values());String profile=getIntent().getStringExtra("dama_profile_author_key");if(profile!=null&&!profile.isEmpty())sayadawKey=profile;draw();}
     void syncBooksNow(){
         if(syncingBooks){msg("EBook Sync လုပ်နေဆဲပါ");return;}
         syncingBooks=true;ebookSyncDone=0;ebookSyncTotal=1;
@@ -200,7 +200,7 @@ public class LibraryActivity extends Activity {
             LinearLayout.LayoutParams margin=new LinearLayout.LayoutParams(dp(124),dp(151));
             margin.setMargins(0,0,dp(9),0);gallery.addView(tile,margin);
             final int monkIndex=i;
-            PremiumMedia.tap(tile,()->showSayadawProfile(monkIndex));
+            PremiumMedia.tap(tile,()->startActivity(new Intent(this,SayadawDirectoryActivity.class)));
         }
         horizontal.addView(gallery);page.addView(horizontal);
         TextView note=t("ဆရာတော်ပုံများ — Wikimedia Commons မူရင်းများ (Credit ပါဝင်သည်)။",10,MUTED,false);
@@ -252,7 +252,7 @@ public class LibraryActivity extends Activity {
             v.setPadding(bars.left,bars.top,bars.right,bars.bottom);return insets;
         });main.requestApplyInsets();}
         LinearLayout hdr=row();hdr.setPadding(dp(14),dp(14),dp(14),dp(10));hdr.setBackground(new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,new int[]{DEEP,0xff17443a,DEEP}));TextView back=t("‹",32,GOLD,true);hdr.addView(back,new LinearLayout.LayoutParams(dp(43),dp(43)));back.setOnClickListener(v->finish());LinearLayout title=vert();title.addView(t("DAMA LIBRARY",22,GOLD,true));title.addView(t("ဓမ္မစာအုပ်များ • Offline Catalog",10,MUTED,false));hdr.addView(title,new LinearLayout.LayoutParams(0,-2,1));
-        TextView readerShortcut=btn("▣  READER",()->startActivity(new Intent(this,ReaderShelfActivity.class)));
+        TextView readerShortcut=btn("☸ SAYADAWS",()->startActivity(new Intent(this,SayadawDirectoryActivity.class)));
         readerShortcut.setBackground(shape(0xff285547,13,0xffbb9254));
         hdr.addView(readerShortcut);main.addView(hdr);
         ScrollView scroll=new ScrollView(this);libraryScroll=scroll;main.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));page=vert();page.setPadding(dp(12),dp(14),dp(12),dp(12));scroll.addView(page);
