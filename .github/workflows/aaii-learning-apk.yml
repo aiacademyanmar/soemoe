@@ -45,7 +45,7 @@ jobs:
               data=data[:108]+bytes([0x73,0x73,0x73])+data[108:]
               p.write_bytes(data)
           assert hashlib.sha256(data).hexdigest()==corrected, 'Portrait file integrity FAILED'
-          assert data[:3]==b'\\xff\\xd8\\xff' and data[-2:]==b'\\xff\\xd9', 'Invalid JPEG markers'
+          assert data[:3]==bytes([255,216,255]) and data[-2:]==bytes([255,217]), 'Invalid JPEG markers'
           print('Portrait JPEG restored; sha256:',corrected)
           PY
       - name: Compile real native APK
