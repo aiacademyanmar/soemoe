@@ -106,7 +106,7 @@ public class MainActivity extends Activity {
     }catch(Exception ex){android.util.Log.e("DAMA","Offline radio catalog unavailable",ex);}
     File cache=new File(getFilesDir(),CACHE_FILE);if(cache.exists())try(FileInputStream in=new FileInputStream(cache);ByteArrayOutputStream out=new ByteArrayOutputStream()){byte[] b=new byte[8192];int n;while((n=in.read(b))!=-1)out.write(b,0,n);JSONArray rows=new JSONArray(out.toString("UTF-8"));for(int i=0;i<rows.length();i++){JSONObject j=rows.optJSONObject(i);if(j!=null)addCatalog(new Track(j));}}catch(Exception ignored){}
   }
-  @Override public void onCreate(Bundle b){super.onCreate(b);getWindow().setStatusBarColor(DEEP);getWindow().setNavigationBarColor(DEEP);initData();audioManager=(AudioManager)getSystemService(Context.AUDIO_SERVICE);lastPlayerError=settings.getString("last_player_error","");show("Home");}
+  @Override public void onCreate(Bundle b){super.onCreate(b);getWindow().setStatusBarColor(DEEP);getWindow().setNavigationBarColor(DEEP);initData();audioManager=(AudioManager)getSystemService(Context.AUDIO_SERVICE);lastPlayerError=settings.getString("last_player_error","");if(getIntent().getBooleanExtra("dama_test_player_ui",false)){openPlayerPreview();}else show("Home");}
   void show(String next){if(next.equals("Menu")&&!screen.equals("Menu"))priorScreen=screen;screen=next;outer=vert();outer.setBackgroundColor(BG);setContentView(outer);applySafeInsets(outer);
     createTop(); ScrollView scroll=new ScrollView(this);scroll.setFillViewport(false);scroll.setVerticalScrollBarEnabled(false);outer.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));body=vert();body.setPadding(dp(15),dp(13),dp(15),dp(14));scroll.addView(body);
     if(next.equals("Home"))home();else if(next.equals("Radio"))browse();else if(next.equals("Playing"))nowPlaying();else if(next.equals("Collection"))collection();else if(next.equals("Menu"))menuScreen();else if(next.equals("Library")){startActivity(new Intent(this,LibraryActivity.class));screen="Home";home();}else if(next.equals("TV")){startActivity(new Intent(this,TvActivity.class));screen="Home";home();}else if(next.equals("Worship"))other("DAILY WORSHIP","✿ နေ့စဉ်ဝတ်ပြုခြင်း", "https://www.dhammadownload.com/");
@@ -224,7 +224,7 @@ public class MainActivity extends Activity {
   TextView kicker=text("✦  TODAY'S DHAMMA  ✦",10,0xffffdf9b,true);kicker.setLetterSpacing(.12f);overlay.addView(kicker);
   overlay.addView(space(10));TextView h=text("အသံတရားဖြင့်\nစိတ်အေးချမ်းစေပါ",22,IVORY,true);overlay.addView(h);
   overlay.addView(space(8));overlay.addView(text("ဆရာတော်ကြီးများ၏ တရားတော်များ",12,0xfff5dcaa,false));overlay.addView(space(17));
-  TextView cta=click("▶  စတင်နားထောင်ရန်",()->show("Radio"));cta.setTextColor(DEEP);cta.setBackground(shape(GOLD,24,0));
+  TextView cta=click("▶  PLAYER ဖွင့်ရန်",()->openPlayerPreview());cta.setTextColor(DEEP);cta.setBackground(shape(GOLD,24,0));
   overlay.addView(cta,lp(178,43));frame.addView(overlay,new android.widget.FrameLayout.LayoutParams(-1,-1));
   body.addView(frame,lp(-1,218));body.addView(space(17));
 }
@@ -248,7 +248,7 @@ public class MainActivity extends Activity {
   ImageView monkPic(int id,int dim){ImageView img=new ImageView(this);int drawable=id==1?R.drawable.mogok_sayadaw:id==2?R.drawable.mahasi_sayadaw:id==4?R.drawable.nandamala_sayadaw:R.drawable.monk_symbol;img.setImageResource(drawable);img.setScaleType(ImageView.ScaleType.CENTER_CROP);img.setBackground(shape(CARD,dim/2,GOLDDIM));img.setClipToOutline(true);return img;}
   void home(){hero();summary();catPills();monkTiles();
     heading("တရားတော် နားထောင်ရန်");quickTrackList(6,false);body.addView(space(12));
-    LinearLayout r=row();r.addView(click("↻  Sync MP3",()->sync()),new LinearLayout.LayoutParams(0,-2,1));r.addView(spaceX(8));r.addView(click("စာရင်းအားလုံး  ›",()->show("Radio")),new LinearLayout.LayoutParams(0,-2,1));body.addView(r);
+    LinearLayout r=row();r.addView(click("↻  Sync MP3",()->sync()),new LinearLayout.LayoutParams(0,-2,1));r.addView(spaceX(8));r.addView(click("▶  Open Player",()->openPlayerPreview()),new LinearLayout.LayoutParams(0,-2,1));body.addView(r);
     body.addView(space(15));heading("Featured Collections");addCollectionCard("ပဋ္ဌာန်းတရားတော်",R.drawable.radio_pattana,1);addCollectionCard("ဝိပဿနာတရားတော်",R.drawable.radio_meditation,2);body.addView(space(10));footnote();
   }
   View spaceX(int w){View v=new View(this);v.setLayoutParams(lp(w,1));return v;}
@@ -257,7 +257,9 @@ public class MainActivity extends Activity {
   void browse(){heading("တရားတော် စာကြည့်တိုက်");summary();
     searchBox=new EditText(this);searchBox.setSingleLine(true);searchBox.setTextSize(14);searchBox.setTextColor(IVORY);searchBox.setHintTextColor(MUTED);searchBox.setHint("⌕  တရားတော် / ဆရာတော် ရှာရန်");searchBox.setBackground(shape(CARD,13,GOLDDIM));searchBox.setPadding(dp(14),0,dp(14),0);searchBox.setText(query);body.addView(searchBox,lp(-1,50));body.addView(space(10));
     LinearLayout toolbar=row();Spinner monk=new Spinner(this);ArrayList<String> monkNames=new ArrayList<>();monkNames.add("ဆရာတော်အားလုံး");for(Monk m:monks)monkNames.add(m.name);initSpinner(monk,monkNames,monkFilter,i->{monkFilter=i;filter();});toolbar.addView(monk,new LinearLayout.LayoutParams(0,dp(48),1));toolbar.addView(spaceX(9));Spinner catSpin=new Spinner(this);initSpinner(catSpin,Arrays.asList(cat),categoryFilter,i->{categoryFilter=i;filter();});toolbar.addView(catSpin,new LinearLayout.LayoutParams(0,dp(48),1));body.addView(toolbar);body.addView(space(10));
-    LinearLayout buttons=row();TextView sync=click("↻  Sync Catalog",()->sync());buttons.addView(sync);buttons.addView(spaceX(9));buttons.addView(click("Website  ↗",()->open("https://www.dhammadownload.com/AudioInMyanmar.htm")));body.addView(buttons);body.addView(space(9));
+    LinearLayout buttons=row();TextView sync=click("↻  Sync Catalog",()->sync());buttons.addView(sync);buttons.addView(spaceX(9));buttons.addView(click("▶  Player",()->openPlayerPreview()));
+    buttons.addView(spaceX(9));
+    buttons.addView(click("Source ↗",()->open("https://www.dhammadownload.com/AudioInMyanmar.htm")));body.addView(buttons);body.addView(space(9));
     information=text("Offline catalog "+catalog.size()+" • Playback မစစ်ရသေးပါ",11,MUTED,false);body.addView(information);body.addView(space(11));
     listArea=vert();body.addView(listArea);searchBox.addTextChangedListener(new TextWatcher(){public void beforeTextChanged(CharSequence s,int st,int n,int a){}public void afterTextChanged(Editable e){}public void onTextChanged(CharSequence s,int st,int b,int c){query=s.toString();filter();}});filter();
   }
@@ -266,7 +268,8 @@ public class MainActivity extends Activity {
   String group(String s){String l=s.toLowerCase(Locale.ROOT);if(s.contains("ပဋ္ဌာန်း")||l.contains("pahtan")||l.contains("patan")||l.contains("patthana"))return cat[1];if(s.contains("ဝိပဿနာ")||s.contains("ပဋိစ္စ")||l.contains("vipassana"))return cat[2];if(s.contains("ပါဠိ")||s.contains("ပရိတ်")||s.contains("သုတ်")||l.contains("paritta"))return cat[3];return cat[4];}
   void filter(){if(listArea==null||!screen.equals("Radio"))return;results.clear();String q=query.toLowerCase(Locale.ROOT).trim();synchronized(catalog){for(Track t:catalog.values()){if(monkFilter>0&&t.monkId!=monkFilter)continue;if(categoryFilter>0&&!cat[categoryFilter].equals(group(t.title)))continue;if(!q.isEmpty()&&!(t.title+" "+t.monk).toLowerCase(Locale.ROOT).contains(q))continue;results.add(t);}}
     listArea.removeAllViews();listArea.addView(text("တရားတော် "+results.size()+" ပုဒ်",17,GOLD,true));listArea.addView(space(8));if(results.isEmpty()){listArea.addView(text("တရားတော်မတွေ့ပါ — အခြား Keyword ဖြင့်ရှာပါ / Sync လုပ်ပါ။",13,MUTED,false));return;}
-    ListView list=new ListView(this);list.setDividerHeight(dp(3));list.setBackgroundColor(BG);list.setCacheColorHint(BG);list.setVerticalScrollBarEnabled(false);list.setAdapter(new BaseAdapter(){public int getCount(){return results.size();}public Object getItem(int i){return results.get(i);}public long getItemId(int i){return i;}public View getView(int i,View reuse,ViewGroup parent){return trackRow(results.get(i));}});list.setOnItemClickListener((p,v,index,id)->trackActions(results.get(index)));listArea.addView(list,lp(-1,530));listArea.addView(space(10));}
+    ListView list=new ListView(this);list.setDividerHeight(dp(3));list.setBackgroundColor(BG);list.setCacheColorHint(BG);list.setVerticalScrollBarEnabled(false);list.setAdapter(new BaseAdapter(){public int getCount(){return results.size();}public Object getItem(int i){return results.get(i);}public long getItemId(int i){return i;}public View getView(int i,View reuse,ViewGroup parent){return trackRow(results.get(i));}});list.setOnItemClickListener((p,v,index,id)->play(results.get(index)));
+    list.setOnItemLongClickListener((p,v,index,id)->{trackActions(results.get(index));return true;});listArea.addView(list,lp(-1,530));listArea.addView(space(10));}
   LinearLayout trackRow(Track t){
   LinearLayout r=row();r.setPadding(dp(10),dp(11),dp(10),dp(11));r.setBackground(shape(0xff133b36,15,0));
   ImageView photo=monkPic(t.monkId,54);r.addView(photo,lp(54,54));
@@ -278,70 +281,118 @@ public class MainActivity extends Activity {
   TextView play=text("▶",16,DEEP,true);play.setGravity(Gravity.CENTER);play.setBackground(shape(GOLD,26,0));
   r.addView(play,lp(40,40));return r;
 }
-  void quickTrackList(int max,boolean onlyFav){int i=0;ArrayList<Track> data; synchronized(catalog){data=new ArrayList<>(catalog.values());}for(Track t:data){if(onlyFav&&!favorites.contains(t.url))continue;if(i++>=max)break;LinearLayout r=trackRow(t);body.addView(r,lp(-1,77));body.addView(space(7));r.setOnClickListener(v->trackActions(t));}if(i==0)body.addView(text("စာရင်းမရှိသေးပါ",12,MUTED,false));}
+  void quickTrackList(int max,boolean onlyFav){int i=0;ArrayList<Track> data; synchronized(catalog){data=new ArrayList<>(catalog.values());}for(Track t:data){if(onlyFav&&!favorites.contains(t.url))continue;if(i++>=max)break;LinearLayout r=trackRow(t);body.addView(r,lp(-1,77));body.addView(space(7));r.setOnClickListener(v->play(t));r.setOnLongClickListener(v->{trackActions(t);return true;});}if(i==0)body.addView(text("စာရင်းမရှိသေးပါ",12,MUTED,false));}
   void trackActions(Track t){String fav=favorites.contains(t.url)?"♥ Favorites မှဖယ်":"♡ Favorites ထည့်";String downloaded=downloadFile(t).exists()?"Offline နားထောင်":"↓ Offline Download";
     new AlertDialog.Builder(this).setTitle(t.title).setMessage(t.monk+"\n"+group(t.title)).setItems(new String[]{"▶  နားထောင်ရန်",fav,downloaded,"🔗 မူရင်း MP3 Link","↗ မူရင်းစာမျက်နှာ"},(d,i)->{switch(i){case 0:play(t);break;case 1:toggleFavorite(t);break;case 2:download(t);break;case 3:open(t.url);break;case 4:open(t.source==null||t.source.isEmpty()?"https://www.dhammadownload.com/":t.source);break;}}).show();}
   void toggleFavorite(Track t){if(!favorites.add(t.url))favorites.remove(t.url);settings.edit().putStringSet("favorites",new HashSet<>(favorites)).apply();toast(favorites.contains(t.url)?"Favorites ထဲထည့်ပြီးပါပြီ":"Favorites မှဖယ်ရှားပြီးပါပြီ");if(screen.equals("Collection"))show("Collection");}
   void rememberRecent(Track t){recent.remove(t.url);recent.add(0,t.url);while(recent.size()>50)recent.remove(recent.size()-1);settings.edit().putString("recent",new JSONArray(recent).toString()).apply();}
+  /**
+   * V11: Open the Player screen FIRST. Loading a network URI can take several seconds
+   * and must not block the main UI thread. The controls remain usable on errors.
+   */
   void play(Track track){
-  if(track==null||track.url==null||(!track.url.startsWith("https://")&&!track.url.startsWith("http://"))){
-     recordPlayerError("SOURCE_INVALID","MP3 လင့်ခ်မမှန်ပါ။");showPlayerErrorDialog();return;
+    if(track==null)return;
+    release();
+    selected=track;
+    ready=false;buffering=true;playerState="Loading";
+    rememberRecent(track);
+    final int generation=playerGeneration;
+    show("Playing");
+    // Show artwork, title, seekbar and controls before attempting any network work.
+    handler.postDelayed(()->prepareTrackAsync(track,generation),140);
   }
-  release();
-  selected=track;playerState="Loading";buffering=true;ready=false;
-  rememberRecent(track);
-  final int generation=++playerGeneration;
-  final File saved=downloadFile(track);
-  try{
-      MediaPlayer instance=new MediaPlayer();player=instance;
+
+  void openPlayerPreview(){
+    if(selected==null){
+      synchronized(catalog){
+        if(!catalog.isEmpty())selected=catalog.values().iterator().next();
+      }
+    }
+    if(selected==null){toast("MP3 စာရင်းမရှိသေးပါ");return;}
+    if(player==null){ready=false;buffering=false;playerState="Paused";}
+    show("Playing");
+  }
+
+  void prepareTrackAsync(Track track,int generation){
+    if(generation!=playerGeneration||isFinishing()||isDestroyed())return;
+    if(track.url==null||(!track.url.startsWith("https://")&&!track.url.startsWith("http://"))){
+      recordPlayerError("SOURCE_INVALID","MP3 URL is not HTTP(S)");
+      buffering=false;playerState="Error";updatePlayerStatus();showPlayerErrorDialog();return;
+    }
+    final File saved=downloadFile(track);
+    final MediaPlayer instance;
+    try{
+      instance=new MediaPlayer();player=instance;
       instance.setAudioAttributes(new AudioAttributes.Builder()
-          .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-          .setUsage(AudioAttributes.USAGE_MEDIA).build());
-      if(saved.exists())instance.setDataSource(saved.getAbsolutePath());
-      else instance.setDataSource(this,Uri.parse(track.url));
+        .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+        .setUsage(AudioAttributes.USAGE_MEDIA).build());
       instance.setOnPreparedListener(p->{
-         if(player!=p||generation!=playerGeneration)return;
-         ready=true;buffering=false;playerState="Ready";
-         if(!requestPlayerAudioFocus()){
-            playerState="Paused";toast("အခြား App တစ်ခုက Audio အသုံးပြုနေပါတယ်။");
-         }else{
-            try{
-              p.start();playerState="Playing";
-              if(speed!=1f)applySpeed(false);
-            }catch(Exception ex){
-              recordPlayerError("PREPARED_START",ex.toString());release();showPlayerErrorDialog();return;
-            }
-         }
-         if(screen.equals("Playing"))show("Playing");else updatePlayerStatus();
+        if(generation!=playerGeneration||p!=player)return;
+        ready=true;buffering=false;playerState="Ready";
+        if(!requestPlayerAudioFocus()){
+          playerState="Paused";
+        }else{
+          try{
+            p.start();playerState="Playing";
+            if(speed!=1f)applySpeed(false);
+          }catch(Exception e){
+            recordPlayerError("START",e.toString());release();
+            playerState="Error";showPlayerErrorDialog();return;
+          }
+        }
+        if(screen.equals("Playing"))show("Playing");else updatePlayerStatus();
       });
       instance.setOnInfoListener((p,what,extra)->{
-         if(p!=player)return true;
-         if(what==MediaPlayer.MEDIA_INFO_BUFFERING_START){buffering=true;playerState="Buffering";updatePlayerStatus();}
-         else if(what==MediaPlayer.MEDIA_INFO_BUFFERING_END){buffering=false;playerState=p.isPlaying()?"Playing":"Paused";updatePlayerStatus();}
-         return false;
+        if(p!=player)return true;
+        if(what==MediaPlayer.MEDIA_INFO_BUFFERING_START){
+          buffering=true;playerState="Buffering";updatePlayerStatus();
+        }else if(what==MediaPlayer.MEDIA_INFO_BUFFERING_END){
+          buffering=false;playerState=ready&&p.isPlaying()?"Playing":"Paused";updatePlayerStatus();
+        }
+        return false;
       });
       instance.setOnCompletionListener(p->{
-         if(p!=player)return;
-         if(repeat){try{p.seekTo(0);p.start();playerState="Playing";}catch(Exception ignored){playerState="Stopped";}}
-         else if(shuffle){skip(1);}
-         else {playerState="Completed";updatePlayerStatus();}
+        if(p!=player)return;
+        if(repeat){try{p.seekTo(0);p.start();playerState="Playing";}catch(Exception ignored){playerState="Stopped";}}
+        else if(shuffle)skip(1);
+        else{playerState="Completed";updatePlayerStatus();}
       });
       instance.setOnErrorListener((p,what,extra)->{
-         if(p!=player||generation!=playerGeneration)return true;
-         String reason=errorMeaning(what,extra);
-         recordPlayerError("MP_"+what+"/"+extra,reason);
-         release();
-         playerState="Error";
-         handler.post(()->{updatePlayerStatus();showPlayerErrorDialog();});
-         return true;
+        if(generation!=playerGeneration||p!=player)return true;
+        recordPlayerError("MP_"+what+"/"+extra,errorMeaning(what,extra));
+        release();playerState="Error";buffering=false;
+        handler.post(()->{
+          if(isFinishing()||isDestroyed())return;
+          updatePlayerStatus();
+          if(screen.equals("Playing"))show("Playing");
+          showPlayerErrorDialog();
+        });
+        return true;
       });
-      instance.prepareAsync();
-      show("Playing");
-  }catch(Exception ex){
-      recordPlayerError("DATA_SOURCE",ex.getClass().getSimpleName()+": "+ex.getMessage());
-      release();playerState="Error";show("Playing");showPlayerErrorDialog();
+    }catch(Exception e){
+      recordPlayerError("PLAYER_INIT",e.toString());release();
+      playerState="Error";buffering=false;updatePlayerStatus();showPlayerErrorDialog();return;
+    }
+    // setDataSource can block on DNS/TLS/redirects: never run it on the UI thread.
+    background.execute(()->{
+      try{
+        if(generation!=playerGeneration)return;
+        if(saved.isFile())instance.setDataSource(saved.getAbsolutePath());
+        else instance.setDataSource(MainActivity.this,Uri.parse(track.url));
+        if(generation!=playerGeneration)return;
+        instance.prepareAsync();
+      }catch(Exception ex){
+        if(generation!=playerGeneration)return;
+        handler.post(()->{
+          if(generation!=playerGeneration||isFinishing()||isDestroyed())return;
+          recordPlayerError("NETWORK_SOURCE",ex.getClass().getSimpleName()+": "+ex.getMessage());
+          release();playerState="Error";buffering=false;
+          if(screen.equals("Playing"))show("Playing");
+          showPlayerErrorDialog();
+        });
+      }
+    });
   }
-}
   void pause(){
   if(player==null||!ready){
     if(selected!=null&&player==null){play(selected);}
@@ -538,6 +589,7 @@ public class MainActivity extends Activity {
       .setNegativeButton("Close",(d,w)->{}).show();
   }
   void nowPlaying(){
+  android.util.Log.i("DAMA_PLAYER_UI","NOW_PLAYING_SCREEN_VISIBLE title="+(selected==null?"none":selected.title));
   if(selected==null){heading("♫  NOW PLAYING");body.addView(text("နားဆင်လိုသော တရားတော်ကို ရွေးချယ်ပါ။",15,MUTED,false));return;}
   LinearLayout top=row();
   TextView back=click("‹  စာရင်းသို့",()->show("Radio"));top.addView(back);
@@ -633,7 +685,7 @@ public class MainActivity extends Activity {
   play(tracks.get(Math.max(0,Math.min(next,tracks.size()-1))));
 }
   void collection(){heading("သိမ်းထားသော တရားတော်များ");LinearLayout tabs=row();for(String mode:new String[]{"Favorites","Downloads","Recent"}){TextView b=click(mode,()->{libraryMode=mode;show("Collection");});tabs.addView(b,new LinearLayout.LayoutParams(0,-2,1));}body.addView(tabs);body.addView(space(15));
-    int found=0;for(Track t:new ArrayList<>(catalog.values())){boolean yes=libraryMode.equals("Favorites")?favorites.contains(t.url):libraryMode.equals("Downloads")?downloadFile(t).exists():recent.contains(t.url);if(!yes)continue;LinearLayout r=trackRow(t);body.addView(r,lp(-1,72));body.addView(space(8));r.setOnClickListener(v->trackActions(t));found++;}if(found==0)body.addView(text("ဤကဏ္ဍတွင် မရှိသေးပါ။ တရားတော်ကို နားထောင်ပြီး Favorites/Download ပြုလုပ်နိုင်ပါတယ်။",13,MUTED,false));footnote();
+    int found=0;for(Track t:new ArrayList<>(catalog.values())){boolean yes=libraryMode.equals("Favorites")?favorites.contains(t.url):libraryMode.equals("Downloads")?downloadFile(t).exists():recent.contains(t.url);if(!yes)continue;LinearLayout r=trackRow(t);body.addView(r,lp(-1,72));body.addView(space(8));r.setOnClickListener(v->play(t));r.setOnLongClickListener(v->{trackActions(t);return true;});found++;}if(found==0)body.addView(text("ဤကဏ္ဍတွင် မရှိသေးပါ။ တရားတော်ကို နားထောင်ပြီး Favorites/Download ပြုလုပ်နိုင်ပါတယ်။",13,MUTED,false));footnote();
   }
   File downloadFile(Track t){String key=Integer.toHexString(t.url.hashCode());File dir=new File(getExternalFilesDir(null),"DhammaMP3");if(!dir.exists())dir.mkdirs();return new File(dir,key+".mp3");}
   void download(Track t){File target=downloadFile(t);if(target.exists()){play(t);return;}
