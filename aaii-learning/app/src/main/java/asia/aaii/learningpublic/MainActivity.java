@@ -89,10 +89,10 @@ public class MainActivity extends Activity {
     line(head,"ပညာရေး  •  Training with Soe Moe",16,WHITE,true);
     ScrollView scroll=new ScrollView(this);scroll.setFillViewport(false);root.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
     body=vertical();body.setPadding(dp(13),dp(12),dp(13),dp(14));scroll.addView(body);
-    if(page==0)home();else if(page==1)courseList();else if(page==2)programList("Specialization");else if(page==3)programList("Professional Certificate");else if(page==4)teacher();else if(page==5)wallet();else detail();
+    if(page==0)home();else if(page==1)courseList();else if(page==2)programList("Specialization");else if(page==3)programList("Professional Certificate");else if(page==4)teacher();else if(page==5)wallet();else if(page==7)enrollmentService();else if(page==8)hireTeacherService();else detail();
     footer=new LinearLayout(this);footer.setOrientation(LinearLayout.HORIZONTAL);footer.setBackgroundColor(WHITE);
     footer.setPadding(dp(2),dp(3),dp(2),dp(5));
-    int highlight=page==6?(detailType==1?1:detailType==2?2:detailType==3?3:4):page;
+    int highlight=(page==7||page==8)?0:(page==6?(detailType==1?1:detailType==2?2:detailType==3?3:4):page);
     for(int i=0;i<5;i++){final int tab=i;LinearLayout item=vertical();item.setGravity(Gravity.CENTER);
       if(highlight==i)item.setBackground(shape(0xffedf8f8,12));
       TextView icon=txt(ICONS[i],20,i==highlight?TEAL:MUTED,true);icon.setGravity(Gravity.CENTER);item.addView(icon);
@@ -107,6 +107,15 @@ public class MainActivity extends Activity {
     line(hero,"Coursera ၏ သင်တန်းစာမျက်နှာများဆီသို့ တိုက်ရိုက်သွားရောက်လေ့လာနိုင်ပြီး AAII မှ မြန်မာဘာသာဖြင့် အကြောင်းအရာများကို ရှင်းပြထားသည်။",14,0xffe3f2f2,false);
     line(hero,courses.length()+" Courses   •   37 Specializations   •   18 Professional",14,GOLD,true);
     button(hero,"သင်ယူရန် Course ရွေးချယ်မည်",()->openTab(1),true);
+    heading("AAII ဝန်ဆောင်မှုအသစ် ၂ ခု","သင်တန်းလျှောက်ထားရေးအကူအညီနှင့် ကိုယ်ပိုင်ဆရာရှာဖွေရေး");
+    LinearLayout enrollment=card(body);
+    line(enrollment,"01  COURSERA ENROLLMENT ASSISTANCE",15,TEAL,true);
+    line(enrollment,"မြန်မာလို သင်တန်းရွေးချယ်မှု၊ Course/Specialization/Professional Certificate ကွာခြားချက်၊ သင်တန်းကြေး၊ Financial Aid ရရှိနိုင်မှုနှင့် ကိုယ်တိုင် Enrollment လုပ်နည်းကို ကူညီလမ်းညွှန်ပေးရန် Request တင်နိုင်သည်။",13,INK,false);
+    button(enrollment,"Coursera သင်တန်းလျှောက်ရန် အကူအညီတောင်းမည်",()->openTab(7),true);
+    LinearLayout hiring=card(body);
+    line(hiring,"02  HIRE A TEACHER • ဆရာငှားရမ်းရန်",15,TEAL,true);
+    line(hiring,"ဘာသာရပ်၊ Online/Offline၊ အတန်းအဆင့်၊ အချိန်ဇယားနှင့် Budget အလိုက် ဆရာရှာဖွေရန် Request ပြုလုပ်နိုင်သည်။ ဆရာ/ကျောင်းသား Matching ကို AAII က သီးခြားအတည်ပြုပေးရမည်။",13,INK,false);
+    button(hiring,"ဆရာငှားရန် Request တင်မည်",()->openTab(8),true);
     sectionHome("01","COURSE / သင်တန်း","ဘာသာရပ်တစ်ခုချင်းကို သီးခြားလေ့လာခြင်း၊ အကြောင်းအရာ၊ Practical Task၊ Coursera Link",()->openTab(1));
     sectionHome("02","SPECIALIZATION / အထူးပြု","ဆက်စပ်ဘာသာရပ်အစုံကို လေ့လာ၍ Project နှင့် နည်းပညာဆိုင်ရာအထူးပြုကျွမ်းကျင်မှု တည်ဆောက်ခြင်း",()->openTab(2));
     sectionHome("03","PROFESSIONAL CERTIFICATE","အလုပ်အကိုင်အတွက် Skill Pathway၊ Project၊ လေ့ကျင့်ခန်းနှင့် Official Program Link",()->openTab(3));
@@ -198,6 +207,9 @@ public class MainActivity extends Activity {
   }
   private void teacher(){
     heading("လက်မှတ်ရဆရာဖြစ်ရန် လမ်းကြောင်း","Official Coursera သင်ကြားရေးအခြေခံ Course နှင့် Professional Certificate များကို ချိတ်ထားပါသည်။");
+    LinearLayout service=card(body);line(service,"ဆရာလိုအပ်နေပါသလား?",17,NAVY,true);
+    line(service,"Online / Offline ဆရာငှားရန် AAII Teacher Matching Request တင်နိုင်ပါသည်။",13,INK,false);
+    button(service,"Hire a Teacher • ဆရာရှာမည်",()->openTab(8),true);
     LinearLayout x=card(body);line(x,"TEACHER CAREER ROADMAP",19,NAVY,true);
     line(x,"01  Teaching Foundations — သင်ယူသူနှင့် သင်ကြားနည်း သီအိုရီ\n02  Lesson Planning — ရည်မှန်းချက်၊ သင်ခန်းစာအစီအစဉ်\n03  Classroom Management — တက်ကြွစွာပါဝင်မှု\n04  Digital Teaching — Zoom, LMS, Digital Activities\n05  Assessment — Quiz, Rubric, Feedback\n06  Teaching Portfolio — Lesson Plan, Video, Sample Work\n07  Official Course / TESOL Certificate ကို သင်တန်းပေးသူထံမှ ရယူခြင်း\n08  Teacher License လိုပါက နိုင်ငံအလိုက် အစိုးရအသိအမှတ်ပြု လမ်းကြောင်းသီးခြား စစ်ဆေးခြင်း",14,INK,false);
     line(x,"Coursera/TESOL Certificate ရရှိရုံဖြင့် နိုင်ငံအလိုက် Teacher License အလိုအလျောက် မရပါ။",13,0xffa3471b,true);
@@ -212,6 +224,92 @@ public class MainActivity extends Activity {
     x=card(body);line(x,"AAII Teacher Soe Moe Training Support",17,NAVY,true);
     line(x,"သင်ယူသူအား သင်ခန်းစာရွေးချယ်မှု၊ လက်တွေ့ Lesson Plan ပြုစုမှုနှင့် Portfolio Review ကို ကူညီလမ်းညွှန်နိုင်ရန် ရည်ရွယ်ထားသည်။ Coursera တရားဝင် Trainer ဖြစ်ကြောင်း မဆိုလိုပါ။",13,INK,false);
   }
+  
+  private EditText requestInput(LinearLayout parent,String label,String hint){
+    line(parent,label,13,NAVY,true);
+    EditText field=new EditText(this);field.setSingleLine(true);field.setTextSize(15);field.setTextColor(INK);
+    field.setHint(hint);field.setPadding(dp(13),dp(11),dp(13),dp(11));field.setBackground(shape(0xfff1f6f9,10));
+    LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,dp(52));lp.setMargins(0,dp(4),0,dp(7));parent.addView(field,lp);
+    return field;
+  }
+  private Spinner requestSelect(LinearLayout parent,String label,String[] choices){
+    line(parent,label,13,NAVY,true);
+    Spinner spinner=new Spinner(this);
+    ArrayAdapter<String> adapter=new ArrayAdapter<String>(this,android.R.layout.simple_spinner_item,choices);
+    adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+    spinner.setAdapter(adapter);
+    parent.addView(spinner,new LinearLayout.LayoutParams(-1,dp(49)));
+    return spinner;
+  }
+  private void shareRequest(String title,String summary,String contact){
+    if(summary==null||summary.trim().length()<2||contact==null||contact.trim().length()<3){
+      new AlertDialog.Builder(this).setTitle("အချက်အလက်လိုအပ်သည်")
+        .setMessage("လိုအပ်သော ဘာသာရပ်/သင်တန်းနှင့် ပြန်ဆက်သွယ်ရန် အချက်အလက်ကို ဖြည့်ပါ။")
+        .setPositiveButton("OK",null).show();return;
+    }
+    new AlertDialog.Builder(this).setTitle("AAII Service Request")
+      .setMessage("နောက်တစ်ဆင့်မှာ ဖုန်းရဲ့ Share Menu ကနေ သင်ကိုယ်တိုင် စာပို့ရမှာ ဖြစ်ပါတယ်။\n\nApp ထဲကနေ အလိုအလျောက် Booking/Payment မပြုလုပ်ပါ။ Coursera Password, OTP, Bank PIN မပို့ပါနှင့်။")
+      .setNegativeButton("Cancel",null)
+      .setPositiveButton("Share Request",(d,w)->{
+        try{
+          Intent send=new Intent(Intent.ACTION_SEND);send.setType("text/plain");
+          send.putExtra(Intent.EXTRA_SUBJECT,title);
+          send.putExtra(Intent.EXTRA_TEXT,title+"\n\n"+summary+"\n\nContact: "+contact+"\n\nShared voluntarily by learner via AAII Learning.");
+          startActivity(Intent.createChooser(send,"AAII Request ကို မည်သည့် App သို့ ပို့မည်နည်း"));
+        }catch(Exception e){
+          Toast.makeText(this,"Sharing App မရှိပါ။ Request ကို Copy/Share နည်းဖြင့် ပို့ပါ။",Toast.LENGTH_LONG).show();
+        }
+      }).show();
+  }
+  private void enrollmentService(){
+    heading("Coursera Enrollment Assistance","AAII ၏ သီးခြားသင်တန်းရွေးချယ်/Enrollment အကြံပေးဝန်ဆောင်မှု ဖြစ်ပါသည်။ Coursera ၏ တရားဝင်ကိုယ်စားလှယ်မဟုတ်ပါ။");
+    LinearLayout intro=card(body);
+    line(intro,"ဘာတွေကူညီပေးမလဲ?",18,NAVY,true);
+    line(intro,"၁။ Course / Specialization / Professional Certificate များကို လိုအပ်ချက်နှင့် ကိုက်ညီအောင် ရွေးချယ်ပေးရန်။\n၂။ Official Course Page မှ သင်ရိုး၊ သင်တန်းကြေးနှင့် သင်ယူချိန်ကို စစ်ဆေးရန်။\n၃။ သက်ဆိုင်ရာ Course မှာ Financial Aid ရနိုင်/မရနိုင် ကို လမ်းညွှန်ရန်။\n၄။ သင်ယူသူကိုယ်တိုင် Coursera Account ဖွင့်ပြီး Enrollment ပြုလုပ်ရန် လမ်းညွှန်ရန်။\n၅။ သင်တန်းပြီးစီးရန် Study Plan နှင့် Teacher Support တိုင်ပင်ရန်။",14,INK,false);
+    line(intro,"တရားဝင်သင်တန်းကြေးကို Coursera ပေါ်တွင်သာ စစ်ဆေးပါ။ AAII Service Fee ရှိပါက သီးခြားရှင်းလင်းအတည်ပြုပါမည်။ Enrollment၊ Financial Aid သို့ Certificate ရရှိမည်ဟု အာမမခံပါ။",12,MUTED,false);
+    button(intro,"Coursera Official Programs",()->browse("https://www.coursera.org/professional-certificates"),false);
+    LinearLayout form=card(body);line(form,"သင်တန်းလျှောက်ရေး အကူအညီတောင်းရန်",18,NAVY,true);
+    EditText topic=requestInput(form,"လိုချင်သောသင်တန်း / Subject *","ဥပမာ: Google Project Management");
+    Spinner type=requestSelect(form,"သင်တန်းအမျိုးအစား",new String[]{"မရွေးရသေး","Course","Specialization","Professional Certificate","သင့်တော်သောသင်တန်း ရွေးပေးရန်"});
+    EditText purpose=requestInput(form,"သင်ယူရခြင်းရည်ရွယ်ချက်","ဥပမာ: Career Change, Teaching");
+    EditText contact=requestInput(form,"ဖုန်း / Email / ဆက်သွယ်ရန် *","ဆက်သွယ်ရန် သင်ရွေးချယ်သည့်နည်း");
+    CheckBox agree=new CheckBox(this);agree.setText("AAII သည် Coursera ၏ တရားဝင်ကိုယ်စားလှယ် မဟုတ်ကြောင်း နားလည်ပါသည်။ Password, OTP နှင့် ငွေပေးချေမှုအချက်အလက်များ မမျှဝေပါ။");
+    agree.setTextSize(12);form.addView(agree);
+    button(form,"Request စာကို Share လုပ်မည်",()->{
+      if(!agree.isChecked()){Toast.makeText(this,"အသိပေးချက်ကို ဦးစွာဖတ်ပြီး အတည်ပြုပါ",Toast.LENGTH_LONG).show();return;}
+      String bodyText="Requested Course: "+topic.getText().toString()+"\nProgram Type: "+String.valueOf(type.getSelectedItem())+"\nGoal: "+purpose.getText().toString();
+      shareRequest("AAII Coursera Enrollment Assistance",bodyText,contact.getText().toString());
+    },true);
+    line(form,"Submit လုပ်ပြီးကြောင်း မဆိုလိုပါ။ Share Menu မှ သင်ရွေးချယ်သည့်ဆက်သွယ်ရေး App ဖြင့် ကိုယ်တိုင်ပေးပို့ရန် လိုပါသည်။",12,MUTED,false);
+    button(form,"← Home",()->openTab(0),false);
+  }
+  private void hireTeacherService(){
+    heading("Hire a Teacher • ဆရာငှားရမ်းရန်","AAII Teacher Matching Request • ဆရာအရည်အချင်းနှင့် လစ်လပ်ချိန်ကို လူကိုယ်တိုင် အတည်ပြုရန် လိုအပ်သည်။");
+    LinearLayout intro=card(body);
+    line(intro,"ဆရာငှားနိုင်သော အကြောင်းအရာများ",18,NAVY,true);
+    line(intro,"• English & Language Learning\n• IT, Programming & AI\n• Business & Management\n• Mathematics & Science\n• Coursera Course Mentoring\n• TESOL, Teaching & Lesson Planning",14,INK,false);
+    line(intro,"သင်ကြားမှုပုံစံ: Online / Offline / Hybrid\nSession: တစ်ဦးချင်း / အုပ်စု\nကြေးနှုန်း: ဆရာ၏အတွေ့အကြုံနှင့် သင်တန်းအချိန်အလိုက် သဘောတူညီရန်",13,MUTED,false);
+    LinearLayout form=card(body);line(form,"Teacher Request Form",18,NAVY,true);
+    EditText subject=requestInput(form,"သင်ကြားလိုသော ဘာသာရပ် *","ဥပမာ: English IELTS, Python");
+    Spinner format=requestSelect(form,"သင်ကြားမှုအမျိုးအစား",new String[]{"Online","Offline","Hybrid"});
+    Spinner level=requestSelect(form,"သင်ယူသူ အဆင့်",new String[]{"Beginner","Intermediate","Advanced","Professional","Children"});
+    EditText schedule=requestInput(form,"သင်ကြားလိုသော အချိန် / ရက်များ","ဥပမာ: Sat/Sun 9–11 AM");
+    EditText duration=requestInput(form,"သင်ကြားမည့် ကာလ / Budget","ဥပမာ: 3 months / MMK budget");
+    EditText location=requestInput(form,"Offline ဖြစ်ပါက မြို့ / နေရာ","ဥပမာ: Yangon");
+    EditText contact=requestInput(form,"ဖုန်း / Email / ဆက်သွယ်ရန် *","ဆက်သွယ်ရန် သင်ရွေးချယ်သည့်နည်း");
+    CheckBox agree=new CheckBox(this);agree.setText("AAII က ဆရာကို စိစစ်ပြီး အတည်ပြုမှ Matching/Booking ဖြစ်ကြောင်းနှင့် ကြေးနှုန်းကို သီးခြားသဘောတူရန် လိုကြောင်း နားလည်ပါသည်။");
+    agree.setTextSize(12);form.addView(agree);
+    button(form,"ဆရာငှားရန် Request ကို Share လုပ်မည်",()->{
+      if(!agree.isChecked()){Toast.makeText(this,"Matching အချက်အလက်ကို ဖတ်ပြီး အတည်ပြုပါ",Toast.LENGTH_LONG).show();return;}
+      String bodyText="Subject: "+subject.getText().toString()+"\nLearning Mode: "+String.valueOf(format.getSelectedItem())+
+      "\nLevel: "+String.valueOf(level.getSelectedItem())+"\nSchedule: "+schedule.getText().toString()+
+      "\nDuration/Budget: "+duration.getText().toString()+"\nLocation: "+location.getText().toString();
+      shareRequest("AAII Hire a Teacher Request",bodyText,contact.getText().toString());
+    },true);
+    line(form,"ယခု Version သည် Request Draft / Share UI ဖြစ်သည်။ Teacher Database, Admin Approval, Booking Confirmation နှင့် Online Payment မချိတ်ရသေးပါ။",12,MUTED,false);
+    button(form,"← Home",()->openTab(0),false);
+  }
+
   private void wallet(){
     heading("My Private Certificates","Public APK ထဲမှာ အခြားသူ၏ Certificate ID မပါဝင်ပါ။");
     LinearLayout x=card(body);line(x,"Personal Credential Wallet",17,NAVY,true);
