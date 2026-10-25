@@ -254,7 +254,7 @@ public class MainActivity extends Activity {
     logo.setScaleType(ImageView.ScaleType.CENTER_CROP);
     LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(dp(44),dp(44));lp.setMargins(0,0,dp(8),0);
     brand.addView(logo,lp);brand.addView(txt("AAII Learning",23,GOLD,true));
-    line(head,"YOUR PATH TO GLOBAL LEARNING  •  V5.1",11,0xffcfe8fe,false);
+    line(head,"YOUR PATH TO GLOBAL LEARNING  •  V5.2",11,0xffcfe8fe,false);
     LinearLayout links=new LinearLayout(this);links.setOrientation(0);head.addView(links);
     TextView learningLink=txt("◉ My Learning",12,GOLD,true);links.addView(learningLink,new LinearLayout.LayoutParams(0,dp(36),1));
     tap(learningLink,()->openTab(12));
@@ -282,7 +282,7 @@ public class MainActivity extends Activity {
   }
     private void home(){
     LinearLayout feedbackBanner=coloredCard(body,0xff0b3158,0xff0e5e98);
-    line(feedbackBanner,"✨ V5.1 • Pop Animation + Click Sound",17,GOLD,true);
+    line(feedbackBanner,"✨ V5.2 • Pop Animation + Click Sound",17,GOLD,true);
     line(feedbackBanner,"Button • Footer • Menu • Category • Course & Provider Card",12,WHITE,false);
     button(feedbackBanner,"🔊 Test Click Sound & Pop",()->new AlertDialog.Builder(this)
       .setTitle("Tap Feedback V5.1").setMessage("Pop Animation နှင့် Click Sound စမ်းသပ်နိုင်ပါသည်။ Media Volume နှင့် Settings ကို စစ်ဆေးပါ။")
@@ -304,6 +304,8 @@ public class MainActivity extends Activity {
     button(partners,"Explore Corporate / Company Courses",()->{providerGroup=1;selectedProvider="";openTab(16);},true);
     button(partners,"Explore University Courses",()->{providerGroup=2;selectedProvider="";openTab(16);},false);
     button(partners,"All Providers • Search by Logo / Name",()->{providerGroup=0;selectedProvider="";openTab(16);},false);
+    button(partners,"Specializations • Certificate & Bridge →",()->{providerGroup=0;selectedProvider="";openTab(2);},true);
+    button(partners,"Teacher Request • Viber / LINE / Telegram →",()->openTab(8),false);
     LinearLayout whatsNew=coloredCard(body,0xff082b53,0xff115999);
     line(whatsNew,"✦  AAII LEARNING V4.9 • NEW FUNCTIONS",19,GOLD,true);
     line(whatsNew,"Certificate Links  •  Profile Popup  •  Pop Animation  •  Click Sound",13,WHITE,false);
@@ -464,6 +466,12 @@ public class MainActivity extends Activity {
     button(banner,"View All Corporate & University Providers ↗",()->openTab(16),false);
   }
   private void providerDirectory(){
+    LinearLayout visual=royalCard(body,"AAII LEARNING • ALL CATEGORY","Corporate • Universities • Learning Partners");
+    ImageView crest=new ImageView(this);crest.setImageResource(R.drawable.aaii_logo_v47);
+    crest.setScaleType(ImageView.ScaleType.FIT_CENTER);
+    visual.addView(crest,new LinearLayout.LayoutParams(-1,dp(115)));
+    line(visual,"Your Path to Global Learning.",17,GOLD,true);
+    line(visual,"337 Courses   •   37 Specializations   •   18 Professional Certificates",12,WHITE,false);
     screenLabel("PROVIDERS • COMPANY & UNIVERSITY","Corporate Logos • University Courses • Learning Partners");
     LinearLayout notice=card(body);line(notice,"Browse Learning Providers",19,NAVY,true);
     line(notice,"Provider အလိုက် သင်တန်းများကို ရှာနိုင်ပါသည်။ Logo/Name များမှာ Provider ကို ခွဲခြားပြသရန်သာဖြစ်ပြီး AAII ၏ တရားဝင် Partner/Agency အဖြစ် မဆိုလိုပါ။",13,INK,false);
@@ -481,8 +489,9 @@ public class MainActivity extends Activity {
     int shown=0;
     for(String provider:names){
       if(providerGroup!=0&&providerType(provider)!=providerGroup)continue;
-      int amount=count.get(provider);LinearLayout card=card(body);
-      providerBadge(card,provider,amount);
+      int amount=count.get(provider);LinearLayout card=royalCard(body,"","");
+      LinearLayout inner=card(card);
+      providerBadge(inner,provider,amount);
       button(card,"View "+amount+" Courses ↗",()->{
         providerGroup=providerType(provider);selectedProvider=provider;search="";limit=35;page=1;render();
       },false);
@@ -540,6 +549,7 @@ public class MainActivity extends Activity {
       line(x,p.optString("provider")+"  •  "+type,12,TEAL,true);
       line(x,overview(type+" "+p.optString("title"),p.optString("title")),13,INK,false);
       button(x,"သင်ရိုးနှင့် မြန်မာရှင်းလင်းချက်",()->inspect(spec?2:3,id),false);
+      if(spec)button(x,"Certificate & Bridge Pathway →",()->inspect(2,id),true);
     }
   }
   private void detail(){
@@ -583,9 +593,98 @@ public class MainActivity extends Activity {
     if(related==0)line(x,"သင်တန်းများ၏ အတိအကျအစီအစဉ်ကို Official Coursera Program Page တွင်ကြည့်ပါ။",13,MUTED,false);
     String completeKey="program_"+detailIndex;CheckBox done=new CheckBox(this);done.setText("AAII Self-study Review ပြီးပြီ (Official Certificate မဟုတ်ပါ)");done.setChecked(prefs.getBoolean(completeKey,false));x.addView(done);
     done.setOnCheckedChangeListener((v,value)->prefs.edit().putBoolean(completeKey,value).apply());
+    if(spec)specializationBridge(p.optString("title"),p.optString("provider"));
+    else{
+      stepFlow(body,new String[]{"Foundations","Core Modules","Capstone Project","Certificate Verification","Career Portfolio"},
+        new String[]{"နောက်ခံသီအိုရီ နားလည်ရန်","သတ်မှတ်ထားသော Modules များလေ့လာရန်",
+        "လက်တွေ့ Project ပြီးစီးရန်","Provider အတည်ပြုထားသော Certificate Link မှ စစ်ရန်",
+        "အလုပ်ရှာဖွေရာ Portfolio တည်ဆောက်ရန်"});
+      certificateTeasers(body,p.optString("title"),3);
+    }
     button(x,"Coursera Original Program & Curriculum",()->browse(p.optString("url")),true);
     line(x,"AAII သင်ကြားရေးအတွက် ရေးသားထားသည့် Roadmap ဖြစ်ပြီး Course Series နှင့် Module များကို Coursera က ပြောင်းလဲနိုင်ပါသည်။",12,MUTED,false);
     button(x,"← ပြန်ရန်",()->openTab(spec?2:3),false);
+  }
+
+  private LinearLayout royalCard(LinearLayout host,String headingText,String subtitle){
+    LinearLayout c=card(host);c.setBackground(gradient(0xff082d58,0xff06182e,17));
+    if(!headingText.isEmpty())line(c,headingText,18,GOLD,true);
+    if(!subtitle.isEmpty())line(c,subtitle,13,0xffdce8fa,false);
+    return c;
+  }
+  private void goldDivider(LinearLayout target){
+    View v=new View(this);v.setBackgroundColor(0xffc69d3d);
+    LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,dp(1));
+    p.setMargins(0,dp(9),0,dp(9));target.addView(v,p);
+  }
+  private void stepFlow(LinearLayout host,String[] headers,String[] details){
+    LinearLayout block=royalCard(host,"LEARNING BRIDGE • STUDY ROADMAP",
+      "သင်ယူမှုမှ Professional Skills သို့ လမ်းကြောင်း");
+    for(int i=0;i<headers.length;i++){
+      LinearLayout row=new LinearLayout(this);row.setGravity(Gravity.CENTER_VERTICAL);row.setOrientation(0);
+      block.addView(row,new LinearLayout.LayoutParams(-1,-2));
+      TextView count=txt(String.format(Locale.US,"%02d",i+1),17,GOLD,true);
+      count.setGravity(Gravity.CENTER);count.setBackground(shape(0xff103e72,11));
+      row.addView(count,new LinearLayout.LayoutParams(dp(50),dp(53)));
+      LinearLayout textcol=vertical();textcol.setPadding(dp(9),0,0,0);
+      row.addView(textcol,new LinearLayout.LayoutParams(0,-2,1));
+      line(textcol,headers[i],15,WHITE,true);
+      line(textcol,details[i],12,0xffb4c9dd,false);
+      if(i<headers.length-1)goldDivider(block);
+    }
+  }
+  private void specializationBridge(String programName,String provider){
+    String[] steps={"Course Foundations","Complete Specialization","Verify Certificate","Professional Skill Bridge","Career / Portfolio"};
+    String[] hints={"Core concepts ကို မူရင်း Coursera သင်တန်းများမှ လေ့လာပါ",
+      "Official Assessments များ ပြီးစီးရန် လိုအပ်သည်",
+      "လက်မှတ်ထုတ်ပေးခြင်းကို Coursera/Provider ကသာ ဆောင်ရွက်သည်",
+      "လက်တွေ့ Project၊ Portfolio၊ Collaboration နှင့် Interview Practice တည်ဆောက်ပါ",
+      "အလုပ်ခေါ်ယူမှု/Advanced Study သည် သီးခြား စံနှုန်းများပေါ်မူတည်သည်"};
+    stepFlow(body,steps,hints);
+    LinearLayout cert=royalCard(body,"CERTIFICATE • VERIFICATION",""+programName+"  |  "+provider);
+    line(cert,"Specialization Certificate ရရှိရန် သတ်မှတ်ထားသော သင်တန်းများ၊ Assessment များကို မူရင်း Provider ၏ စည်းကမ်းအတိုင်း ပြီးစီးရပါမည်။",13,WHITE,false);
+    line(cert,"Certificate ကို APK က မထုတ်ပေးပါ။ Professional Certificate သို့ Bridge ဖြစ်ခြင်းဟာ အလိုအလျောက်လက်မှတ်ပြောင်းပေးခြင်း မဟုတ်ပါ။",12,0xfff1d59f,false);
+    button(cert,"My Private Coursera Certificates →",()->openTab(5),true);
+    button(cert,"Coursera Organization Certificates →",()->openCertificatesPortal(),false);
+    certificateTeasers(body,programName,3);
+  }
+  private String composeTeacherRequest(EditText student,EditText phone,EditText email,
+      EditText topic,Spinner course,Spinner mode,EditText budget,EditText notes,
+      String date,String time){
+    return "AAII Learning • TEACHER REQUEST\n"
+      +"Student: "+student.getText().toString().trim()
+      +"\nPhone / Viber: "+phone.getText().toString().trim()
+      +"\nEmail: "+email.getText().toString().trim()
+      +"\nSubject: "+topic.getText().toString().trim()
+      +"\nCourse / Program: "+String.valueOf(course.getSelectedItem())
+      +"\nMode: "+String.valueOf(mode.getSelectedItem())
+      +"\nDate: "+date+"\nTime: "+time
+      +"\nBudget: "+budget.getText().toString().trim()
+      +"\nMessage: "+notes.getText().toString().trim();
+  }
+  private void deliverTeacherRequest(String text,String method){
+    // User explicitly confirms sharing; Android opens the target app or composer.
+    saveLocalDraft("AAII Teacher Request",text.length()>160?text.substring(0,160):text);
+    if("Viber".equals(method))channel(0,text);
+    else if("LINE".equals(method))channel(1,text);
+    else if("Telegram".equals(method))channel(2,text);
+    else if("Email".equals(method)){
+      try{
+        Intent mail=new Intent(Intent.ACTION_SENDTO,Uri.parse("mailto:"));
+        mail.putExtra(Intent.EXTRA_SUBJECT,"AAII Learning Teacher Request");
+        mail.putExtra(Intent.EXTRA_TEXT,text);
+        startActivity(Intent.createChooser(mail,"Choose email app & recipient"));
+      }catch(Exception e){Toast.makeText(this,"Email App မတွေ့ပါ။ Share Menu ကို အသုံးပြုပါ။",Toast.LENGTH_LONG).show();}
+    }else genericShare("AAII Learning Teacher Request",text);
+  }
+  private void confirmTeacherRequest(String text,String destination){
+    new AlertDialog.Builder(this)
+      .setTitle(destination+" • Teacher Request")
+      .setMessage("အောက်ပါ အချက်အလက်များကို "+destination+" App ဖြင့် ပေးပို့မည်။\n\n"+text+
+       "\n\nနောက်ဆုံး Send ကို Messaging App ထဲမှာ ကိုယ်တိုင်နှိပ်ပါ။")
+      .setNegativeButton("Edit / Cancel",null)
+      .setPositiveButton("Open "+destination,(dialog,which)->deliverTeacherRequest(text,destination))
+      .show();
   }
   private void teacher(){
     screenLabel("TEACHER TRAINING","Teaching methodology • TESOL • Online classroom tools");
@@ -779,37 +878,66 @@ public class MainActivity extends Activity {
     contactButtons(body);
   }
   private void hireTeacherService(){
-    screenLabel("HIRE A TEACHER","Find a learning mentor • Online / Offline Request");
-    heading("Hire a Teacher • ဆရာငှားရမ်းရန်","AAII Teacher Matching Request • ဆရာအရည်အချင်းနှင့် လစ်လပ်ချိန်ကို လူကိုယ်တိုင် အတည်ပြုရန် လိုအပ်သည်။");
-    LinearLayout intro=card(body);
-    portraitCard(intro,"Teacher Soe Moe","AI • Data • Business • Online / Offline");
-    button(intro,"View Full Teacher Profile",()->openTab(9),false);
-    line(intro,"ဆရာငှားနိုင်သော အကြောင်းအရာများ",18,NAVY,true);
-    line(intro,"• English & Language Learning\n• IT, Programming & AI\n• Business & Management\n• Mathematics & Science\n• Coursera Course Mentoring\n• TESOL, Teaching & Lesson Planning",14,INK,false);
-    line(intro,"သင်ကြားမှုပုံစံ: Online / Offline / Hybrid\nSession: တစ်ဦးချင်း / အုပ်စု\nကြေးနှုန်း: ဆရာ၏အတွေ့အကြုံနှင့် သင်တန်းအချိန်အလိုက် သဘောတူညီရန်",13,MUTED,false);
-    LinearLayout form=card(body);line(form,"Teacher Request Form",18,NAVY,true);
-    EditText subject=requestInput(form,"သင်ကြားလိုသော ဘာသာရပ် *","ဥပမာ: English IELTS, Python");
-    Spinner format=requestSelect(form,"သင်ကြားမှုအမျိုးအစား",new String[]{"Online","Offline","Hybrid"});
-    Spinner level=requestSelect(form,"သင်ယူသူ အဆင့်",new String[]{"Beginner","Intermediate","Advanced","Professional","Children"});
-    EditText schedule=requestInput(form,"သင်ကြားလိုသော အချိန် / ရက်များ","ဥပမာ: Sat/Sun 9–11 AM");
-    EditText duration=requestInput(form,"သင်ကြားမည့် ကာလ / Budget","ဥပမာ: 3 months / MMK budget");
-    EditText location=requestInput(form,"Offline ဖြစ်ပါက မြို့ / နေရာ","ဥပမာ: Yangon");
-    EditText contact=requestInput(form,"ဖုန်း / Email / ဆက်သွယ်ရန် *","ဆက်သွယ်ရန် သင်ရွေးချယ်သည့်နည်း");
-    CheckBox agree=new CheckBox(this);agree.setText("AAII က ဆရာကို စိစစ်ပြီး အတည်ပြုမှ Matching/Booking ဖြစ်ကြောင်းနှင့် ကြေးနှုန်းကို သီးခြားသဘောတူရန် လိုကြောင်း နားလည်ပါသည်။");
-    agree.setTextSize(12);form.addView(agree);
-    button(form,"Teacher Request → Viber / LINE / Telegram",()->{
-      if(!agree.isChecked()){Toast.makeText(this,"Matching အချက်အလက်ကို ဖတ်ပြီး အတည်ပြုပါ",Toast.LENGTH_LONG).show();return;}
-      String bodyText="Subject: "+subject.getText().toString()+"\nLearning Mode: "+String.valueOf(format.getSelectedItem())+
-      "\nLevel: "+String.valueOf(level.getSelectedItem())+"\nSchedule: "+schedule.getText().toString()+
-      "\nDuration/Budget: "+duration.getText().toString()+"\nLocation: "+location.getText().toString();
-      shareRequest("AAII Hire a Teacher Request",bodyText,contact.getText().toString());
-    },true);
-    line(form,"ယခု Version သည် Request Draft / Share UI ဖြစ်သည်။ Teacher Database, Admin Approval, Booking Confirmation နှင့် Online Payment မချိတ်ရသေးပါ။",12,MUTED,false);
-    button(form,"← Home",()->openTab(0),false);
+    screenLabel("TEACHER REQUEST FORM • V5.2","ရွေးချယ်ထားသော Platform မှ သင်ကြားရေး Request ပေးပို့ရန်");
+    LinearLayout intro=royalCard(body,"HIRE A TEACHER • GOLDEN REQUEST",
+      "Full Name • Phone • Email • Subject • Program • Mode • Schedule • Budget");
+    portraitCard(intro,"Teacher Soe Moe","AAII Learning Mentor • Online / Offline");
+    line(intro,"ရွေးချယ်ထားသော Platform ဖြင့် Request ကို Send မလုပ်မီ အချက်အလက် Preview ပြပါမည်။",12,WHITE,false);
+    LinearLayout form=card(body);line(form,"YOUR INFORMATION",19,NAVY,true);
+    EditText student=requestInput(form,"Full Name *","သင်၏အမည်");
+    EditText phone=requestInput(form,"Phone / Viber *","+95 9...");
+    EditText email=requestInput(form,"Email (optional)","student@example.com");
+    EditText subject=requestInput(form,"Subject / Topic *","Python / English / Artificial Intelligence");
+    Spinner program=requestSelect(form,"Course / Specialization / Professional",new String[]{"General Course","Specialization","Professional Certificate","AI & Data Science","Python Programming","English & Languages","Business & Project Management","Other"});
+    Spinner mode=requestSelect(form,"Learning Mode *",new String[]{"Online","Offline","Hybrid"});
+    TextView date=txt("Preferred Date: "+bookingDate,14,INK,true);form.addView(date);
+    button(form,"Select Date • ရက်ရွေးရန်",()->{
+      java.util.Calendar c=java.util.Calendar.getInstance();
+      DatePickerDialog p=new DatePickerDialog(this,(v,y,m,d)->{
+        bookingDate=String.format(Locale.US,"%04d-%02d-%02d",y,m+1,d);
+        date.setText("Preferred Date: "+bookingDate);
+      },c.get(java.util.Calendar.YEAR),c.get(java.util.Calendar.MONTH),c.get(java.util.Calendar.DAY_OF_MONTH));
+      p.getDatePicker().setMinDate(System.currentTimeMillis()-1000);p.show();
+    },false);
+    TextView time=txt("Preferred Time: "+bookingTime,14,INK,true);form.addView(time);
+    button(form,"Select Time • အချိန်ရွေးရန်",()->{
+      java.util.Calendar c=java.util.Calendar.getInstance();
+      new TimePickerDialog(this,(v,h,m)->{
+        bookingTime=String.format(Locale.US,"%02d:%02d",h,m);
+        time.setText("Preferred Time: "+bookingTime);
+      },c.get(java.util.Calendar.HOUR_OF_DAY),c.get(java.util.Calendar.MINUTE),false).show();
+    },false);
+    EditText budget=requestInput(form,"Budget (optional)","e.g. 100000 MMK");
+    EditText notes=requestInput(form,"Message / Additional Details","သင်ယူလိုသောအကြောင်းအရာ");
+    Spinner platform=requestSelect(form,"SEND TO PLATFORM *",new String[]{"Viber","LINE","Telegram","Email","Other App"});
+    LinearLayout channels=royalCard(body,"CONTACT PLATFORMS","Viber  +95 9 252566954   |   LINE  +66 9 30409759   |   Telegram  @myanmardata");
+    line(channels,"Email ကိုရွေးပါက Recipient Email ကို Messaging App ထဲမှာ ကိုယ်တိုင်ရွေးပေးရမည်။",12,WHITE,false);
+    CheckBox consent=new CheckBox(this);consent.setText("Request ကို ပြန်လည်ဆက်သွယ်ရန် မျှဝေမည်ဖြစ်ကြောင်း သဘောတူပါသည်။ Message App ထဲ Send ကို ကိုယ်တိုင် နှိပ်ပါမည်။");
+    consent.setTextColor(INK);consent.setTextSize(12);form.addView(consent);
+    Runnable preview=()->{
+      if(student.getText().toString().trim().isEmpty()||
+         phone.getText().toString().trim().isEmpty()||
+         subject.getText().toString().trim().isEmpty()||
+         bookingDate.equals("ရက်ရွေးပါ")||bookingTime.equals("အချိန်ရွေးပါ")){
+        Toast.makeText(this,"Name, Phone, Subject, Date, Time အချက်အလက်များကို ဖြည့်ပါ",Toast.LENGTH_LONG).show();return;
+      }
+      if(!consent.isChecked()){
+        Toast.makeText(this,"Send အတွက် သဘောတူချက်ကို အတည်ပြုပါ",Toast.LENGTH_LONG).show();return;
+      }
+      String text=composeTeacherRequest(student,phone,email,subject,program,mode,budget,notes,bookingDate,bookingTime);
+      confirmTeacherRequest(text,String.valueOf(platform.getSelectedItem()));
+    };
+    button(form,"✉ PREVIEW & SEND REQUEST",preview,true);
+    button(form,"Message Preview",()->{
+      String text=composeTeacherRequest(student,phone,email,subject,program,mode,budget,notes,bookingDate,bookingTime);
+      new AlertDialog.Builder(this).setTitle("Teacher Request • Message Preview")
+        .setMessage(text).setPositiveButton("OK",null).show();
+    },false);
+    line(form,"ဤ Form သည် Viber/LINE/Telegram/Email App ကို ဖွင့်ပြီး စာသားပြင်ဆင်ပေးသော Native Share Flow ဖြစ်သည်။ Platform API ဖြင့် အလိုအလျောက်မပို့ပါ။",12,MUTED,false);
+    line(form,"Teacher availability, payment နှင့် Booking Confirmation ကို AAII မှ သီးခြားအတည်ပြုရမည်။",12,MUTED,false);
+    button(form,"Teacher Soe Moe • Profile",()->openTab(9),false);
     contactButtons(body);
   }
-
-  
   private void teacherProfile(){
     LinearLayout teacherCover=coloredCard(body,0xff071b35,0xff17497f);
     ImageView teacherPhoto=portrait(150,160);teacherCover.addView(teacherPhoto);
