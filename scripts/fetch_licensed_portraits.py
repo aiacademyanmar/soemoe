@@ -28,4 +28,4 @@ for x in ITEMS:
   x['downloaded']=False;x['error']=str(ex)[:150]
  print(x['name'],'photo received' if x['downloaded'] else 'using symbolic fallback',flush=True)
 (ROOT/'photo_license_report.json').write_text(json.dumps(ITEMS,ensure_ascii=False,indent=2),encoding='utf8')
-(TARGET/'CREDITS.txt').write_text('\n'.join(x['name']+': '+x['credit']+' | downloaded='+str(x['downloaded']) for x in ITEMS)+'\n',encoding='utf8')
+(ROOT/'app/src/main/assets/portrait_credits.txt').write_text('\n'.join(x['name']+': '+x['credit']+' | downloaded='+str(x['downloaded']) for x in ITEMS)+'\n',encoding='utf8')

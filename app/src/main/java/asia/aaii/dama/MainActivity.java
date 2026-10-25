@@ -53,8 +53,12 @@ public class MainActivity extends Activity {
   final String CACHE_FILE="dama_radio_catalog_v2.json";
   String screen="Home",query="",libraryMode="Favorites",priorScreen="Home";
   int monkFilter=0, categoryFilter=0, seekInterval=1000;
-  String[] cat={"အားလုံး","ပဋ္ဌာန်း","ဝိပဿနာ","ပါဠိ / ပရိတ်","အခြား"};
-  LinearLayout outer,body,miniBar,listArea;
+  String[] cat={"အားလုံး","ပဋ္ဌာန်း","အဘိဓမ္မာ","ပဋိစ္စသမုပ္ပါဒ်","ဝိပဿနာ","သမထ / ဘာဝနာ","ပရိတ် / ဝတ်ရွတ်","သုတ္တန်","သီလ / မေတ္တာ / ဒါန","အခြား"};
+  LinearLayout outer,body,miniBar,listArea,categoryChips;
+  int displayedTracks=0; static final int LIST_PAGE_SIZE=35;
+  ScrollView radioScroll;
+  TextView listSummary;
+  final LinkedHashMap<String,Integer> linkAudit=new LinkedHashMap<>();
   TextView counter,information,miniLabel,radioSyncStatus;
   ProgressBar radioSyncProgress;
   volatile int radioSyncDone=0,radioSyncTotal=0;
@@ -184,6 +188,12 @@ public class MainActivity extends Activity {
       menuOption("♡","Favorites / Downloads","ကြိုက်နှစ်သက်ရာနှင့် Offline Audio",()->show("Collection"));
       menuOption("⌕","တရားတော် ရှာဖွေရန်","ဆရာတော်၊ ခေါင်းစဉ်၊ ပဋ္ဌာန်း",()->show("Radio"));
       menuOption("↻","MP3 Catalog Sync","မူရင်းစာမျက်နှာများမှ Link အသစ်များ",()->sync());
+      menuOption("©","ဆရာတော်ဓာတ်ပုံ မူရင်းနှင့် Credit","Wikimedia Commons ပုံအသုံးပြုခွင့်",()->new AlertDialog.Builder(this)
+        .setTitle("Sayadaw Portrait Sources")
+        .setMessage("Mogok Sayadaw U Vimala: Wikimedia Commons / Public Domain, 1940s.\nMahasi Sayadaw U Sobhana: Wikimedia Commons / Public Domain, 1949.\nDr. Nandamalabhivamsa: Kiwiladi / CC BY-SA 4.0, Wikimedia Commons (2009).\n\nဓာတ်ပုံ မရရှိနိုင်ပါက ဓမ္မသင်္ကေတပုံဖြင့် အစားထိုးပါသည်။")
+        .setPositiveButton("OK",null)
+        .setNeutralButton("Commons Photo",(d,w)->open("https://commons.wikimedia.org/wiki/File:Sayadaw_nandamalabhivamsa.jpg"))
+        .show());
       menuOption("⌂","Home Dashboard","ပင်မစာမျက်နှာ ပြန်ဖွင့်ရန်",()->show("Home"));
       menuOption("!","Player Error Report","နောက်ဆုံး Audio Error နှင့် ဖြေရှင်းနည်း",()->playerErrorReport());
       TextView source=click("မူရင်း DhammaDownload Website  ↗",
@@ -232,69 +242,273 @@ public class MainActivity extends Activity {
 }
   void summary(){LinearLayout r=row();r.setBackground(shape(CARD,14,GOLDDIM));r.setPadding(dp(12),dp(12),dp(8),dp(12));
     TextView qty=text("♫  "+catalog.size()+" MP3 links",14,GOLD,true);r.addView(qty,new LinearLayout.LayoutParams(0,-2,1));TextView n=text(monks.size()+" ဆရာတော်",12,MUTED,false);r.addView(n);body.addView(r);body.addView(space(10));}
-  void catPills(){LinearLayout row=row();String[] titles={"☸ ပဋ္ဌာန်း","✿ ဝိပဿနာ","♬ ပရိတ်"};for(int i=0;i<3;i++){final int t=i;TextView bt=text(titles[i],12,GOLD,true);bt.setGravity(Gravity.CENTER);bt.setPadding(dp(7),dp(12),dp(7),dp(12));bt.setBackground(shape(CARD,13,GOLDDIM));LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(0,dp(46),1);p.setMargins(dp(3),0,dp(3),0);row.addView(bt,p);bt.setOnClickListener(v->{categoryFilter=t==0?1:t==1?2:3;show("Radio");});}body.addView(row);body.addView(space(15));}
-  void monkTiles(){
-  heading("ဆရာတော်ကြီးများ  ·  SAYADAWS");
-  HorizontalScrollView horiz=new HorizontalScrollView(this);horiz.setHorizontalScrollBarEnabled(false);
-  LinearLayout r=row();
-  for(int i=0;i<Math.min(monks.size(),20);i++){
-    Monk monk=monks.get(i);LinearLayout tile=vert();tile.setGravity(Gravity.CENTER);
-    tile.setPadding(dp(8),dp(10),dp(8),dp(9));tile.setBackground(shape(0xff143f38,17,GOLDDIM));
-    ImageView photo=monkPic(monk.id,66);tile.addView(photo,lp(66,66));tile.addView(space(7));
-    TextView tx=text(monk.name,11,IVORY,true);tx.setMaxLines(2);tx.setGravity(Gravity.CENTER);tile.addView(tx,lp(100,45));
-    LinearLayout.LayoutParams param=lp(116,146);param.setMargins(0,0,dp(10),0);r.addView(tile,param);
-    tile.setOnClickListener(v->{monkFilter=monk.id;show("Radio");});
+  int[] categoryTotals(int selectedMonk,String keyword){
+    int[] result=new int[cat.length];String q=keyword==null?"":keyword.toLowerCase(Locale.ROOT).trim();
+    synchronized(catalog){for(Track track:catalog.values()){
+      if(selectedMonk>0&&track.monkId!=selectedMonk)continue;
+      if(!q.isEmpty()&&!(track.title+" "+track.monk).toLowerCase(Locale.ROOT).contains(q))continue;
+      result[0]++;
+      for(int i=1;i<cat.length;i++)if(cat[i].equals(group(track.title))){result[i]++;break;}
+    }}return result;
   }
-  horiz.addView(r);body.addView(horiz);body.addView(space(18));
-}
+  int countMonk(int id){int n=0;synchronized(catalog){for(Track track:catalog.values())if(track.monkId==id)n++;}return n;}
+  void catPills(){
+    heading("ဓမ္မခေါင်းစဉ်အလိုက်  ·  CATEGORIES");
+    HorizontalScrollView sc=new HorizontalScrollView(this);sc.setHorizontalScrollBarEnabled(false);
+    LinearLayout items=row();int[] totals=categoryTotals(0,"");
+    for(int i=1;i<cat.length;i++){
+      final int index=i;
+      LinearLayout chip=vert();chip.setGravity(Gravity.CENTER);chip.setPadding(dp(13),dp(8),dp(13),dp(8));
+      chip.setBackground(shape(0xff153d34,15,GOLDDIM));
+      TextView label=text(cat[i],12,IVORY,true);label.setGravity(Gravity.CENTER);chip.addView(label);
+      TextView count=text(String.format(Locale.US,"%,d MP3",totals[i]),11,GOLD,true);count.setGravity(Gravity.CENTER);chip.addView(count);
+      LinearLayout.LayoutParams p=lp(-2,62);p.setMargins(0,0,dp(8),0);items.addView(chip,p);
+      chip.setOnClickListener(v->{categoryFilter=index;monkFilter=0;query="";show("Radio");});
+    }
+    sc.addView(items);body.addView(sc);body.addView(space(17));
+  }
+  void monkTiles(){
+    heading("ဆရာတော်ကြီးများ  ·  SAYADAWS");
+    HorizontalScrollView sc=new HorizontalScrollView(this);sc.setHorizontalScrollBarEnabled(false);
+    LinearLayout tiles=row();
+    for(Monk monk:monks){
+      LinearLayout tile=vert();tile.setGravity(Gravity.CENTER);
+      tile.setPadding(dp(9),dp(11),dp(9),dp(9));
+      tile.setBackground(shape(0xff17453b,18,0xff806d44));
+      ImageView portrait=monkPic(monk.id,72);tile.addView(portrait,lp(72,72));
+      tile.addView(space(7));
+      TextView name=text(monk.name,11,IVORY,true);name.setMaxLines(2);name.setGravity(Gravity.CENTER);tile.addView(name,lp(110,41));
+      TextView count=text(String.format(Locale.US,"%,d MP3",countMonk(monk.id)),11,GOLD,true);
+      count.setGravity(Gravity.CENTER);tile.addView(count);
+      LinearLayout.LayoutParams p=lp(126,162);p.setMargins(0,0,dp(11),0);tiles.addView(tile,p);
+      tile.setOnClickListener(v->{monkFilter=monk.id;categoryFilter=0;query="";show("Radio");});
+    }
+    sc.addView(tiles);body.addView(sc);body.addView(space(18));
+    TextView note=text("ဆရာတော်ဓာတ်ပုံ ၃ ပုံကို Wikimedia Commons မှ ရယူရန် စီစဉ်ထားပါသည်။ အခြားသူများအတွက် ဓမ္မသင်္ကေတပုံ ပြထားသည်။",10,MUTED,false);
+    body.addView(note);body.addView(space(12));
+  }
   ImageView monkPic(int id,int dim){ImageView img=new ImageView(this);int drawable=id==1?R.drawable.mogok_sayadaw:id==2?R.drawable.mahasi_sayadaw:id==4?R.drawable.nandamala_sayadaw:R.drawable.monk_symbol;img.setImageResource(drawable);img.setScaleType(ImageView.ScaleType.CENTER_CROP);img.setBackground(shape(CARD,dim/2,GOLDDIM));img.setClipToOutline(true);return img;}
   void home(){hero();summary();catPills();monkTiles();
     heading("တရားတော် နားထောင်ရန်");quickTrackList(6,false);body.addView(space(12));
     LinearLayout r=row();r.addView(click("↻  Sync MP3",()->sync()),new LinearLayout.LayoutParams(0,-2,1));r.addView(spaceX(8));r.addView(click("▶  Open Player",()->openPlayerPreview()),new LinearLayout.LayoutParams(0,-2,1));body.addView(r);
-    body.addView(space(15));heading("Featured Collections");addCollectionCard("ပဋ္ဌာန်းတရားတော်",R.drawable.radio_pattana,1);addCollectionCard("ဝိပဿနာတရားတော်",R.drawable.radio_meditation,2);body.addView(space(10));footnote();
+    body.addView(space(15));heading("Featured Collections");addCollectionCard("ပဋ္ဌာန်းတရားတော်",R.drawable.radio_pattana,1);addCollectionCard("ဝိပဿနာတရားတော်",R.drawable.radio_meditation,4);body.addView(space(10));footnote();
   }
   View spaceX(int w){View v=new View(this);v.setLayoutParams(lp(w,1));return v;}
   void addCollectionCard(String s,int img,int category){LinearLayout r=row();ImageView pic=picture(img,75);r.addView(pic,lp(104,75));LinearLayout text=vert();text.setPadding(dp(14),dp(8),dp(8),dp(8));text.addView(text(s,16,IVORY,true));text.addView(text("တရားတော်များ ရှာဖွေကြည့်ရှုရန်  ›",12,MUTED,false));r.addView(text,new LinearLayout.LayoutParams(0,dp(75),1));r.setBackground(shape(CARD,13,0));body.addView(r,lp(-1,78));body.addView(space(8));r.setOnClickListener(v->{categoryFilter=category;show("Radio");});}
   void footnote(){TextView n=text("မူရင်း DhammaDownload MP3 လင့်ခ်များကို Index လုပ်ထားပါသည်။ Offline = စာရင်း/ပုံများ; အသံကို Stream လုပ်ရန် Internet လိုအပ်သည်။ ကိုယ်တိုင် Download လုပ်ထားသော MP3 ကိုသာ Offline နားဆင်နိုင်သည်။",11,MUTED,false);n.setPadding(dp(4),dp(10),dp(4),dp(12));body.addView(n);}
-  void browse(){heading("တရားတော် စာကြည့်တိုက်");summary();
-    searchBox=new EditText(this);searchBox.setSingleLine(true);searchBox.setTextSize(14);searchBox.setTextColor(IVORY);searchBox.setHintTextColor(MUTED);searchBox.setHint("⌕  တရားတော် / ဆရာတော် ရှာရန်");searchBox.setBackground(shape(CARD,13,GOLDDIM));searchBox.setPadding(dp(14),0,dp(14),0);searchBox.setText(query);body.addView(searchBox,lp(-1,50));body.addView(space(10));
-    LinearLayout toolbar=row();Spinner monk=new Spinner(this);ArrayList<String> monkNames=new ArrayList<>();monkNames.add("ဆရာတော်အားလုံး");for(Monk m:monks)monkNames.add(m.name);initSpinner(monk,monkNames,monkFilter,i->{monkFilter=i;filter();});toolbar.addView(monk,new LinearLayout.LayoutParams(0,dp(48),1));toolbar.addView(spaceX(9));Spinner catSpin=new Spinner(this);initSpinner(catSpin,Arrays.asList(cat),categoryFilter,i->{categoryFilter=i;filter();});toolbar.addView(catSpin,new LinearLayout.LayoutParams(0,dp(48),1));body.addView(toolbar);body.addView(space(10));
-    LinearLayout buttons=row();TextView sync=click("↻  Sync Catalog",()->sync());buttons.addView(sync);buttons.addView(spaceX(9));buttons.addView(click("▶  Player",()->openPlayerPreview()));
-    buttons.addView(spaceX(9));
-    buttons.addView(click("Source ↗",()->open("https://www.dhammadownload.com/AudioInMyanmar.htm")));body.addView(buttons);body.addView(space(9));
-    information=text("Offline catalog "+catalog.size()+" • Playback မစစ်ရသေးပါ",11,MUTED,false);body.addView(information);body.addView(space(7));
-    radioSyncStatus=text(syncing?"MP3 Sync လုပ်နေသည် … "+radioSyncDone+"/"+radioSyncTotal:
-      settings.getString("radio_sync_summary","MP3 Catalog: "+catalog.size()+" links Offline (site verification pending)"),11,GOLD,false);
+  void browse(){
+    // Entire track list shares ONE outer ScrollView, unlike the old fixed-height nested ListView.
+    heading("DAMA RADIO  ·  SPECIAL LIBRARY");
+    LinearLayout top=row();top.setPadding(dp(12),dp(12),dp(12),dp(12));
+    top.setBackground(shape(0xff16443c,17,GOLDDIM));
+    ImageView banner=picture(R.drawable.radio_hero,85);top.addView(banner,lp(125,85));
+    LinearLayout titles=vert();titles.setPadding(dp(12),0,0,0);
+    titles.addView(text("DHAMMA AUDIO",17,GOLD,true));
+    titles.addView(text("တရားတော်အားလုံး ရှာဖွေ • Scroll • Play",11,IVORY,false));
+    titles.addView(text(String.format(Locale.US,"%,d indexed MP3 links",catalog.size()),12,MUTED,false));
+    top.addView(titles,new LinearLayout.LayoutParams(0,-2,1));body.addView(top);body.addView(space(14));
+    monkTiles(); // Premium Radio category page also shows Sayadaw portraits and per-teacher MP3 totals.
+
+
+    searchBox=new EditText(this);searchBox.setSingleLine(true);searchBox.setTextSize(14);
+    searchBox.setTextColor(IVORY);searchBox.setHintTextColor(MUTED);
+    searchBox.setHint("⌕  တရားခေါင်းစဉ် / ဆရာတော်အမည် ရှာရန်");
+    searchBox.setPadding(dp(15),0,dp(15),0);searchBox.setBackground(shape(0xff1b483e,15,GOLDDIM));
+    searchBox.setText(query);body.addView(searchBox,lp(-1,52));body.addView(space(11));
+
+    LinearLayout toolbar=row();
+    Spinner monk=new Spinner(this);ArrayList<String> names=new ArrayList<>();names.add("ဆရာတော်အားလုံး");
+    for(Monk m:monks)names.add(m.name);
+    initSpinner(monk,names,monkFilter,i->{monkFilter=i;filter();});
+    toolbar.addView(monk,new LinearLayout.LayoutParams(0,dp(50),1));toolbar.addView(spaceX(8));
+    TextView reset=click("✕  RESET",()->{monkFilter=0;categoryFilter=0;query="";show("Radio");});
+    toolbar.addView(reset,lp(112,49));body.addView(toolbar);body.addView(space(13));
+
+    heading("ဓမ္မခေါင်းစဉ်များ • Category & MP3 Count");
+    HorizontalScrollView horiz=new HorizontalScrollView(this);horiz.setHorizontalScrollBarEnabled(false);
+    categoryChips=row();horiz.addView(categoryChips);body.addView(horiz);body.addView(space(14));
+    renderCategoryChips();
+
+    LinearLayout shortcuts=row();
+    TextView sync=click("↻  MP3 SYNC",()->sync());
+    shortcuts.addView(sync,new LinearLayout.LayoutParams(0,dp(46),1));shortcuts.addView(spaceX(8));
+    shortcuts.addView(click("▶  PLAYER",()->openPlayerPreview()),new LinearLayout.LayoutParams(0,dp(46),1));
+    body.addView(shortcuts);body.addView(space(10));
+    information=text("MP3 Links Offline Index • Audio availability unverified",11,MUTED,false);
+    body.addView(information);body.addView(space(6));
+    radioSyncStatus=text(syncing?"Sync "+radioSyncDone+"/"+radioSyncTotal:
+      settings.getString("radio_sync_summary","Offline catalog ready • Live sync not checked"),11,GOLD,false);
     body.addView(radioSyncStatus);body.addView(space(7));
     radioSyncProgress=new ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal);
-    radioSyncProgress.setMax(Math.max(1,monks.size()));
-    radioSyncProgress.setProgress(syncing?radioSyncDone:Math.max(0,settings.getInt("radio_sync_last_checked",0)));
+    radioSyncProgress.setMax(Math.max(1,monks.size()));radioSyncProgress.setProgress(syncing?radioSyncDone:0);
     radioSyncProgress.setProgressTintList(android.content.res.ColorStateList.valueOf(GOLD));
-    radioSyncProgress.setProgressBackgroundTintList(android.content.res.ColorStateList.valueOf(0xff34594d));
-    body.addView(radioSyncProgress,lp(-1,7));body.addView(space(12));
-    listArea=vert();body.addView(listArea);searchBox.addTextChangedListener(new TextWatcher(){public void beforeTextChanged(CharSequence s,int st,int n,int a){}public void afterTextChanged(Editable e){}public void onTextChanged(CharSequence s,int st,int b,int c){query=s.toString();filter();}});filter();
+    radioSyncProgress.setProgressBackgroundTintList(android.content.res.ColorStateList.valueOf(0xff355d4b));
+    body.addView(radioSyncProgress,lp(-1,6));body.addView(space(13));
+
+    listArea=vert();body.addView(listArea);
+    searchBox.addTextChangedListener(new TextWatcher(){
+      public void beforeTextChanged(CharSequence s,int a,int b,int c){}
+      public void afterTextChanged(Editable e){}
+      public void onTextChanged(CharSequence s,int a,int b,int c){
+        query=s.toString();renderCategoryChips();filter();
+      }
+    });
+    filter();
+    body.addView(space(13));
+    TextView helper=text("စာရင်းကို အပေါ်/အောက် ဆွဲကြည့်နိုင်သည်။ နောက်ထပ် MP3 များအတွက် LOAD MORE နှိပ်ပါ။ Track ကို ဖိထားလျှင် Link Check / Download ရွေးချယ်နိုင်သည်။",11,MUTED,false);
+    helper.setPadding(dp(5),dp(12),dp(5),dp(16));body.addView(helper);
+  }
+  void renderCategoryChips(){
+    if(categoryChips==null||!screen.equals("Radio"))return;
+    categoryChips.removeAllViews();int[] counts=categoryTotals(monkFilter,query);
+    String[] glyph={"◉","☸","✦","∞","✿","❋","♫","▣","♡","•"};
+    for(int i=0;i<cat.length;i++){
+      final int x=i;boolean active=i==categoryFilter;
+      LinearLayout chip=vert();chip.setGravity(Gravity.CENTER);
+      chip.setPadding(dp(13),dp(9),dp(13),dp(9));
+      chip.setBackground(shape(active?0xffdaba78:0xff16483e,14,active?GOLD:GOLDDIM));
+      TextView label=text(glyph[i]+" "+cat[i],12,active?DEEP:IVORY,true);label.setGravity(Gravity.CENTER);
+      chip.addView(label);
+      TextView qty=text(String.format(Locale.US,"%,d ပုဒ်",counts[i]),11,active?DEEP:GOLD,true);
+      qty.setGravity(Gravity.CENTER);chip.addView(qty);
+      LinearLayout.LayoutParams p=lp(-2,66);p.setMargins(0,0,dp(8),0);categoryChips.addView(chip,p);
+      chip.setOnClickListener(v->{categoryFilter=x;renderCategoryChips();filter();});
+    }
   }
   interface Select {void chose(int index);}
   void initSpinner(Spinner s,List<String> values,int current,Select listener){ArrayAdapter<String> adapter=new ArrayAdapter<String>(this,android.R.layout.simple_spinner_item,values){@Override public View getView(int p,View old,ViewGroup parent){TextView t=(TextView)super.getView(p,old,parent);t.setTextSize(12);t.setTextColor(GOLD);t.setPadding(dp(8),dp(8),dp(4),dp(8));return t;}};adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);s.setAdapter(adapter);s.setBackground(shape(CARD,12,GOLDDIM));s.setSelection(Math.max(0,Math.min(current,values.size()-1)));s.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener(){public void onItemSelected(android.widget.AdapterView<?> p,View v,int pos,long id){listener.chose(pos);}public void onNothingSelected(android.widget.AdapterView<?> p){}});}
-  String group(String s){String l=s.toLowerCase(Locale.ROOT);if(s.contains("ပဋ္ဌာန်း")||l.contains("pahtan")||l.contains("patan")||l.contains("patthana"))return cat[1];if(s.contains("ဝိပဿနာ")||s.contains("ပဋိစ္စ")||l.contains("vipassana"))return cat[2];if(s.contains("ပါဠိ")||s.contains("ပရိတ်")||s.contains("သုတ်")||l.contains("paritta"))return cat[3];return cat[4];}
-  void filter(){if(listArea==null||!screen.equals("Radio"))return;results.clear();String q=query.toLowerCase(Locale.ROOT).trim();synchronized(catalog){for(Track t:catalog.values()){if(monkFilter>0&&t.monkId!=monkFilter)continue;if(categoryFilter>0&&!cat[categoryFilter].equals(group(t.title)))continue;if(!q.isEmpty()&&!(t.title+" "+t.monk).toLowerCase(Locale.ROOT).contains(q))continue;results.add(t);}}
-    listArea.removeAllViews();listArea.addView(text("တရားတော် "+results.size()+" ပုဒ်",17,GOLD,true));listArea.addView(space(8));if(results.isEmpty()){listArea.addView(text("တရားတော်မတွေ့ပါ — အခြား Keyword ဖြင့်ရှာပါ / Sync လုပ်ပါ။",13,MUTED,false));return;}
-    ListView list=new ListView(this);list.setDividerHeight(dp(3));list.setBackgroundColor(BG);list.setCacheColorHint(BG);list.setVerticalScrollBarEnabled(false);list.setAdapter(new BaseAdapter(){public int getCount(){return results.size();}public Object getItem(int i){return results.get(i);}public long getItemId(int i){return i;}public View getView(int i,View reuse,ViewGroup parent){return trackRow(results.get(i));}});list.setOnItemClickListener((p,v,index,id)->play(results.get(index)));
-    list.setOnItemLongClickListener((p,v,index,id)->{trackActions(results.get(index));return true;});listArea.addView(list,lp(-1,530));listArea.addView(space(10));}
+  String group(String s){
+    String l=(s==null?"":s).toLowerCase(Locale.ROOT);
+    if(s==null)return cat[cat.length-1];
+    if(s.contains("ပဋ္ဌာန်း")||s.contains("ပဌာန်း")||l.contains("pahtan")||l.contains("patthana")||l.contains("patan"))return cat[1];
+    if(s.contains("အဘိဓမ္မာ")||l.contains("abhidhamma"))return cat[2];
+    if(s.contains("ပဋိစ္စ")||l.contains("paticca")||l.contains("dependent origination"))return cat[3];
+    if(s.contains("ဝိပဿနာ")||s.contains("ဝိပဿ")||s.contains("သတိပဋ္ဌာန်")||l.contains("vipassana"))return cat[4];
+    if(s.contains("သမထ")||s.contains("ဘာဝနာ")||s.contains("တရားထိုင်")||l.contains("samatha")||l.contains("meditation"))return cat[5];
+    if(s.contains("ပရိတ်")||s.contains("ဂါထာ")||s.contains("ဝတ်ရွတ်")||l.contains("paritta")||l.contains("chant"))return cat[6];
+    if(s.contains("သုတ်")||s.contains("သုတ္တန်")||l.contains("sutta")||l.contains("sutra"))return cat[7];
+    if(s.contains("သီလ")||s.contains("မေတ္တာ")||s.contains("ဒါန")||s.contains("ကရုဏာ")||l.contains("metta"))return cat[8];
+    return cat[9];
+  }
+  void filter(){
+    if(listArea==null||!screen.equals("Radio"))return;
+    results.clear();String q=query.toLowerCase(Locale.ROOT).trim();
+    synchronized(catalog){for(Track t:catalog.values()){
+      if(monkFilter>0&&t.monkId!=monkFilter)continue;
+      if(categoryFilter>0&&!cat[categoryFilter].equals(group(t.title)))continue;
+      if(!q.isEmpty()&&!(t.title+" "+t.monk).toLowerCase(Locale.ROOT).contains(q))continue;
+      results.add(t);
+    }}
+    listArea.removeAllViews();displayedTracks=0;
+    LinearLayout summary=row();summary.setPadding(dp(12),dp(12),dp(12),dp(12));
+    summary.setBackground(shape(0xff183f37,12,0xff4b634c));
+    listSummary=text(String.format(Locale.US,"တရားတော် %,d ပုဒ် • %s",results.size(),cat[categoryFilter]),14,GOLD,true);
+    summary.addView(listSummary,new LinearLayout.LayoutParams(0,-2,1));
+    TextView check=text("↓ SCROLL",11,MUTED,true);summary.addView(check);
+    listArea.addView(summary);listArea.addView(space(10));
+    if(results.isEmpty()){
+      listArea.addView(text("ရှာဖွေမှုနှင့်ကိုက်ညီသော MP3 မတွေ့ပါ။ Category သို့မဟုတ် ဆရာတော်ကို ပြန်ရွေးပါ။",12,MUTED,false));
+      return;
+    }
+    appendTrackPage();
+  }
+  void appendTrackPage(){
+    if(listArea==null||!screen.equals("Radio"))return;
+    // Remove previous load-more footer before appending new items.
+    if(displayedTracks>0&&displayedTracks<results.size()&&listArea.getChildCount()>0){
+      View last=listArea.getChildAt(listArea.getChildCount()-1);
+      if("load_more".equals(last.getTag()))listArea.removeView(last);
+    }
+    int to=Math.min(results.size(),displayedTracks+LIST_PAGE_SIZE);
+    for(int i=displayedTracks;i<to;i++){
+      Track track=results.get(i);LinearLayout card=trackRow(track);
+      LinearLayout.LayoutParams p=lp(-1,-2);p.setMargins(0,0,0,dp(9));
+      listArea.addView(card,p);
+      card.setOnClickListener(v->play(track));
+      card.setOnLongClickListener(v->{trackActions(track);return true;});
+    }
+    displayedTracks=to;
+    if(displayedTracks<results.size()){
+      String title=String.format(Locale.US,"↓  နောက်ထပ် %d ပုဒ်ကြည့်ရန်  •  %,d / %,d",
+        Math.min(LIST_PAGE_SIZE,results.size()-displayedTracks),displayedTracks,results.size());
+      TextView load=click(title,()->appendTrackPage());
+      load.setTag("load_more");load.setPadding(dp(14),dp(16),dp(14),dp(16));
+      listArea.addView(load,lp(-1,-2));
+    }else{
+      TextView end=text(String.format(Locale.US,"END OF RESULTS • %,d MP3",displayedTracks),11,MUTED,false);
+      end.setGravity(Gravity.CENTER);listArea.addView(end);
+    }
+  }
   LinearLayout trackRow(Track t){
-  LinearLayout r=row();r.setPadding(dp(10),dp(11),dp(10),dp(11));r.setBackground(shape(0xff133b36,15,0));
-  ImageView photo=monkPic(t.monkId,54);r.addView(photo,lp(54,54));
-  LinearLayout labels=vert();labels.setPadding(dp(12),0,dp(6),0);
-  TextView name=text(t.title,14,IVORY,true);name.setMaxLines(2);labels.addView(name);
-  TextView who=text(t.monk,11,MUTED,false);who.setMaxLines(1);labels.addView(who);
-  TextView status=text(downloadFile(t).exists()?"● OFFLINE":"♫  MP3  ·  ONLINE",10,GOLD,false);labels.addView(status);
-  r.addView(labels,new LinearLayout.LayoutParams(0,-2,1));
-  TextView play=text("▶",16,DEEP,true);play.setGravity(Gravity.CENTER);play.setBackground(shape(GOLD,26,0));
-  r.addView(play,lp(40,40));return r;
-}
+    LinearLayout card=row();card.setPadding(dp(12),dp(13),dp(12),dp(13));
+    card.setBackground(shape(0xff143d35,16,0xff355b4c));
+    ImageView photo=monkPic(t.monkId,60);card.addView(photo,lp(60,60));
+    LinearLayout title=vert();title.setPadding(dp(12),0,dp(6),0);
+    TextView name=text(t.title,14,IVORY,true);name.setMaxLines(2);title.addView(name);
+    TextView who=text(t.monk,11,MUTED,false);who.setMaxLines(1);title.addView(who);
+    String saved=settings.getString("audit_"+t.url.hashCode(),"");
+    String label=downloadFile(t).exists()?"● OFFLINE SAVED":saved.startsWith("OK")?"● LINK REACHABLE":
+      saved.startsWith("ERR")?"● LINK CHECK FAILED":"♫ MP3 LINK · NOT YET CHECKED";
+    TextView status=text(label,10,saved.startsWith("ERR")?0xffe4bba8:GOLD,false);
+    status.setMaxLines(1);title.addView(status);
+    card.addView(title,new LinearLayout.LayoutParams(0,-2,1));
+    TextView play=text("▶",19,DEEP,true);play.setGravity(Gravity.CENTER);
+    play.setBackground(shape(GOLD,25,0));card.addView(play,lp(42,42));
+    return card;
+  }
   void quickTrackList(int max,boolean onlyFav){int i=0;ArrayList<Track> data; synchronized(catalog){data=new ArrayList<>(catalog.values());}for(Track t:data){if(onlyFav&&!favorites.contains(t.url))continue;if(i++>=max)break;LinearLayout r=trackRow(t);body.addView(r,lp(-1,77));body.addView(space(7));r.setOnClickListener(v->play(t));r.setOnLongClickListener(v->{trackActions(t);return true;});}if(i==0)body.addView(text("စာရင်းမရှိသေးပါ",12,MUTED,false));}
-  void trackActions(Track t){String fav=favorites.contains(t.url)?"♥ Favorites မှဖယ်":"♡ Favorites ထည့်";String downloaded=downloadFile(t).exists()?"Offline နားထောင်":"↓ Offline Download";
-    new AlertDialog.Builder(this).setTitle(t.title).setMessage(t.monk+"\n"+group(t.title)).setItems(new String[]{"▶  နားထောင်ရန်",fav,downloaded,"🔗 မူရင်း MP3 Link","↗ မူရင်းစာမျက်နှာ"},(d,i)->{switch(i){case 0:play(t);break;case 1:toggleFavorite(t);break;case 2:download(t);break;case 3:open(t.url);break;case 4:open(t.source==null||t.source.isEmpty()?"https://www.dhammadownload.com/":t.source);break;}}).show();}
+  void trackActions(Track t){
+    String fav=favorites.contains(t.url)?"♥ Favorites မှဖယ်":"♡ Favorites ထည့်";
+    String downloaded=downloadFile(t).exists()?"Offline နားထောင်":"↓ Offline Download";
+    new AlertDialog.Builder(this).setTitle(t.title).setMessage(t.monk+"\n"+group(t.title))
+      .setItems(new String[]{"▶  နားထောင်ရန်",fav,downloaded,
+        "🔎 MP3 Link စစ်ဆေးရန်","↗ မူရင်း MP3 ဖွင့်ရန်","↗ ဆရာတော် Source Page"},(d,i)->{
+        switch(i){
+          case 0:play(t);break;
+          case 1:toggleFavorite(t);break;
+          case 2:download(t);break;
+          case 3:checkTrackLink(t);break;
+          case 4:open(t.url);break;
+          case 5:open(t.source==null||t.source.isEmpty()?"https://www.dhammadownload.com/":t.source);break;
+        }
+      }).show();
+  }
+  void checkTrackLink(Track t){
+    toast("MP3 Link ကို စစ်ဆေးနေသည်…");
+    background.execute(()->{
+      String error=null,good="";
+      try{
+        URL url=new URL(t.url);String host=url.getHost().toLowerCase(Locale.ROOT);
+        if(!"https".equalsIgnoreCase(url.getProtocol())&&! "http".equalsIgnoreCase(url.getProtocol()))
+          throw new IOException("HTTP(S) URL required");
+        if(!(host.equals("dhammadownload.com")||host.endsWith(".dhammadownload.com")))
+          throw new IOException("Unknown audio host: "+host);
+        HttpURLConnection c=(HttpURLConnection)url.openConnection();
+        c.setConnectTimeout(12000);c.setReadTimeout(15000);
+        c.setRequestProperty("User-Agent","Mozilla/5.0 (Android; DAMA Link Check)");
+        c.setRequestProperty("Range","bytes=0-511");
+        try{
+          int code=c.getResponseCode();String type=c.getContentType();
+          if(code!=200&&code!=206)throw new IOException("HTTP "+code);
+          if(type!=null&&(type.toLowerCase(Locale.ROOT).contains("text/html")||
+             type.toLowerCase(Locale.ROOT).contains("text/plain")))
+            throw new IOException("Not MP3 content: "+type);
+          good="HTTP "+code+" • "+(type==null?"unknown content type":type);
+        }finally{c.disconnect();}
+      }catch(Exception ex){error=ex.getMessage()==null?ex.getClass().getSimpleName():ex.getMessage();}
+      final String result=error==null?"OK "+good:"ERR "+error;
+      settings.edit().putString("audit_"+t.url.hashCode(),result).apply();
+      handler.post(()->{
+        if(isFinishing()||isDestroyed())return;
+        new AlertDialog.Builder(this).setTitle(result.startsWith("OK")?"MP3 Link Reachable":"MP3 Link Problem")
+          .setMessage(t.title+"\n"+result+"\n\nHTTP reachability only. A playable MP3 stream is not guaranteed.")
+          .setPositiveButton("▶  PLAY",(d,w)->play(t))
+          .setNeutralButton("SOURCE",(d,w)->open(t.source==null||t.source.isEmpty()?t.url:t.source))
+          .setNegativeButton("OK",null).show();
+        if(screen.equals("Radio"))filter();
+      });
+    });
+  }
   void toggleFavorite(Track t){if(!favorites.add(t.url))favorites.remove(t.url);settings.edit().putStringSet("favorites",new HashSet<>(favorites)).apply();toast(favorites.contains(t.url)?"Favorites ထဲထည့်ပြီးပါပြီ":"Favorites မှဖယ်ရှားပြီးပါပြီ");if(screen.equals("Collection"))show("Collection");}
   void rememberRecent(Track t){recent.remove(t.url);recent.add(0,t.url);while(recent.size()>50)recent.remove(recent.size()-1);settings.edit().putString("recent",new JSONArray(recent).toString()).apply();}
   /**
