@@ -1,0 +1,3 @@
+# AAII Learning V4.8
+
+Adds Coursera organization My Learning Certificates link to native Wallet, Teacher Profile, and Settings. Login likely required. Uses existing private imported certificate verifier for individually held credentials. Native bottom profile dialog and five quick links. Adds scale pop animation and short click WAV to buttons, category pills, footer menus and Teacher Soe Moe portrait cards. User can toggle click sounds in Settings. Sound volume respects device media routing and must be tested on real hardware. Some passive/noninteractive content cards do not get click feedback; clickable cards are being progressively wired. No access to Coursera account assumed.
