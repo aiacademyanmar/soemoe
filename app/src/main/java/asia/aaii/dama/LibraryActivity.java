@@ -25,7 +25,7 @@ import java.security.MessageDigest;
 import java.net.*;
 
 /** DAMA LIBRARY: offline BOOK LINK catalog, consent-based PDF downloads, native PDF reading. */
-public class LibraryActivity extends Activity {
+public class LibraryActivity extends DamaActivity {
     static final int BG=0xff041e1c,DEEP=0xff001613,CARD=0xff11362e,GOLD=0xffe4b767,IVORY=0xfffff8e7,MUTED=0xffa6b3a5;
     final ArrayList<Book> books=new ArrayList<>(),visible=new ArrayList<>();
     Set<String> favorites=new HashSet<>(); SharedPreferences prefs;

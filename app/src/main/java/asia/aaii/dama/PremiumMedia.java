@@ -33,19 +33,9 @@ public final class PremiumMedia {
     if(stroke!=0)b.setStroke(dp(c,1),stroke);return b;
   }
   /** Android click sound follows system preference, no surprise loud audio or permissions. */
+  /** Use the same micro-pop feedback for popup dialogs and on-page cards. */
   public static void tap(View v,Runnable action){
-    v.setSoundEffectsEnabled(true);
-    v.setClickable(true);
-    v.setOnTouchListener((view,e)->{
-      if(e.getAction()==android.view.MotionEvent.ACTION_DOWN){
-        view.animate().scaleX(.985f).scaleY(.985f).alpha(.92f).setDuration(65).start();
-      } else if(e.getAction()==android.view.MotionEvent.ACTION_UP||
-                e.getAction()==android.view.MotionEvent.ACTION_CANCEL){
-        view.animate().scaleX(1f).scaleY(1f).alpha(1f).setDuration(95).start();
-      }
-      return false;
-    });
-    v.setOnClickListener(view->{view.playSoundEffect(android.view.SoundEffectConstants.CLICK);action.run();});
+    DamaTouchFeedback.bind(v,action);
   }
   /** Local branded book jacket, not the publisher's cover. Category and title are real metadata. */
   public static View decorativeBookCover(Context context,String title,String category,int variant,int w,int h){

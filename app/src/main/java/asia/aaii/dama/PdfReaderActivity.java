@@ -25,7 +25,7 @@ import java.util.concurrent.Executors;
 /** Offline first-party PdfRenderer; pinch/double-tap zoom, panning, page navigation.
  * PDFs remain within the app's private document directory; no external viewer needed.
  */
-public class PdfReaderActivity extends Activity {
+public class PdfReaderActivity extends DamaActivity {
     private final int BG = 0xff031e1c, GOLD = 0xfff4c475, PALE = 0xfffff6de;
     private final Object rendererLock = new Object();
     private final ExecutorService worker = Executors.newSingleThreadExecutor();

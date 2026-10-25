@@ -43,7 +43,7 @@ import java.util.zip.GZIPInputStream;
  * Metadata is bundled offline. Videos always stream from YouTube under its own controls and policies.
  * No media stream extraction, credential injection or ad bypass.
  */
-public class TvActivity extends Activity {
+public class TvActivity extends DamaActivity {
     private static final int BG=0xff071f20, DARK=0xff0a302d, CARD=0xff18443a;
     private static final int GOLD=0xffeec778, IVORY=0xfffff3da, MUTED=0xffc5c8b5;
     private static final String EMBED_ORIGIN="https://aaii.asia/"; // nonopaque, HTTPS document origin provides Referer to YouTube iframe

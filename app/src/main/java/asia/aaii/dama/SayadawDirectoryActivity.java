@@ -18,7 +18,7 @@ import java.io.*;
 import java.util.*;
 
 /** V20 offline Sayadaw directory. PHOTO and GENERIC ILLUSTRATION must never be confused. */
-public final class SayadawDirectoryActivity extends Activity {
+public final class SayadawDirectoryActivity extends DamaActivity {
   private static final int BG=0xff061d1c, DEEP=0xff092e28, PANEL=0xff154236;
   private static final int GOLD=0xffedc578, IVORY=0xfffff5df, MUTED=0xffbbd2c5;
   private final ArrayList<JSONObject> people=new ArrayList<>();

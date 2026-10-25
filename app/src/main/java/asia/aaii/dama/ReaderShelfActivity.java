@@ -20,7 +20,7 @@ import java.util.*;
  * Reader Shelf is a safe, offline list of PDFs deliberately downloaded from DAMA LIBRARY.
  * It launches the existing PdfReaderActivity and does not guess/forge file paths.
  */
-public final class ReaderShelfActivity extends Activity {
+public final class ReaderShelfActivity extends DamaActivity {
     private static final int BG=0xff041e1c, DEEP=0xff092b27, PANEL=0xff123c34;
     private static final int GOLD=0xffedc375, WHITE=0xfffff5dd, MUTED=0xffbecabd;
     private LinearLayout content,root;

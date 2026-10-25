@@ -30,7 +30,7 @@ import java.util.zip.GZIPInputStream;
  * Voice playback uses installed Android TTS; this app does NOT bundle prerecorded audio.
  * AI-drafted content is educational reflection, not a verbatim Buddhist scripture quotation.
  */
-public final class DailyVoiceActivity extends Activity {
+public final class DailyVoiceActivity extends DamaActivity {
     private static final int DARK=0xff061e1c, DEEP=0xff092c27, PANEL=0xff133d35;
     private static final int GOLD=0xffefc576, PALE=0xfffff5df, MUTED=0xffb1c5b8, GREEN=0xff30644e;
     private final ArrayList<JSONObject> voices=new ArrayList<>();

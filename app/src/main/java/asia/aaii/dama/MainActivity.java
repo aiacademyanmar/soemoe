@@ -40,7 +40,7 @@ import java.util.concurrent.Executors;
 
 /** DAMA RADIO V2 native Android: offline metadata and licensed portraits,
  * publisher-linked online audio and user-initiated private offline downloads. */
-public class MainActivity extends Activity {
+public class MainActivity extends DamaActivity {
   final int BG=Color.rgb(4,28,28), DEEP=Color.rgb(2,20,21), CARD=Color.rgb(14,52,48), GOLD=Color.rgb(247,202,108), GOLDDIM=Color.rgb(183,147,82);
   final int IVORY=Color.rgb(255,250,237), MUTED=Color.rgb(195,212,204), WHITE=Color.rgb(250,244,232), GREEN=Color.rgb(40,104,79);
   final Handler handler=new Handler(Looper.getMainLooper());

@@ -19,7 +19,7 @@ import android.widget.TextView;
  * DAMA V9 launcher. Three independent native modules: RADIO V7, LIBRARY V7, TV V6.
  * Catalog metadata is bundled offline; streaming requires connection.
  */
-public final class HomeActivity extends Activity {
+public final class HomeActivity extends DamaActivity {
   private static final int NIGHT=0xff061e1d, DEEP=0xff082b28,
       GOLD=0xffedc375, WHITE=0xfffff5dd, SOFT=0xffbfcec0, PANEL=0xff143d36;
   private LinearLayout root;
@@ -50,7 +50,7 @@ public final class HomeActivity extends Activity {
     identity.addView(label("DAMA LIGHT",22,GOLD,true));
     identity.addView(label("ဓမ္မအလင်း",15,SOFT,true));
     bar.addView(identity,new LinearLayout.LayoutParams(0,-2,1));
-    TextView index=label("V21",12,GOLD,true);index.setGravity(Gravity.CENTER);
+    TextView index=label("V22",12,GOLD,true);index.setGravity(Gravity.CENTER);
     index.setBackground(fill(PANEL,11,0xff755d35));bar.addView(index,size(43,34));
     root.addView(bar,size(-1,78));
 
@@ -116,6 +116,24 @@ public final class HomeActivity extends Activity {
     LinearLayout.LayoutParams statWrap=size(-1,-2);statWrap.topMargin=d(13);
     content.addView(health,statWrap);
 
+    // V22 touch sound preference: animation always responds; audio is optional.
+    LinearLayout interaction=horizontal();interaction.setPadding(d(14),d(12),d(14),d(12));
+    interaction.setBackground(fill(PANEL,15,0xff806a49));
+    LinearLayout touchInfo=vertical();
+    touchInfo.addView(label("✦  TOUCH ANIMATION + SOFT SOUND",13,GOLD,true));
+    touchInfo.addView(label("နှိပ်လျှင် Pop Animation • အသံပိတ်/ဖွင့်နိုင်သည်",11,SOFT,false));
+    interaction.addView(touchInfo,new LinearLayout.LayoutParams(0,-2,1));
+    android.widget.Switch audioSwitch=new android.widget.Switch(this);
+    audioSwitch.setContentDescription("အသံအထူးပြုချက် ဖွင့် / ပိတ်");
+    audioSwitch.setChecked(DamaTouchFeedback.enabled(this));
+    audioSwitch.setOnCheckedChangeListener((button,enabled)->{
+        DamaTouchFeedback.setEnabled(this,enabled);
+        android.widget.Toast.makeText(this,enabled?"Click Sound ဖွင့်ပြီးပါပြီ":"Click Sound ပိတ်ပြီးပါပြီ",
+            android.widget.Toast.LENGTH_SHORT).show();
+    });
+    interaction.addView(audioSwitch);
+    LinearLayout.LayoutParams touchCard=size(-1,-2);touchCard.topMargin=d(13);
+    content.addView(interaction,touchCard);
     FooterNav.attach(this,root,"Home");
 
   }
