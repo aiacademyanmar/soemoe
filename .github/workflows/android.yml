@@ -1,7 +1,7 @@
-name: DAMA LIBRARY V4 - Offline Book Catalog and Filters
+name: DAMA RADIO V5 - Premium UI and Audio Link QA
 on:
   push:
-    branches: ["dama-library-v4"]
+    branches: ["dama-radio-redesign-v5"]
   workflow_dispatch:
 permissions:
   contents: read
@@ -45,6 +45,27 @@ jobs:
         run: rm -f app/src/main/assets/books_catalog.json
       - name: Rename compressed catalog to Android-packaged asset
         run: mv app/src/main/assets/books_catalog.json.gz app/src/main/assets/library_catalog.dat
+      - name: Validate publisher MP3 samples (non-destructive checks)
+        run: |
+          python3 - <<'PY'
+          import json,urllib.request,urllib.error,random
+          from pathlib import Path
+          # Test only actual MP3 URLs present in the bundled seed list.
+          tracks=json.loads(Path('app/src/main/assets/seed_tracks.json').read_text())
+          tested=[]
+          for t in tracks[:14]:
+              url=t['url']
+              try:
+                  req=urllib.request.Request(url,headers={'User-Agent':'DAMA-Radio-QA/1.0','Range':'bytes=0-1023'})
+                  with urllib.request.urlopen(req,timeout=8) as rsp:
+                      ct=rsp.headers.get('Content-Type','')
+                      start=rsp.read(1024)
+                      ok=rsp.status in (200,206) and ('audio' in ct or start[:3]==b'ID3' or start[:2] in (b'\\xff\\xfb',b'\\xff\\xf3',b'\\xff\\xf2'))
+                      tested.append({'url':url,'status':'reachable_audio_sample' if ok else 'response_not_verified_audio','http':rsp.status,'content_type':ct})
+              except Exception as e:tested.append({'url':url,'status':'unavailable_or_unverified','error':str(e)[:150]})
+          Path('mp3_playback_link_qa.json').write_text(json.dumps({'method':'HTTP range/first 1024 bytes, NOT full audio playback','tested_count':len(tested),'total_bundled_seed':len(tracks),'links':tested},ensure_ascii=False,indent=2))
+          print('MP3 sample results', {k:sum(v['status']==k for v in tested) for k in set(v['status'] for v in tested)})
+          PY
       - name: Build installable debug APK
         run: gradle --no-daemon assembleDebug
       - name: Verify embedded data and APK consistency
@@ -63,6 +84,6 @@ jobs:
         if: always()
         with:
           name: DAMA-LIBRARY-V4-Android-APK
-          path: app/build/outputs/apk/debug/*.apk
+          path: |\n            app/build/outputs/apk/debug/*.apk\n            mp3_playback_link_qa.json
           if-no-files-found: warn
           retention-days: 60
