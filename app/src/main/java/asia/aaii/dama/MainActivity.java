@@ -92,7 +92,7 @@ public class MainActivity extends Activity {
   @Override public void onCreate(Bundle b){super.onCreate(b);getWindow().setStatusBarColor(DEEP);getWindow().setNavigationBarColor(DEEP);initData();show("Home");}
   void show(String next){screen=next;outer=vert();outer.setBackgroundColor(BG);setContentView(outer);
     createTop(); ScrollView scroll=new ScrollView(this);scroll.setFillViewport(false);scroll.setVerticalScrollBarEnabled(false);outer.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));body=vert();body.setPadding(dp(15),dp(13),dp(15),dp(14));scroll.addView(body);
-    if(next.equals("Home"))home();else if(next.equals("Radio"))browse();else if(next.equals("Playing"))nowPlaying();else if(next.equals("Collection"))collection();else if(next.equals("Library")){startActivity(new Intent(this,LibraryActivity.class));screen="Home";home();}else if(next.equals("TV"))other("DAMA TV","▶ YouTube တရားတော်", "https://www.dhammadownload.com/VideoInMyanmar.htm");else if(next.equals("Worship"))other("DAILY WORSHIP","✿ နေ့စဉ်ဝတ်ပြုခြင်း", "https://www.dhammadownload.com/");
+    if(next.equals("Home"))home();else if(next.equals("Radio"))browse();else if(next.equals("Playing"))nowPlaying();else if(next.equals("Collection"))collection();else if(next.equals("Library")){startActivity(new Intent(this,LibraryActivity.class));screen="Home";home();}else if(next.equals("TV")){startActivity(new Intent(this,TvActivity.class));screen="Home";home();}else if(next.equals("Worship"))other("DAILY WORSHIP","✿ နေ့စဉ်ဝတ်ပြုခြင်း", "https://www.dhammadownload.com/");
     if(selected!=null&&!next.equals("Playing"))miniPlayer();bottomBar();
   }
   void createTop(){

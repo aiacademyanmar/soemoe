@@ -66,6 +66,20 @@ jobs:
           Path('mp3_playback_link_qa.json').write_text(json.dumps({'method':'HTTP range/first 1024 bytes, NOT full audio playback','tested_count':len(tested),'total_bundled_seed':len(tracks),'links':tested},ensure_ascii=False,indent=2))
           print('MP3 sample results', {k:sum(v['status']==k for v in tested) for k in set(v['status'] for v in tested)})
           PY
+      - name: Decode DAMA TV assets
+        run: |
+          base64 -d app/src/main/assets/tv_catalog.json.gz.b64 > app/src/main/assets/tv_catalog.json.gz
+          base64 -d app/src/main/res/drawable-nodpi/tv_banner.jpg.b64 > app/src/main/res/drawable-nodpi/tv_banner.jpg
+          rm -f app/src/main/assets/tv_catalog.json.gz.b64 app/src/main/res/drawable-nodpi/tv_banner.jpg.b64
+      - name: Verify DAMA TV video catalog
+        run: |
+          python3 - <<'PY'
+          import gzip,json
+          records=json.loads(gzip.open('app/src/main/assets/tv_catalog.json.gz','rb').read())
+          assert len(records)==3264,len(records)
+          assert len({v['id'] for v in records})==3264
+          print('3264 unique YouTube video IDs bundled as offline metadata')
+          PY
       - name: Build installable debug APK
         run: gradle --no-daemon assembleDebug
       - name: Verify embedded data and APK consistency
@@ -83,7 +97,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: DAMA-LIBRARY-V4-Android-APK
+          name: DAMA-TV-V6-Android-APK
           path: |
             app/build/outputs/apk/debug/*.apk
             mp3_playback_link_qa.json
