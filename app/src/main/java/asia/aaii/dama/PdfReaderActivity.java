@@ -50,6 +50,7 @@ public class PdfReaderActivity extends Activity {
         String path = getIntent().getStringExtra("path");
         String title = getIntent().getStringExtra("title");
         if (state != null) current = state.getInt("page", 0);
+        else if(path!=null)current=getSharedPreferences("dama_reader",MODE_PRIVATE).getInt("page_"+path.hashCode(),0);
         try {
             if (path == null) throw new IllegalArgumentException("No PDF selected");
             File file = new File(path).getCanonicalFile();
@@ -94,6 +95,10 @@ public class PdfReaderActivity extends Activity {
     private void render(int index) {
         if (closed || pdf == null || index<0 || index>=pageCount) return;
         current=index;final int request=++generation;
+        String filePath=getIntent().getStringExtra("path");
+        if(filePath!=null)getSharedPreferences("dama_reader",MODE_PRIVATE).edit()
+            .putString("last_path",filePath).putString("last_title",getIntent().getStringExtra("title"))
+            .putInt("page_"+filePath.hashCode(),index).apply();
         if (counter != null) counter.setText(""+(index+1)+" / "+pageCount);
         if (zoomLabel != null) zoomLabel.setText("Loading …");
         worker.execute(()->{

@@ -7,6 +7,7 @@
         <activity android:name=".AuthorDirectoryActivity" android:exported="false" />
         <activity android:name=".LibraryActivity" android:exported="false" />
         <activity android:name=".PdfReaderActivity" android:exported="false" />
+        <activity android:name=".ReaderShelfActivity" android:exported="false" />
         <activity android:name=".MainActivity" android:screenOrientation="unspecified" android:exported="false" />
         <activity android:name=".HomeActivity" android:exported="true">
             <intent-filter>

@@ -634,40 +634,7 @@ public class MainActivity extends Activity {
     toast("Download စတင်နေပါပြီ…");background.execute(()->{File tmp=new File(target.getPath()+".part");try{URL url=new URL(t.url);HttpURLConnection c=(HttpURLConnection)url.openConnection();c.setConnectTimeout(18000);c.setReadTimeout(45000);c.setInstanceFollowRedirects(true);if(c.getResponseCode()!=200)throw new IOException("HTTP "+c.getResponseCode());long length=c.getContentLengthLong();if(length>180L*1024L*1024L)throw new IOException("Audio file too large");try(InputStream in=c.getInputStream();FileOutputStream out=new FileOutputStream(tmp)){byte[] bytes=new byte[32768];int n;long total=0;while((n=in.read(bytes))!=-1){total+=n;if(total>180L*1024L*1024L)throw new IOException("Audio limit exceeded");out.write(bytes,0,n);}if(total<10000)throw new IOException("File is unexpectedly small");}if(!tmp.renameTo(target))throw new IOException("File move failed");handler.post(()->{toast("MP3 Download ပြီးပါပြီ · Offline ဖွင့်နိုင်ပါပြီ");if(screen.equals("Collection"))show("Collection");});}catch(Exception e){tmp.delete();handler.post(()->toast("Download မအောင်မြင်: "+e.getMessage()));}});
     }).setNegativeButton("မလုပ်တော့ပါ",null).show();}
   void other(String title,String b,String url){heading(title);ImageView img=picture(R.drawable.radio_hero,220);body.addView(img,lp(-1,220));body.addView(space(14));body.addView(text(b,18,IVORY,true));body.addView(space(14));body.addView(click("မူရင်းဓမ္မစာမျက်နှာသို့ သွားရန် ↗",()->open(url)));body.addView(space(16));body.addView(text("DAMA Radio V2 အဓိက MP3 Library ကို ပြန်သွားနိုင်ပါတယ်။",12,MUTED,false));body.addView(click("♫  DAMA RADIO",()->show("Radio")));}
-  void bottomBar(){
-    LinearLayout footer=vert();footer.setPadding(dp(11),dp(6),dp(11),dp(8));
-    footer.setBackgroundColor(BG);
-    LinearLayout nav=row();nav.setGravity(Gravity.CENTER_VERTICAL);
-    nav.setPadding(dp(6),dp(8),dp(6),dp(8));
-    GradientDrawable panel=new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,
-        new int[]{0xff092922,0xff17453b,0xff0b2c29});
-    panel.setCornerRadius(dp(23));panel.setStroke(dp(1),GOLD);
-    nav.setBackground(panel);nav.setElevation(dp(10));
-    String[] routes={"Home","Radio","Library","TV","Worship"};
-    String[] glyph={"⌂","♫","▤","▶","✿"};
-    String[] labels={"Home","Radio","Books","TV","Worship"};
-    for(int i=0;i<routes.length;i++){
-       final String dest=routes[i];
-       boolean active=screen.equals(dest)||(screen.equals("Playing")&&i==1)
-                      ||(screen.equals("Collection")&&i==1);
-       LinearLayout cell=vert();cell.setGravity(Gravity.CENTER);
-       if(active){
-           GradientDrawable selectedBg=new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
-               new int[]{0xff496043,0xff285044});
-           selectedBg.setCornerRadius(dp(16));selectedBg.setStroke(dp(1),0xffc2a15c);
-           cell.setBackground(selectedBg);
-       }
-       TextView ic=text(glyph[i],23,active?GOLD:IVORY,true);ic.setGravity(Gravity.CENTER);
-       TextView label=text(labels[i],10,active?GOLD:MUTED,active);label.setGravity(Gravity.CENTER);
-       cell.addView(ic);cell.addView(label);
-       cell.setContentDescription(labels[i]+" tab");
-       LinearLayout.LayoutParams item=new LinearLayout.LayoutParams(0,dp(58),1);
-       item.setMargins(dp(2),0,dp(2),0);nav.addView(cell,item);
-       cell.setOnClickListener(v->{if("Home".equals(dest))finish();else show(dest);});
-    }
-    footer.addView(nav,lp(-1,74));
-    outer.addView(footer,lp(-1,88));
-}
+  void bottomBar(){FooterNav.attach(this,outer,"Radio");}
   void open(String url){try{startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse(url)));}catch(Exception ex){toast("Website မဖွင့်နိုင်ပါ");}}
   void saveCache(){File out=new File(getFilesDir(),CACHE_FILE),tmp=new File(getFilesDir(),CACHE_FILE+".tmp");try(FileOutputStream f=new FileOutputStream(tmp)){JSONArray a=new JSONArray();synchronized(catalog){for(Track t:catalog.values())a.put(t.json());}f.write(a.toString().getBytes(StandardCharsets.UTF_8));f.getFD().sync();if(!tmp.renameTo(out))throw new IOException("rename failed");}catch(Exception e){android.util.Log.e("DAMA","Unable to cache catalog",e);}}
   String fetch(String ref)throws Exception{URL url=new URL(ref);String host=url.getHost().toLowerCase(Locale.ROOT);if(!host.equals("dhammadownload.com")&&!host.equals("www.dhammadownload.com"))throw new IOException("host not allowed");HttpURLConnection conn=(HttpURLConnection)url.openConnection();conn.setConnectTimeout(16000);conn.setReadTimeout(26000);conn.setRequestProperty("User-Agent","DAMA-RADIO/2.0 Audio link index (no audio downloaded)");try{if(conn.getResponseCode()!=200)throw new IOException("HTTP "+conn.getResponseCode());ByteArrayOutputStream b=new ByteArrayOutputStream();try(InputStream in=conn.getInputStream()){byte[] array=new byte[8192];int n;while((n=in.read(array))!=-1){if(b.size()+n>5_000_000)throw new IOException("HTML too large");b.write(array,0,n);}}String enc=conn.getContentEncoding();String contentType=conn.getContentType();if(contentType!=null&&contentType.toLowerCase(Locale.ROOT).contains("charset=")){String ch=contentType.replaceAll("(?i).*charset=\\s*([A-Za-z0-9_-]+).*","$1");try{return b.toString(ch);}catch(Exception ignored){}}return b.toString("UTF-8");}finally{conn.disconnect();}}

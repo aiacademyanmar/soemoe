@@ -127,6 +127,7 @@ public class TvActivity extends Activity {
         resultCount=text("Video စာရင်းပြင်ဆင်နေသည်…",12,GOLD,false);filterPanel.addView(resultCount);gap(filterPanel,4);
         videoList=new ListView(this);videoList.setBackgroundColor(BG);videoList.setDividerHeight(dp(4));videoList.setCacheColorHint(BG);
         root.addView(videoList,new LinearLayout.LayoutParams(-1,0,1));
+        FooterNav.attach(this,root,"TV");
         videoList.setOnItemClickListener((p,v,index,id)->{if(section.equals("Playlists")){sourceIndex=index+1;section="All";showBrowse();}else if(index<filtered.size())openVideo(filtered.get(index));});
         queryInput.addTextChangedListener(new TextWatcher(){public void beforeTextChanged(CharSequence s,int start,int count,int after){}
             public void onTextChanged(CharSequence s,int start,int before,int count){query=s.toString();filterList();}

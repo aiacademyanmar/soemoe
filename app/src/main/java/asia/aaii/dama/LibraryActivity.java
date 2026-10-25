@@ -116,6 +116,7 @@ public class LibraryActivity extends Activity {
         list=vert();page.addView(list);
         page.addView(btn("မူရင်း DhammaDownload စာကြည့်တိုက် ↗",()->open("https://www.dhammadownload.com/eBook-Myanmar.htm")));
         TextView rights=t("စာအုပ်လင့်ခ်များကို Offline သိမ်းထားသည်။ PDF ဖိုင်များကို ကိုယ်တိုင် Download လုပ်မှသာ Offline ဖတ်နိုင်သည်။ မူရင်းရေးသားသူများ၏ မူပိုင်ခွင့်ကို လေးစားပါ။",11,MUTED,false);rights.setPadding(0,dp(12),0,0);page.addView(rights);
+        FooterNav.attach(this,main,"Library");
         filter();
     }
     void filter(){if(list==null)return;visible.clear();String q=query.toLowerCase(Locale.ROOT).trim();for(Book b:books){if(!category.equals("အားလုံး")&&!b.category.equals(category))continue;

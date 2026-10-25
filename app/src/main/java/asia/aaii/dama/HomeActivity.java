@@ -16,7 +16,7 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 
 /**
- * DAMA V8 launcher. Three independent native modules: RADIO V7, LIBRARY V7, TV V6.
+ * DAMA V9 launcher. Three independent native modules: RADIO V7, LIBRARY V7, TV V6.
  * Catalog metadata is bundled offline; streaming requires connection.
  */
 public final class HomeActivity extends Activity {
@@ -50,7 +50,7 @@ public final class HomeActivity extends Activity {
     identity.addView(label("DAMA  APP",23,GOLD,true));
     identity.addView(label("Dhamma for a Better Life",11,SOFT,false));
     bar.addView(identity,new LinearLayout.LayoutParams(0,-2,1));
-    TextView index=label("V8",12,GOLD,true);index.setGravity(Gravity.CENTER);
+    TextView index=label("V9",12,GOLD,true);index.setGravity(Gravity.CENTER);
     index.setBackground(fill(PANEL,11,0xff755d35));bar.addView(index,size(43,34));
     root.addView(bar,size(-1,78));
 
@@ -88,16 +88,8 @@ public final class HomeActivity extends Activity {
     explanation.setPadding(0,d(7),0,0);note.addView(explanation);
     LinearLayout.LayoutParams np=size(-1,-2);np.topMargin=d(13);content.addView(note,np);
 
-    LinearLayout nav=horizontal();nav.setPadding(d(3),d(7),d(3),d(9));
-    nav.setBackground(fill(DEEP,0,0));
-    String[] icons={"⌂","♫","▣","▶"};String[] names={"Home","Radio","Library","TV"};
-    for(int i=0;i<4;i++){final int n=i;LinearLayout cell=vertical();cell.setGravity(Gravity.CENTER);
-      TextView ic=label(icons[i],23,i==0?GOLD:SOFT,true);ic.setGravity(Gravity.CENTER);cell.addView(ic);
-      TextView title=label(names[i],11,i==0?GOLD:SOFT,i==0);title.setGravity(Gravity.CENTER);cell.addView(title);
-      nav.addView(cell,new LinearLayout.LayoutParams(0,d(55),1));
-      cell.setOnClickListener(v->go(n));
-    }
-    root.addView(nav,size(-1,73));
+    FooterNav.attach(this,root,"Home");
+
   }
   private void addModule(LinearLayout into,String number,String title,String explanation,
       String footer,int background,Class<?> target,String glyph){
