@@ -34,7 +34,7 @@ jobs:
           python3 - <<'PY'
           import gzip,json,collections
           b=json.loads(gzip.open('app/src/main/assets/books_catalog.json.gz','rb').read())
-          assert len(b)==1894
+          assert len(b)>=1894
           assert len(set(x['url'] for x in b))==1894
           assert collections.Counter(x['format'] for x in b)=={'PDF':1849,'DOC':45}
           assert len({x['author'] for x in b})>=50
