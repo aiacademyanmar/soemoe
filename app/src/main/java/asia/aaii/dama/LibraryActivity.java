@@ -169,17 +169,7 @@ public class LibraryActivity extends Activity {
             msg("ဤဆရာတော်၏ စာအုပ်ကို လက်ရှိ Catalog တွင် မတွေ့ရသေးပါ");
         }else{msg(names[monkIndex]+" — စာအုပ် "+visible.size()+" အုပ်");}
     }
-    void donatePopup(){
-        LinearLayout panel=vert();panel.setPadding(dp(19),dp(13),dp(19),dp(6));
-        TextView heading=t("🙏  ဓမ္မအလှူ ပံ့ပိုးကူညီရန်",18,GOLD,true);
-        panel.addView(heading);
-        TextView msg=t("ဓမ္မစာပေ၊ တရားတော်အသံနှင့် ဗုဒ္ဓဘာသာပညာများကို အများပြည်သူ လေ့လာနိုင်ရေးအတွက် AAII.ASIA မှ ပံ့ပိုးကူညီထားပါသည်။\n\nဤစီမံကိန်းကို ဆက်လက်တိုးတက်အောင် ကူညီလိုပါက အောက်ပါ ဝက်ဘ်ဆိုက်များတွင် အသေးစိတ်ကြည့်ရှုနိုင်ပါသည်။\n\nအလှူငွေပေးရန် မဖြစ်မနေမလိုအပ်ပါ။",13,IVORY,false);
-        msg.setPadding(0,dp(12),0,dp(14));panel.addView(msg);
-        panel.addView(btn("🌐  DONATE BY AAII.ASIA",()->open("https://aaii.asia/")));
-        panel.addView(btn("🌐  SOEMOE.AAII.ASIA",()->open("https://soemoe.aaii.asia/")));
-        new AlertDialog.Builder(this).setView(panel)
-            .setNegativeButton("ပိတ်မည်",null).show();
-    }
+    void donatePopup(){DonationPopup.show(this);}
     void featuredSayadaws(){
         TextView title=t("✦  FEATURED SAYADAWS",16,GOLD,true);
         title.setPadding(dp(2),dp(18),0,dp(9));page.addView(title);

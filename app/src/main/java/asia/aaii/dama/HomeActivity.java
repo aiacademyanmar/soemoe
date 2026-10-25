@@ -45,12 +45,12 @@ public final class HomeActivity extends Activity {
     root=vertical();root.setBackgroundColor(NIGHT);setContentView(root);
     if(android.os.Build.VERSION.SDK_INT>=35){root.setOnApplyWindowInsetsListener((v,insets)->{android.graphics.Insets safe=insets.getInsets(android.view.WindowInsets.Type.systemBars());v.setPadding(safe.left,safe.top,safe.right,safe.bottom);return insets;});}
     LinearLayout bar=horizontal();bar.setBackgroundColor(NIGHT);bar.setPadding(d(21),d(12),d(18),d(13));
-    TextView mark=label("☸",32,GOLD,true);mark.setGravity(Gravity.CENTER);bar.addView(mark,size(45,47));
+    ImageView mark=new ImageView(this);mark.setImageResource(R.drawable.dama_official_logo_icon);mark.setScaleType(ImageView.ScaleType.FIT_CENTER);bar.addView(mark,size(49,49));
     LinearLayout identity=vertical();identity.setPadding(d(10),0,0,0);
-    identity.addView(label("DAMA  APP",23,GOLD,true));
-    identity.addView(label("Dhamma for a Better Life",11,SOFT,false));
+    identity.addView(label("DAMA LIGHT",22,GOLD,true));
+    identity.addView(label("ဓမ္မအလင်း",15,SOFT,true));
     bar.addView(identity,new LinearLayout.LayoutParams(0,-2,1));
-    TextView index=label("V20",12,GOLD,true);index.setGravity(Gravity.CENTER);
+    TextView index=label("V21",12,GOLD,true);index.setGravity(Gravity.CENTER);
     index.setBackground(fill(PANEL,11,0xff755d35));bar.addView(index,size(43,34));
     root.addView(bar,size(-1,78));
 
@@ -86,6 +86,10 @@ public final class HomeActivity extends Activity {
       "365 Days · Offline Reading · Burmese TTS",R.drawable.radio_pattana,DailyVoiceActivity.class,"☀");
 
     addModule(content,"05","SAYADAW GALLERY","ဆရာတော် ၂၂ ပါး • Photo / Illustration\nProfile • စာအုပ် • MP3 • TV", "22 Profiles · 3 Source Photos · 19 Illustration Slots",R.drawable.radio_meditation,SayadawDirectoryActivity.class,"☸");
+    TextView donate=label("♡  ဓမ္မအလှူ ပံ့ပိုးကူညီရန် • DONATE BY AAII.ASIA",13,GOLD,true);
+    donate.setGravity(Gravity.CENTER);donate.setPadding(d(10),d(14),d(10),d(14));donate.setBackground(fill(PANEL,13,0xffa7844b));
+    LinearLayout.LayoutParams dp=size(-1,-2);dp.bottomMargin=d(12);content.addView(donate,dp);
+    donate.setOnClickListener(v->DonationPopup.show(this));
     LinearLayout note=vertical();note.setBackground(fill(PANEL,13,0xff526b54));padding(note,15,14);
     note.addView(label("✦   DAMA Learning Collection",13,GOLD,true));
     TextView explanation=label("စာအုပ်နှင့် ဗီဒီယိုလင့်ခ်စာရင်းများကို Offline ကြည့်ရှုနိုင်သည်။ အသံ/ဗီဒီယို Stream လုပ်ရန် Internet လိုအပ်ပါသည်။",11,SOFT,false);
