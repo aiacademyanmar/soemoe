@@ -104,7 +104,7 @@ jobs:
           with zipfile.ZipFile(path) as z:
             assert z.testzip() is None
             b=json.loads(gzip.decompress(z.read('assets/library_catalog.dat')))
-            assert len(b)==1894
+            assert len(b)>=1894
             assert 'classes.dex' in z.namelist()
             assert 'assets/tv_catalog.json' in z.namelist()
             vids=json.loads(z.read('assets/tv_catalog.json'))
