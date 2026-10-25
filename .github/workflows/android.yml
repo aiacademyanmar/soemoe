@@ -84,6 +84,8 @@ jobs:
         if: always()
         with:
           name: DAMA-LIBRARY-V4-Android-APK
-          path: |\n            app/build/outputs/apk/debug/*.apk\n            mp3_playback_link_qa.json
+          path: |
+            app/build/outputs/apk/debug/*.apk
+            mp3_playback_link_qa.json
           if-no-files-found: warn
           retention-days: 60
