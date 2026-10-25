@@ -29,7 +29,10 @@ public class LibraryActivity extends Activity {
     static final int BG=0xff041e1c,DEEP=0xff001613,CARD=0xff11362e,GOLD=0xffe4b767,IVORY=0xfffff8e7,MUTED=0xffa6b3a5;
     final ArrayList<Book> books=new ArrayList<>(),visible=new ArrayList<>();
     Set<String> favorites=new HashSet<>(); SharedPreferences prefs;
-    LinearLayout page,list,main; TextView counter; EditText search;
+    LinearLayout page,list,main; TextView counter,ebookSyncLabel; ProgressBar ebookSyncProgress;
+    EditText search;
+    volatile boolean syncingBooks=false;
+    int ebookSyncDone=0,ebookSyncTotal=1;
     String query="",category="အားလုံး",authorFilter="",fileFilter="ALL",statusFilter="ALL",sortMode="DEFAULT"; boolean favoritesOnly=false,offlineOnly=false;int rendered=0;
     final String[] categories={"အားလုံး","ပဋ္ဌာန်း","အဘိဓမ္မာ","ပိဋကတ်သုံးပုံ","ဝိပဿနာ","ဝန်ကြီးဌာန","ပရိတ်/ဝတ်ရွတ်","ပါဠိ","ဓမ္မစာအုပ်"};
     static class Book {String title,author,category,format,url,listUrl, status,id,authorType;
@@ -77,7 +80,44 @@ public class LibraryActivity extends Activity {
     }
 
     JSONArray load(String p){try(InputStream original=getAssets().open(p);InputStream in=p.endsWith(".dat")?new java.util.zip.GZIPInputStream(original):original){ByteArrayOutputStream out=new ByteArrayOutputStream();byte[] b=new byte[65536];int n;while((n=in.read(b))>0)out.write(b,0,n);return new JSONArray(out.toString("UTF-8"));}catch(Exception e){return new JSONArray();}}
-    @Override public void onCreate(Bundle b){super.onCreate(b);getWindow().setStatusBarColor(DEEP);getWindow().setNavigationBarColor(DEEP);prefs=getSharedPreferences("dama_books",0);favorites=new HashSet<>(prefs.getStringSet("saved",new HashSet<>())); LinkedHashMap<String,Book> uniq=new LinkedHashMap<>(); for(String f:new String[]{"library_catalog.dat"}){JSONArray x=load(f);for(int i=0;i<x.length();i++){JSONObject j=x.optJSONObject(i);if(j==null)continue;Book v=new Book(j);if(v.url.startsWith("http"))uniq.putIfAbsent(v.url,v);}}books.addAll(uniq.values());draw();}
+    @Override public void onCreate(Bundle b){super.onCreate(b);getWindow().setStatusBarColor(DEEP);getWindow().setNavigationBarColor(DEEP);prefs=getSharedPreferences("dama_books",0);favorites=new HashSet<>(prefs.getStringSet("saved",new HashSet<>())); LinkedHashMap<String,Book> uniq=new LinkedHashMap<>(); for(String f:new String[]{"library_catalog.dat","ebook_catalog_updates.json"}){JSONArray x=f.equals("ebook_catalog_updates.json")?EbookSync.readSaved(this):load(f);for(int i=0;i<x.length();i++){JSONObject j=x.optJSONObject(i);if(j==null)continue;Book v=new Book(j);if(v.url.startsWith("http"))uniq.putIfAbsent(v.url,v);}}books.addAll(uniq.values());draw();}
+    void syncBooksNow(){
+        if(syncingBooks){msg("EBook Sync လုပ်နေဆဲပါ");return;}
+        syncingBooks=true;ebookSyncDone=0;ebookSyncTotal=1;
+        if(ebookSyncProgress!=null){ebookSyncProgress.setMax(1);ebookSyncProgress.setProgress(0);}
+        if(ebookSyncLabel!=null)ebookSyncLabel.setText("EBook Publisher Pages စစ်နေပါသည် …");
+        HashSet<String> currentUrls=new HashSet<>();for(Book book:books)currentUrls.add(book.url);
+        EbookSync.run(this,currentUrls,new EbookSync.Listener(){
+          public void onProgress(int checked,int total,int added,int errors,String source){
+            ebookSyncDone=checked;ebookSyncTotal=Math.max(1,total);
+            if(ebookSyncProgress!=null){ebookSyncProgress.setMax(ebookSyncTotal);ebookSyncProgress.setProgress(checked);}
+            if(ebookSyncLabel!=null)ebookSyncLabel.setText(
+              "EBOOK SYNC "+checked+"/"+total+" • "+(100*checked/Math.max(1,total))+"%  •  +"+added+"  • Errors "+errors);
+          }
+          public void onDone(int added,int checked,int errors,String diagnostic){
+            syncingBooks=false;
+            int actuallyAdded=0;
+            HashSet<String> urls=new HashSet<>();for(Book book:books)urls.add(book.url);
+            JSONArray saved=EbookSync.readSaved(LibraryActivity.this);
+            for(int i=0;i<saved.length();i++){
+              JSONObject o=saved.optJSONObject(i);if(o==null)continue;
+              Book b=new Book(o);
+              if(b.url.startsWith("https://")&&urls.add(b.url)){books.add(b);actuallyAdded++;}
+            }
+            String summary="EBOOK Sync: "+checked+" source pages checked • +"+actuallyAdded+" links • "+errors+" errors";
+            prefs.edit().putString("ebook_sync_summary",summary).putLong("ebook_sync_last_at",System.currentTimeMillis()).apply();
+            final int count=actuallyAdded;
+            if(!isFinishing()&&!isDestroyed()){
+              draw();
+              new AlertDialog.Builder(LibraryActivity.this).setTitle("DAMA LIBRARY — EBook Sync Result")
+                .setMessage(summary+"\n\n"+diagnostic+
+                "\n\nNote: Limited publisher source pages, not a complete website crawl. Links are not individually verified.")
+                .setPositiveButton("OK",null)
+                .setNeutralButton("Source Website",(d,w)->open("https://www.dhammadownload.com/eBook-Myanmar.htm")).show();
+            }
+          }
+        });
+    }
     void addPremiumStat(LinearLayout row,String value,String caption){
         LinearLayout tile=vert();tile.setGravity(Gravity.CENTER);tile.setPadding(dp(5),dp(9),dp(5),dp(9));
         tile.setBackground(shape(0xff174238,14,0xff645f45));
@@ -127,6 +167,25 @@ public class LibraryActivity extends Activity {
         addPremiumShortcut(quick,"☸","SAYADAWS","Author directory",()->openAuthorDirectory());
         addPremiumShortcut(quick,"♡","FAVORITES","Saved books",()->{favoritesOnly=!favoritesOnly;offlineOnly=false;filter();});
         page.addView(quick);
+        LinearLayout syncPanel=vert();syncPanel.setPadding(dp(12),dp(13),dp(12),dp(13));
+        syncPanel.setBackground(shape(0xff123b34,15,0xff746a4c));
+        TextView syncTitle=t("↻  EBOOK LIST SYNC PROGRESS",13,GOLD,true);
+        syncPanel.addView(syncTitle);
+        ebookSyncLabel=t(syncingBooks?"EBook Sync "+ebookSyncDone+"/"+ebookSyncTotal:
+            prefs.getString("ebook_sync_summary","Offline EBook Catalog "+books.size()+" links • Live sync not run"),11,MUTED,false);
+        ebookSyncLabel.setPadding(0,dp(7),0,dp(9));syncPanel.addView(ebookSyncLabel);
+        ebookSyncProgress=new ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal);
+        ebookSyncProgress.setMax(Math.max(1,ebookSyncTotal));ebookSyncProgress.setProgress(syncingBooks?ebookSyncDone:0);
+        ebookSyncProgress.setProgressTintList(android.content.res.ColorStateList.valueOf(GOLD));
+        ebookSyncProgress.setProgressBackgroundTintList(android.content.res.ColorStateList.valueOf(0xff38574c));
+        syncPanel.addView(ebookSyncProgress,new LinearLayout.LayoutParams(-1,dp(7)));
+        TextView syncButton=btn("↻  Publisher မှ EBook အသစ်များစစ်ရန်",()->syncBooksNow());
+        LinearLayout.LayoutParams syncBtnParams=new LinearLayout.LayoutParams(-1,-2);
+        syncBtnParams.topMargin=dp(10);syncPanel.addView(syncButton,syncBtnParams);
+        TextView syncNote=t("Publisher eBook စာမျက်နှာ အချို့ကိုသာ စစ်ပြီး Link Metadata အသစ်ကို Offline သိမ်းသည်။ PDF များ အလိုအလျောက် Download မလုပ်ပါ။",10,MUTED,false);
+        syncNote.setPadding(0,dp(9),0,0);syncPanel.addView(syncNote);
+        LinearLayout.LayoutParams syncWrap=new LinearLayout.LayoutParams(-1,-2);
+        syncWrap.setMargins(0,dp(13),0,dp(7));page.addView(syncPanel,syncWrap);
         page.addView(t("စာအုပ်အမည်၊ စာရေးသူနှင့် လင့်ခ်များ Offline ပါဝင်သည်။ Link အလုပ်လုပ်မှုကို တစ်ခုချင်းစစ်ဆေးရန် လိုအပ်သည်။",10,MUTED,false));
         // Detailed author progress remains available in code; compact metrics lead this screen.
         search=new EditText(this);search.setSingleLine(true);search.setTextColor(IVORY);search.setHintTextColor(0xffa7bcaf);search.setTextSize(14);search.setPadding(dp(13),dp(5),dp(13),dp(5));search.setBackground(shape(0xff183e37,15,0xffab8650));search.setHint("စာအုပ် / ဆရာတော် / PDF ရှာရန်…");search.setText(query);page.addView(search,new LinearLayout.LayoutParams(-1,dp(52)));search.addTextChangedListener(new TextWatcher(){public void beforeTextChanged(CharSequence s,int st,int c,int a){}public void onTextChanged(CharSequence s,int st,int b,int c){query=s.toString();filter();}public void afterTextChanged(Editable e){}});

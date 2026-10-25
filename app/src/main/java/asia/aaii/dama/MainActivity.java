@@ -55,7 +55,9 @@ public class MainActivity extends Activity {
   int monkFilter=0, categoryFilter=0, seekInterval=1000;
   String[] cat={"အားလုံး","ပဋ္ဌာန်း","ဝိပဿနာ","ပါဠိ / ပရိတ်","အခြား"};
   LinearLayout outer,body,miniBar,listArea;
-  TextView counter,information,miniLabel;
+  TextView counter,information,miniLabel,radioSyncStatus;
+  ProgressBar radioSyncProgress;
+  volatile int radioSyncDone=0,radioSyncTotal=0;
   EditText searchBox;
   MediaPlayer player; Track selected;
   boolean ready=false,syncing=false,repeat=false,shuffle=false,buffering=false;
@@ -260,7 +262,16 @@ public class MainActivity extends Activity {
     LinearLayout buttons=row();TextView sync=click("↻  Sync Catalog",()->sync());buttons.addView(sync);buttons.addView(spaceX(9));buttons.addView(click("▶  Player",()->openPlayerPreview()));
     buttons.addView(spaceX(9));
     buttons.addView(click("Source ↗",()->open("https://www.dhammadownload.com/AudioInMyanmar.htm")));body.addView(buttons);body.addView(space(9));
-    information=text("Offline catalog "+catalog.size()+" • Playback မစစ်ရသေးပါ",11,MUTED,false);body.addView(information);body.addView(space(11));
+    information=text("Offline catalog "+catalog.size()+" • Playback မစစ်ရသေးပါ",11,MUTED,false);body.addView(information);body.addView(space(7));
+    radioSyncStatus=text(syncing?"MP3 Sync လုပ်နေသည် … "+radioSyncDone+"/"+radioSyncTotal:
+      settings.getString("radio_sync_summary","MP3 Catalog: "+catalog.size()+" links Offline (site verification pending)"),11,GOLD,false);
+    body.addView(radioSyncStatus);body.addView(space(7));
+    radioSyncProgress=new ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal);
+    radioSyncProgress.setMax(Math.max(1,monks.size()));
+    radioSyncProgress.setProgress(syncing?radioSyncDone:Math.max(0,settings.getInt("radio_sync_last_checked",0)));
+    radioSyncProgress.setProgressTintList(android.content.res.ColorStateList.valueOf(GOLD));
+    radioSyncProgress.setProgressBackgroundTintList(android.content.res.ColorStateList.valueOf(0xff34594d));
+    body.addView(radioSyncProgress,lp(-1,7));body.addView(space(12));
     listArea=vert();body.addView(listArea);searchBox.addTextChangedListener(new TextWatcher(){public void beforeTextChanged(CharSequence s,int st,int n,int a){}public void afterTextChanged(Editable e){}public void onTextChanged(CharSequence s,int st,int b,int c){query=s.toString();filter();}});filter();
   }
   interface Select {void chose(int index);}
@@ -728,7 +739,8 @@ public class MainActivity extends Activity {
   }
   void sync(){
     if(syncing){toast("Sync လုပ်နေဆဲပါ");return;}
-    syncing=true;
+    syncing=true;radioSyncDone=0;radioSyncTotal=monks.size();
+    show("Radio");
     toast("MP3 Catalog "+catalog.size()+" ပုဒ် Offline ပါရှိပြီးပါပြီ · Website ကို စစ်နေသည်");
     background.execute(()->{
       int okay=0,failed=0,added=0;
@@ -746,15 +758,23 @@ public class MainActivity extends Activity {
           if(faults.size()<7)faults.add(monk.name+": "+ex.getClass().getSimpleName()+" "+ex.getMessage());
         }
         final int progress=okay+failed,total=monks.size(),failCount=failed,count;
+        radioSyncDone=progress;
+        if(progress==1||progress%3==0||progress==total)
+          settings.edit().putInt("radio_sync_last_checked",progress).apply();
         synchronized(catalog){count=catalog.size();}
         handler.post(()->{
-          if(information!=null&&screen.equals("Radio"))information.setText(
-            "Sync "+progress+"/"+total+"  •  MP3 "+count+"  •  Errors "+failCount);
+          if(screen.equals("Radio")){
+            if(information!=null)information.setText("MP3 "+count+" Offline Catalog Links");
+            if(radioSyncProgress!=null){radioSyncProgress.setMax(total);radioSyncProgress.setProgress(progress);}
+            if(radioSyncStatus!=null)radioSyncStatus.setText("CHECKING "+progress+"/"+total+"  •  "+(100*progress/Math.max(1,total))+"%  •  Errors "+failCount);
+          }
         });
       }
       if(added>0)saveCache();
       syncing=false;
       final int successes=okay,errors=failed,newTracks=added;
+      settings.edit().putString("radio_sync_summary","MP3 SYNC: "+successes+"/"+monks.size()+" page(s) OK • "+errors+" errors • +"+newTracks+" links")
+        .putLong("radio_sync_last_at",System.currentTimeMillis()).apply();
       handler.post(()->{
         String message="Offline MP3 စာရင်း "+catalog.size()+" ပုဒ်\\nWebsite Pages: "+successes+" OK, "+errors+" failed\\nNew links: "+newTracks;
         if(!faults.isEmpty())message+="\\n\\nErrors:\\n"+android.text.TextUtils.join("\\n",faults);

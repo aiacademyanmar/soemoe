@@ -50,7 +50,7 @@ public final class HomeActivity extends Activity {
     identity.addView(label("DAMA  APP",23,GOLD,true));
     identity.addView(label("Dhamma for a Better Life",11,SOFT,false));
     bar.addView(identity,new LinearLayout.LayoutParams(0,-2,1));
-    TextView index=label("V9",12,GOLD,true);index.setGravity(Gravity.CENTER);
+    TextView index=label("V13",12,GOLD,true);index.setGravity(Gravity.CENTER);
     index.setBackground(fill(PANEL,11,0xff755d35));bar.addView(index,size(43,34));
     root.addView(bar,size(-1,78));
 
@@ -78,7 +78,7 @@ public final class HomeActivity extends Activity {
     addModule(content,"01","DAMA RADIO","ဆရာတော်ကြီးများ၏ တရားတော် MP3\nနားထောင်ရန် • Player • Favorites",
       "MP3 Streaming · Offline Link Catalog",R.drawable.radio_hero,MainActivity.class,"♫");
     addModule(content,"02","DAMA LIBRARY","ဓမ္မစာအုပ်၊ ပိဋကတ်နှင့် PDF များ\nစာရေးသူအလိုက်ရှာရန် • Offline Reader",
-      "1,894+ Book Links · Native PDF",R.drawable.radio_pattana,LibraryActivity.class,"▣");
+      "2,204+ Book Links · Native PDF",R.drawable.radio_pattana,LibraryActivity.class,"▣");
     addModule(content,"03","DAMA TV","YouTube တရားတော်ဗီဒီယိုများ\nဆရာတော်၊ Category၊ Playlist ရွေးကြည့်ရန်",
       "3,264 Video Links · In-App Player",R.drawable.tv_banner,TvActivity.class,"▶");
 
@@ -87,6 +87,26 @@ public final class HomeActivity extends Activity {
     TextView explanation=label("စာအုပ်နှင့် ဗီဒီယိုလင့်ခ်စာရင်းများကို Offline ကြည့်ရှုနိုင်သည်။ အသံ/ဗီဒီယို Stream လုပ်ရန် Internet လိုအပ်ပါသည်။",11,SOFT,false);
     explanation.setPadding(0,d(7),0,0);note.addView(explanation);
     LinearLayout.LayoutParams np=size(-1,-2);np.topMargin=d(13);content.addView(note,np);
+
+    // V13: User-visible sync health; "not checked" is distinct from live verification.
+    LinearLayout health=vertical();health.setPadding(d(15),d(13),d(15),d(13));
+    health.setBackground(fill(PANEL,15,0xff686349));
+    TextView ht=label("↻  CATALOG SYNC PROGRESS",14,GOLD,true);
+    health.addView(ht);
+    android.content.SharedPreferences radio=getSharedPreferences("dama_radio_preferences",MODE_PRIVATE);
+    android.content.SharedPreferences library=getSharedPreferences("dama_books",MODE_PRIVATE);
+    TextView mp3=label("♫  MP3 LIST  •  12,973 Offline Links",12,WHITE,true);
+    mp3.setPadding(0,d(10),0,d(4));health.addView(mp3);
+    TextView mp3Status=label(radio.getString("radio_sync_summary","Last Live Sync: not checked"),11,SOFT,false);
+    health.addView(mp3Status);
+    TextView ebook=label("▣  EBOOK LIST  •  2,204 Offline Links",12,WHITE,true);
+    ebook.setPadding(0,d(10),0,d(4));health.addView(ebook);
+    TextView ebookStatus=label(library.getString("ebook_sync_summary","Last Live Sync: not checked"),11,SOFT,false);
+    health.addView(ebookStatus);
+    TextView launch=label("MP3 ကို Sync လုပ်ရန် Radio သို့ ဝင်ပါ • EBook ကို Sync လုပ်ရန် Library သို့ ဝင်ပါ",10,GOLD,false);
+    launch.setPadding(0,d(9),0,0);health.addView(launch);
+    LinearLayout.LayoutParams statWrap=size(-1,-2);statWrap.topMargin=d(13);
+    content.addView(health,statWrap);
 
     FooterNav.attach(this,root,"Home");
 

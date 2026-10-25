@@ -1,7 +1,7 @@
-name: DAMA APP V12 - Premium Library and Ebook Reader
+name: DAMA APP V13 - MP3 and EBook Sync Progress
 on:
   push:
-    branches: ["dama-library-premium-v12"]
+    branches: ["dama-sync-progress-v13"]
   workflow_dispatch:
 permissions:
   contents: read
@@ -161,6 +161,22 @@ jobs:
           assert 'Home","Radio","Library","Reader","TV' in c
           print("Premium Library + EBook Reader menus verified")
           PY
+      - name: Validate MP3 and EBook Sync progress UI
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          root=Path('app/src/main/java/asia/aaii/dama')
+          radio=(root/'MainActivity.java').read_text()
+          books=(root/'LibraryActivity.java').read_text()
+          home=(root/'HomeActivity.java').read_text()
+          websync=(root/'EbookSync.java').read_text()
+          assert 'radioSyncProgress' in radio and 'radio_sync_summary' in radio
+          assert 'ebookSyncProgress' in books and 'syncBooksNow' in books
+          assert 'EbookSync.readSaved(this)' in books
+          assert 'CATALOG SYNC PROGRESS' in home
+          assert 'MAX_PAGES=12' in websync and 'CACHE_NAME' in websync
+          print('V13 MP3/EBook progress UI and bounded publisher sync verified')
+          PY
       - name: Build installable debug APK
         run: gradle --no-daemon assembleDebug
       - name: Verify embedded data and APK consistency
@@ -183,7 +199,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: DAMA-APP-V12-Premium-Library-APK
+          name: DAMA-APP-V13-Sync-Progress-APK
           path: |
             app/build/outputs/apk/debug/*.apk
             
