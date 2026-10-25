@@ -98,7 +98,18 @@ public class TvActivity extends Activity {
         }catch(Exception e){new AlertDialog.Builder(this).setTitle("DAMA TV Catalog Error").setMessage(e.getMessage()).setPositiveButton("OK",null).show();}
         if(monks.isEmpty())monks.add("ဆရာတော်အားလုံး");if(categories.isEmpty())categories.add("အမျိုးအစားအားလုံး");if(sources.isEmpty())sources.add("Channel / Playlist အားလုံး");
     }
-    private void reset(String title){root=col();root.setBackgroundColor(BG);setContentView(root);
+    private void reset(String title){
+        root=col();root.setBackgroundColor(BG);setContentView(root);
+        // Android 15+ enforces edge-to-edge. Reserve actual system-bar insets so the
+        // shared footer sits ABOVE gesture/nav controls on real phones.
+        if(android.os.Build.VERSION.SDK_INT>=35){
+            root.setOnApplyWindowInsetsListener((view,insets)->{
+                android.graphics.Insets bars=insets.getInsets(android.view.WindowInsets.Type.systemBars());
+                view.setPadding(bars.left,bars.top,bars.right,bars.bottom);
+                return insets;
+            });
+            root.requestApplyInsets();
+        }
         LinearLayout header=row();header.setPadding(dp(14),dp(9),dp(14),dp(9));header.setBackgroundColor(DARK);
         TextView back=button("‹",()->{if(selected!=null)exitPlayer();else finish();});header.addView(back,wh(42,44));
         LinearLayout heading=col();heading.setPadding(dp(12),0,0,0);heading.addView(text(title,20,GOLD,true));heading.addView(text("ဓမ္မရုပ်သံ • In-App YouTube Player",10,MUTED,false));header.addView(heading,new LinearLayout.LayoutParams(0,dp(50),1));
@@ -106,7 +117,13 @@ public class TvActivity extends Activity {
     }
     private void showBrowse(){selected=null;releasePlayer();reset("DAMA TV");
         ScrollView headerScroll=new ScrollView(this);headerScroll.setFillViewport(false);headerScroll.setVerticalScrollBarEnabled(false);
-        filterPanel=col();filterPanel.setPadding(dp(14),dp(12),dp(14),dp(3));headerScroll.addView(filterPanel);root.addView(headerScroll,wh(-1,-2));
+        filterPanel=col();filterPanel.setPadding(dp(14),dp(12),dp(14),dp(3));
+        headerScroll.addView(filterPanel);
+        // Keep the scrollable video list and phone footer allocated real screen height.
+        // Header filters scroll INSIDE their own capped area.
+        int maxFilterHeight=Math.min(dp(315),
+            Math.max(dp(155),getResources().getDisplayMetrics().heightPixels-dp(285)));
+        root.addView(headerScroll,new LinearLayout.LayoutParams(-1,maxFilterHeight));
         LinearLayout brand=row();brand.setPadding(dp(12),dp(10),dp(12),dp(10));brand.setBackground(bg(CARD,14,0xffa6894a));
         ImageView image=new ImageView(this);image.setImageResource(R.drawable.tv_banner);image.setScaleType(ImageView.ScaleType.CENTER_CROP);
         image.setBackground(bg(DARK,10,0));image.setClipToOutline(true);brand.addView(image,wh(100,68));
@@ -214,6 +231,9 @@ public class TvActivity extends Activity {
         content.addView(text("Channel / Playlist: "+v.source,12,IVORY,true));gap(content,8);
         content.addView(button("မူရင်း Channel / Playlist",()->launchExternal(v.sourceUrl)));
         gap(content,12);content.addView(text("ဗီဒီယိုဒေတာ Offline သိမ်းထားပြီး Video ကို YouTube မှ Online ဖွင့်ပါသည်။",11,MUTED,false));
+        // V16: shared six-item footer is ALWAYS anchored under the video player content,
+        // except while YouTube's native fullscreen video overlay is active.
+        FooterNav.attach(this,root,"TV");
     }
     private void toggleFavorite(Video v){if(!favorites.add(v.id))favorites.remove(v.id);prefs.edit().putStringSet("favorites",new LinkedHashSet<>(favorites)).apply();}
     private void launchExternal(String url){try{startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse(url)));}

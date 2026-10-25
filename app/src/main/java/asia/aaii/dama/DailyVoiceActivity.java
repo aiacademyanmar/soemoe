@@ -8,6 +8,8 @@ import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
+import android.speech.tts.Voice;
+import android.media.AudioAttributes;
 import android.speech.tts.UtteranceProgressListener;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -37,7 +39,10 @@ public final class DailyVoiceActivity extends Activity {
     private SharedPreferences store;
     private Set<String> listened,favorites;
     private TextToSpeech tts;
-    private boolean ttsReady=false,playing=false,calendarMode=false,favoritesMode=false;
+    private boolean ttsReady=false,playing=false,calendarMode=false,favoritesMode=false,ttsOffline=false,ttsChecked=false;
+    private String ttsState="မြန်မာ Voice စစ်ဆေးနေပါသည်...",activeSpeechId=null,ttsEngine="Not initialized";
+    private long speechSequence=0;
+    private final Locale MYANMAR=Locale.forLanguageTag("my-MM");
     private int index=0,month=1;
     private float rate=1.0f;
     private int dp(float a){return Math.round(a*getResources().getDisplayMetrics().density);}
@@ -58,23 +63,122 @@ public final class DailyVoiceActivity extends Activity {
         listened=new HashSet<>(store.getStringSet("listened",new HashSet<>()));
         favorites=new HashSet<>(store.getStringSet("favorites",new HashSet<>()));
         load();index=todayIndex();month=voices.isEmpty()?1:voices.get(index).optInt("month",1);
-        tts=new TextToSpeech(this,status->{
-            if(status==TextToSpeech.SUCCESS){
-                Locale locale=new Locale("my","MM");
-                int support=tts.setLanguage(locale);
-                ttsReady=support!=TextToSpeech.LANG_NOT_SUPPORTED&&support!=TextToSpeech.LANG_MISSING_DATA;
-                if(ttsReady){
-                    tts.setSpeechRate(rate);
-                    tts.setOnUtteranceProgressListener(new UtteranceProgressListener(){
-                        @Override public void onStart(String id){runOnUiThread(()->{playing=true;setPlayback("♫ မြန်မာအသံဖြင့် ဖတ်နေပါသည်");});}
-                        @Override public void onDone(String id){runOnUiThread(()->{playing=false;markListened();setPlayback("✓ ဖတ်ပြီးပါပြီ");});}
-                        @Override public void onError(String id){runOnUiThread(()->{playing=false;setPlayback("အသံဖွင့်မရပါ — စာသားဖတ်နိုင်ပါသည်");});}
-                    });
+        tts=new TextToSpeech(this,status->runOnUiThread(()->configureMyanmarTts(status)));
+        render();
+    }
+    private void configureMyanmarTts(int initStatus){
+        ttsChecked=true;
+        ttsReady=false;ttsOffline=false;
+        if(tts==null||initStatus!=TextToSpeech.SUCCESS){
+            ttsState="TTS Engine မဖွင့်နိုင်ပါ • Android Voice Settings ကို စစ်ဆေးပါ";
+            setPlayback(ttsState);return;
+        }
+        try{
+            ttsEngine=tts.getDefaultEngine()==null?"Unknown TTS Engine":tts.getDefaultEngine();
+            Voice bestOffline=null,bestOnline=null;
+            Set<Voice> installed=tts.getVoices();
+            if(installed!=null)for(Voice voice:installed){
+                if(voice==null||voice.getLocale()==null)continue;
+                if(!"my".equalsIgnoreCase(voice.getLocale().getLanguage()))continue;
+                if(!voice.isNetworkConnectionRequired()&&bestOffline==null)bestOffline=voice;
+                else if(bestOnline==null)bestOnline=voice;
+            }
+            int available=tts.isLanguageAvailable(MYANMAR);
+            if(available==TextToSpeech.LANG_MISSING_DATA||available==TextToSpeech.LANG_NOT_SUPPORTED){
+                // Some TTS engines report an incomplete language list. Prefer an explicitly
+                // exposed Burmese voice when present instead of falling back to English.
+                if(bestOffline==null&&bestOnline==null){
+                    ttsState="မြန်မာ (my-MM) Voice မရှိပါ • ဖုန်း TTS Settings မှ Install လုပ်ပါ";
+                    setPlayback(ttsState);return;
                 }
             }
-            runOnUiThread(()->{if(!ttsReady)setPlayback("မြန်မာ TTS Voice မရှိပါ — စာသားကို Offline ဖတ်နိုင်ပါသည်");else setPlayback("Voice Engine Ready · Burmese TTS");});
+            int result;
+            if(bestOffline!=null){result=tts.setVoice(bestOffline);ttsOffline=result==TextToSpeech.SUCCESS;}
+            else if(bestOnline!=null){result=tts.setVoice(bestOnline);ttsOffline=false;}
+            else{
+                result=tts.setLanguage(MYANMAR);
+                Voice selected=tts.getVoice();
+                ttsOffline=selected!=null&&!selected.isNetworkConnectionRequired();
+            }
+            ttsReady=result!=TextToSpeech.ERROR&&result!=TextToSpeech.LANG_MISSING_DATA&&
+                     result!=TextToSpeech.LANG_NOT_SUPPORTED;
+            if(!ttsReady){ttsState="မြန်မာ Voice မတပ်ဆင်ရသေးပါ • Voice Data ထည့်ရန်လိုအပ်သည်";}
+            else{
+                tts.setSpeechRate(rate);
+                tts.setAudioAttributes(new AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_MEDIA)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build());
+                ttsState=ttsOffline?"✓ မြန်မာ Offline TTS အသင့်ဖြစ်ပါပြီ":
+                                    "✓ မြန်မာ TTS ရရှိသည် • အသံအတွက် Internet လိုအပ်နိုင်သည်";
+            }
+            tts.setOnUtteranceProgressListener(new UtteranceProgressListener(){
+                @Override public void onStart(String id){
+                    runOnUiThread(()->{
+                        if(activeSpeechId==null||id==null||!id.startsWith(activeSpeechId+"#"))return;
+                        playing=true;setPlayback("♫ မြန်မာအသံ ဖတ်နေပါသည် • "+(ttsOffline?"Offline":"Engine"));
+                    });
+                }
+                @Override public void onDone(String id){
+                    runOnUiThread(()->{
+                        if(activeSpeechId==null||id==null||!id.equals(activeSpeechId+"#LAST"))return;
+                        activeSpeechId=null;playing=false;markListened();
+                        ttsState="✓ Today's Voice ဖတ်ပြီးပါပြီ";render();
+                    });
+                }
+                @Override public void onError(String id){failSpeech(id,"TTS Audio Error");}
+                @Override public void onError(String id,int code){failSpeech(id,"TTS Error "+code);}
+                @Override public void onStop(String id,boolean interrupted){
+                    runOnUiThread(()->{if(id!=null&&activeSpeechId!=null&&id.startsWith(activeSpeechId+"#")){
+                        playing=false;setPlayback("အသံဖတ်ခြင်း ရပ်ထားသည်");}});
+                }
+            });
+        }catch(Exception e){
+            ttsReady=false;ttsState="TTS Setting ပြဿနာ: "+e.getClass().getSimpleName();
+            android.util.Log.w("DAMA_TTS","Myanmar voice selection failed",e);
+        }
+        setPlayback(ttsState);
+    }
+    private void failSpeech(String id,String detail){
+        runOnUiThread(()->{
+            if(activeSpeechId==null||id==null||!id.startsWith(activeSpeechId+"#"))return;
+            activeSpeechId=null;playing=false;ttsState=detail+" • စာသားဖတ်ရှုနိုင်ပါသည်";
+            setPlayback(ttsState);
         });
-        render();
+    }
+    private void stopSpeech(){
+        // Invalidate callback IDs BEFORE stop. A cancelled utterance must NEVER
+        // mark a different daily reflection as finished.
+        activeSpeechId=null;playing=false;
+        if(tts!=null)try{tts.stop();}catch(Exception ignored){}
+    }
+    private void showTtsDiagnostics(){
+        String selected="Unknown";boolean network=false;
+        try{
+            if(tts!=null&&tts.getVoice()!=null){
+                selected=tts.getVoice().getName();network=tts.getVoice().isNetworkConnectionRequired();
+            }
+        }catch(Exception ignored){}
+        String message="TTS Engine: "+ttsEngine+"\\nLanguage: Myanmar (my-MM)"+
+          "\\nAvailable: "+(ttsReady?"YES":"NO")+
+          "\\nVoice: "+selected+
+          "\\nNetwork Voice: "+(network?"YES":"NO / Unknown")+
+          "\\n\\nမြန်မာ Voice မရှိပါက Android TTS Settings မှ Language Data ကို ထည့်ပါ။ "+
+          "မြန်မာဘာသာကို Device TTS Engine က မပံ့ပိုးလျှင် အသံဖတ်ပြနိုင်မည် မဟုတ်ပါ။ "+
+          "App ထဲတွင် ကြိုတင်ဖန်တီးထားသော MP3 အသံဖိုင် မပါရှိပါ။";
+        new AlertDialog.Builder(this).setTitle("DAMA DAILY VOICE • TTS CHECK")
+          .setMessage(message)
+          .setPositiveButton("CHECK AGAIN",(d,w)->{configureMyanmarTts(TextToSpeech.SUCCESS);render();})
+          .setNeutralButton("TTS SETTINGS",(d,w)->openAndroidTtsSettings())
+          .setNegativeButton("CLOSE",null).show();
+    }
+    private void openAndroidTtsSettings(){
+        try{
+            Intent settings=new Intent("com.android.settings.TTS_SETTINGS");
+            startActivity(settings);
+        }catch(Exception unavailable){
+            try{startActivity(new Intent(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA));}
+            catch(Exception ignored){toast("TTS Settings: Android Settings → Accessibility → Text-to-Speech ကိုဖွင့်ပါ");}
+        }
     }
     private void load(){
         try(InputStream raw=getAssets().open("daily_voice_365.dat");GZIPInputStream unzip=new GZIPInputStream(raw);ByteArrayOutputStream out=new ByteArrayOutputStream()){
@@ -91,19 +195,47 @@ public final class DailyVoiceActivity extends Activity {
     private void toggleFavorite(){if(!favorites.add(key()))favorites.remove(key());store.edit().putStringSet("favorites",new HashSet<>(favorites)).apply();render();}
     private void speak(){
         if(voices.isEmpty())return;
-        if(!ttsReady){new AlertDialog.Builder(this).setTitle("မြန်မာအသံ မရရှိသေးပါ")
-            .setMessage("ဒီ APK တွင် အသံဖိုင် ၃၆၅ ဖိုင် ထည့်မထားပါ။ သင့်ဖုန်းတွင် မြန်မာဘာသာ Text-to-Speech voice ပါမှ အသံဖတ်နိုင်ပါသည်။ Voice မရှိပါက Offline စာသားဖတ်နိုင်ပါတယ်။")
-            .setPositiveButton("ဖတ်ပြီးအမှတ်အသားလုပ်",(d,w)->{markListened();render();})
-            .setNegativeButton("OK",null).show();return;}
-        if(tts.isSpeaking()){tts.stop();playing=false;setPlayback("ရပ်နားထားသည်");return;}
+        if(!ttsChecked||!ttsReady||tts==null){
+            showTtsDiagnostics();return;
+        }
+        if(playing||tts.isSpeaking()){
+            stopSpeech();ttsState="Ⅱ ဖတ်ရှုမှု ရပ်ထားသည် • ပြန်နှိပ်၍ အစမှစနိုင်သည်";
+            setPlayback(ttsState);return;
+        }
+        String script=string(current(),"script").trim();
+        if(script.length()<2){setPlayback("ဖတ်ရန်စာသား မရှိပါ");return;}
+        stopSpeech();
         try{
             tts.setSpeechRate(rate);
-            int status=tts.speak(string(current(),"script"),TextToSpeech.QUEUE_FLUSH,null,"DAMA_DAY_"+key());
-            if(status==TextToSpeech.ERROR){playing=false;setPlayback("TTS မအောင်မြင်ပါ");}
-            else{playing=true;setPlayback("အသံစတင်ဖတ်နေပါသည် …");}
-        }catch(Exception e){playing=false;setPlayback("အသံစနစ် မပံ့ပိုးပါ");}
+            String token="DAMA_DAY_"+key()+"_"+(++speechSequence);
+            activeSpeechId=token;
+            // Native Android limits each utterance's size; split longer talks and
+            // mark completion ONLY when the LAST chunk's callback is delivered.
+            int chunkMax=Math.max(500,Math.min(2800,TextToSpeech.getMaxSpeechInputLength()-200));
+            int cursor=0,part=0;
+            while(cursor<script.length()){
+                int next=Math.min(script.length(),cursor+chunkMax);
+                if(next<script.length()){
+                    int lastSpace=script.lastIndexOf(' ',next);
+                    int lastStop=script.lastIndexOf('။',next);
+                    int boundary=Math.max(lastSpace,lastStop);
+                    if(boundary>cursor+400)next=boundary+1;
+                }
+                boolean last=next>=script.length();
+                String id=token+"#"+(last?"LAST":String.valueOf(part++));
+                String piece=script.substring(cursor,next);
+                int status=tts.speak(piece,cursor==0?TextToSpeech.QUEUE_FLUSH:TextToSpeech.QUEUE_ADD,null,id);
+                if(status==TextToSpeech.ERROR)throw new IllegalStateException("Speech synthesis rejected");
+                cursor=next;
+            }
+            playing=true;ttsState="♫ မြန်မာအသံ ဖတ်ရန် ပြင်ဆင်နေသည်...";
+            setPlayback(ttsState);
+        }catch(Exception e){
+            stopSpeech();ttsState="TTS စတင်မရပါ: "+e.getClass().getSimpleName();
+            setPlayback(ttsState);android.util.Log.e("DAMA_TTS","speak failed",e);
+        }
     }
-    private void openDay(int at){if(at<0||at>=voices.size())return;if(tts!=null)tts.stop();playing=false;index=at;month=current().optInt("month",1);calendarMode=false;favoritesMode=false;render();}
+    private void openDay(int at){if(at<0||at>=voices.size())return;stopSpeech();index=at;month=current().optInt("month",1);calendarMode=false;favoritesMode=false;render();}
     private TextView chip(String name,boolean active,Runnable action){TextView t=button(name,active,action);LinearLayout.LayoutParams lp=lp(-2,42);lp.setMargins(dp(3),0,dp(3),0);t.setLayoutParams(lp);return t;}
     private void render(){
         root=col();root.setBackgroundColor(DARK);setContentView(root);
@@ -147,15 +279,19 @@ public final class DailyVoiceActivity extends Activity {
         addCard(content,card);
         LinearLayout control=col();control.setPadding(dp(14),dp(12),dp(14),dp(13));control.setBackground(shape(0xff0d302c,17,0xff806845));
         TextView now=txt("♫  NATIVE VOICE PLAYER",12,GOLD,true);control.addView(now);
-        playbackLabel=txt(ttsReady?"Burmese Voice Ready":"မြန်မာ TTS Engine စစ်ဆေးနေပါသည် ...",11,MUTED,false);playbackLabel.setPadding(0,dp(8),0,dp(13));control.addView(playbackLabel);
-        LinearLayout transport=row();TextView prev=button("‹",false,()->openDay(index-1));TextView play=button(playing?"Ⅱ STOP":"▶ LISTEN",true,()->speak());TextView next=button("›",false,()->openDay(index+1));
+        playbackLabel=txt(ttsState,11,MUTED,false);playbackLabel.setPadding(0,dp(8),0,dp(13));control.addView(playbackLabel);
+        LinearLayout transport=row();TextView prev=button("‹",false,()->openDay(index-1));TextView play=button(playing?"■ STOP":"▶ LISTEN",true,()->speak());TextView next=button("›",false,()->openDay(index+1));
         transport.addView(prev,new LinearLayout.LayoutParams(0,dp(49),1));LinearLayout.LayoutParams mp=new LinearLayout.LayoutParams(0,dp(49),2);mp.setMargins(dp(8),0,dp(8),0);transport.addView(play,mp);transport.addView(next,new LinearLayout.LayoutParams(0,dp(49),1));control.addView(transport);
         LinearLayout speeds=row();speeds.setPadding(0,dp(12),0,0);
         for(float choice:new float[]{.8f,1.0f,1.2f}){
             TextView speed=button(String.format(Locale.US,"%.1f×",choice),Math.abs(rate-choice)<.01f,()->{rate=choice;if(tts!=null)tts.setSpeechRate(rate);render();});
             LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(0,dp(39),1);p.setMargins(dp(3),0,dp(3),0);speeds.addView(speed,p);
         }
-        control.addView(speeds);addCard(content,control);
+        control.addView(speeds);
+        TextView check=button("⚙  MYANMAR TTS CHECK / VOICE SETTINGS",false,()->showTtsDiagnostics());
+        LinearLayout.LayoutParams cp=lp(-1,46);cp.topMargin=dp(11);
+        control.addView(check,cp);
+        addCard(content,control);
         LinearLayout tools=row();TextView heart=button(favorites.contains(key())?"♥ SAVED":"♡ FAVORITE",false,()->toggleFavorite());TextView done=button(listened.contains(key())?"✓ COMPLETED":"✓ MARK DONE",false,()->{markListened();render();});tools.addView(heart,new LinearLayout.LayoutParams(0,dp(47),1));LinearLayout.LayoutParams btnp=new LinearLayout.LayoutParams(0,dp(47),1);btnp.leftMargin=dp(9);tools.addView(done,btnp);content.addView(tools);gap(16);
         LinearLayout practice=col();practice.setPadding(dp(16),dp(15),dp(16),dp(14));practice.setBackground(shape(0xff18443a,17,0xff647151));practice.addView(txt("☸  TODAY'S PRACTICE",13,GOLD,true));
         TextView activity=txt(string(x,"practice"),14,PALE,false);activity.setPadding(0,dp(8),0,dp(12));practice.addView(activity);
@@ -196,5 +332,13 @@ public final class DailyVoiceActivity extends Activity {
         if(n==0)content.addView(txt("သိမ်းထားသောစာသား မရှိသေးပါ။ Voice ဖတ်ရှုပြီး ♥ Favorite ထည့်နိုင်သည်။",13,MUTED,false));
     }
     @Override public void onBackPressed(){if(calendarMode||favoritesMode){calendarMode=false;favoritesMode=false;render();}else super.onBackPressed();}
-    @Override protected void onDestroy(){if(tts!=null){tts.stop();tts.shutdown();}super.onDestroy();}
+    @Override protected void onPause(){stopSpeech();super.onPause();}
+    @Override protected void onResume(){
+        super.onResume();
+        if(ttsChecked&&tts!=null&&!playing){
+            // Engine voice packs may have been installed in Android settings.
+            configureMyanmarTts(TextToSpeech.SUCCESS);
+        }
+    }
+    @Override protected void onDestroy(){stopSpeech();if(tts!=null)tts.shutdown();super.onDestroy();}
 }
