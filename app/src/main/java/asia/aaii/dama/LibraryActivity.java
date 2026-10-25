@@ -82,7 +82,7 @@ public class LibraryActivity extends Activity {
         LinearLayout hdr=row();hdr.setPadding(dp(14),dp(14),dp(14),dp(10));hdr.setBackgroundColor(DEEP);TextView back=t("‹",32,GOLD,true);hdr.addView(back,new LinearLayout.LayoutParams(dp(43),dp(43)));back.setOnClickListener(v->finish());LinearLayout title=vert();title.addView(t("DAMA LIBRARY",22,GOLD,true));title.addView(t("ဓမ္မစာအုပ်များ • Offline Catalog",10,MUTED,false));hdr.addView(title,new LinearLayout.LayoutParams(0,-2,1));main.addView(hdr);
         ScrollView scroll=new ScrollView(this);main.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));page=vert();page.setPadding(dp(12),dp(14),dp(12),dp(12));scroll.addView(page);
         android.widget.FrameLayout hero=new android.widget.FrameLayout(this);hero.setBackground(shape(CARD,20,GOLD));hero.setClipToOutline(true);ImageView cover=new ImageView(this);cover.setImageResource(R.drawable.radio_hero);cover.setScaleType(ImageView.ScaleType.CENTER_CROP);hero.addView(cover,new android.widget.FrameLayout.LayoutParams(-1,dp(157)));LinearLayout words=vert();words.setPadding(dp(20),dp(20),dp(6),dp(9));words.setBackground(new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,new int[]{0xe900201b,0x9000201b,0x00102018}));words.addView(t("DAMA LIBRARY",24,GOLD,true));words.addView(t("ဓမ္မစာအုပ်များ စုစည်းရာ",15,IVORY,true));words.addView(t("Read • Learn • Keep",10,IVORY,false));hero.addView(words,new android.widget.FrameLayout.LayoutParams(-1,-1));page.addView(hero,new LinearLayout.LayoutParams(-1,dp(157)));
-        page.addView(t("စာအုပ် " + books.size() + " အုပ် | PDF ၁၈၄၉ | DOC ၄၅",12,GOLD,true));
+        page.addView(t("စာအုပ် "+books.size()+" အုပ် (DhammaDownload + Google Drive)",12,GOLD,true));
         page.addView(t("စာအုပ်အမည်၊ စာရေးသူနှင့် လင့်ခ်များ Offline ပါဝင်သည်။ Link အလုပ်လုပ်မှုကို တစ်ခုချင်းစစ်ဆေးရန် လိုအပ်သည်။",10,MUTED,false));
         authorProgressUI();
         search=new EditText(this);search.setSingleLine(true);search.setTextColor(DEEP);search.setHintTextColor(0xff777777);search.setTextSize(14);search.setPadding(dp(13),dp(5),dp(13),dp(5));search.setBackground(shape(0xfffcf8ec,12,0));search.setHint("စာအုပ် / ဆရာတော် / PDF ရှာရန်…");search.setText(query);page.addView(search,new LinearLayout.LayoutParams(-1,dp(49)));search.addTextChangedListener(new TextWatcher(){public void beforeTextChanged(CharSequence s,int st,int c,int a){}public void onTextChanged(CharSequence s,int st,int b,int c){query=s.toString();filter();}public void afterTextChanged(Editable e){}});
@@ -148,8 +148,8 @@ public class LibraryActivity extends Activity {
             line.addView(btn("⋮",()->details(b)));
             holder.addView(line);line.setOnClickListener(v->details(b));
             LinearLayout actions=row();actions.setPadding(0,dp(5),0,0);
-            TextView readNow=btn(b.pdf()?"📖 တန်းဖတ်ရန်":"↗ DOC ဖွင့်ရန်",()->{if(b.pdf())openOrDownload(b,true);else open(b.url);});
-            TextView save=btn(local(b).exists()?"✓ သိမ်းပြီး":"↓ Download",()->{if(b.pdf())openOrDownload(b,false);else open(b.url);});
+            TextView readNow=btn(b.url.contains("drive.google.com/file/d/")?"📖 Drive မှဖတ်ရန်":b.pdf()?"📖 တန်းဖတ်ရန်":"↗ DOC ဖွင့်ရန်",()->{if(b.url.contains("drive.google.com/file/d/"))open(b.url);else if(b.pdf())openOrDownload(b,true);else open(b.url);});
+            TextView save=btn(b.url.contains("drive.google.com/file/d/")?"↓ Drive Download":local(b).exists()?"✓ သိမ်းပြီး":"↓ Download",()->{if(b.url.contains("drive.google.com/file/d/"))open(b.url);else if(b.pdf())openOrDownload(b,false);else open(b.url);});
             LinearLayout.LayoutParams l=new LinearLayout.LayoutParams(0,-2,1);l.setMargins(0,0,dp(6),0);
             actions.addView(readNow,l);actions.addView(save,new LinearLayout.LayoutParams(0,-2,1));
             holder.addView(actions);list.addView(holder,itemParams);
