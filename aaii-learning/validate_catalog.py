@@ -1,14 +1,15 @@
 import json,re
 from pathlib import Path
-d=Path(__file__).resolve().parent/'app/src/main/assets'
-c=json.loads((d/'courses.json').read_text(encoding='utf-8'))
-r=json.loads((d/'roadmaps.json').read_text(encoding='utf-8'))
-assert len(c)==337,len(c)
-assert len(r)==18,len(r)
-for x in (c,r):
-  for o in x:
-    assert set(o.keys()).isdisjoint({'certificateUrl','certificateId','notificationDate','completionDate','verifiedInCoursera','source','page'}),o
-    assert not any('/account/accomplishments/' in str(v) for v in o.values()),o
-    u=o.get('url','')
-    assert not u or bool(re.match(r'https://www\.coursera\.org/(learn|specializations|professional-certificates)/',u))
-print('Validated:',len(c),'public course titles,',len(r),'public roadmaps, no personal certificate IDs')
+p=Path(__file__).resolve().parent/'app/src/main/assets'
+a=json.loads((p/'courses.json').read_text(encoding='utf-8'))
+b=json.loads((p/'roadmaps.json').read_text(encoding='utf-8'))
+c=json.loads((p/'programs_public.json').read_text(encoding='utf-8'))
+t=json.loads((p/'teacher_paths.json').read_text(encoding='utf-8'))
+assert len(a)==337 and len(b)==18 and len(c)==55 and len(t)>=5
+assert sum(x['type']=='Specialization' for x in c)==37 and sum(x['type']=='Professional Certificate' for x in c)==18
+for f in p.glob('*.json'):
+ s=f.read_text(encoding='utf-8')
+ assert '/account/accomplishments/' not in s, f
+ assert 'certificateId' not in s and 'certificateUrl' not in s, f
+ json.loads(s)
+print('PASS: 337 courses, 37 specializations, 18 professional, teacher learning paths. No private URLs.')

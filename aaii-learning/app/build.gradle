@@ -1,2 +1,8 @@
 plugins { id 'com.android.application' }
-android { namespace 'asia.aaii.learningpublic'; compileSdk 35; defaultConfig { applicationId 'asia.aaii.learningpublic.buildtest'; minSdk 24; targetSdk 35; versionCode 30; versionName '3.0.0-public' }; buildTypes { release { minifyEnabled false } }; compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 } }
+android {
+  namespace 'asia.aaii.learningpublic'
+  compileSdk 35
+  defaultConfig { applicationId 'asia.aaii.learningpublic.buildtest'; minSdk 24; targetSdk 35; versionCode 31; versionName '3.1.0-mm-ui' }
+  buildTypes { release { minifyEnabled false } }
+  compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+}
