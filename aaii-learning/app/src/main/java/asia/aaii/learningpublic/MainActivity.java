@@ -110,6 +110,24 @@ public class MainActivity extends Activity {
     ProgressBar bar=new ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal);
     bar.setMax(Math.max(1,total));bar.setProgress(count);card.addView(bar,new LinearLayout.LayoutParams(-1,dp(6)));
   }
+  private android.widget.ImageView portrait(int width,int height){
+    android.widget.ImageView v=new android.widget.ImageView(this);
+    v.setImageResource(R.drawable.soe_moe_original);
+    v.setScaleType(android.widget.ImageView.ScaleType.CENTER_CROP);
+    v.setLayoutParams(new LinearLayout.LayoutParams(dp(width),dp(height)));
+    v.setBackground(shape(0xffebf4fa,14));
+    v.setClipToOutline(true);
+    return v;
+  }
+  private void portraitCard(LinearLayout target, String headline, String description){
+    LinearLayout row=new LinearLayout(this);row.setOrientation(LinearLayout.HORIZONTAL);row.setGravity(Gravity.CENTER_VERTICAL);
+    row.addView(portrait(100,112));
+    LinearLayout bodyText=vertical();bodyText.setPadding(dp(12),0,0,0);
+    row.addView(bodyText,new LinearLayout.LayoutParams(0,-2,1));
+    line(bodyText,headline,18,NAVY,true);
+    line(bodyText,description,12,INK,false);
+    target.addView(row);
+  }
   private void render(){
     root=vertical();root.setBackgroundColor(BG);root.setFitsSystemWindows(true);setContentView(root);
     LinearLayout head=vertical();head.setPadding(dp(16),dp(8),dp(16),dp(8));head.setBackgroundColor(NAVY);root.addView(head);
@@ -142,6 +160,10 @@ public class MainActivity extends Activity {
     line(hero,"Coursera ၏ သင်တန်းစာမျက်နှာများဆီသို့ တိုက်ရိုက်သွားရောက်လေ့လာနိုင်ပြီး AAII မှ မြန်မာဘာသာဖြင့် အကြောင်းအရာများကို ရှင်းပြထားသည်။",14,0xffe3f2f2,false);
     line(hero,courses.length()+" Courses   •   37 Specializations   •   18 Professional",14,GOLD,true);
     button(hero,"သင်ယူရန် Course ရွေးချယ်မည်",()->openTab(1),true);
+    LinearLayout teacherHero=card(body);
+    portraitCard(teacherHero,"Teacher Soe Moe • ဆရာ စိုးမိုး","Original portrait • Coursera learning guidance • AI, Data, Business, IT");
+    line(teacherHero,"337 Courses  •  37 Specializations  •  18 Professional Programs",12,TEAL,true);
+    button(teacherHero,"Teacher Profile & Portfolio",()->openTab(9),false);
     heading("AAII ဝန်ဆောင်မှုအသစ် ၂ ခု","သင်တန်းလျှောက်ထားရေးအကူအညီနှင့် ကိုယ်ပိုင်ဆရာရှာဖွေရေး");
     LinearLayout enrollment=card(body);
     line(enrollment,"01  COURSERA ENROLLMENT ASSISTANCE",15,TEAL,true);
@@ -329,6 +351,8 @@ public class MainActivity extends Activity {
   private void hireTeacherService(){
     heading("Hire a Teacher • ဆရာငှားရမ်းရန်","AAII Teacher Matching Request • ဆရာအရည်အချင်းနှင့် လစ်လပ်ချိန်ကို လူကိုယ်တိုင် အတည်ပြုရန် လိုအပ်သည်။");
     LinearLayout intro=card(body);
+    portraitCard(intro,"Teacher Soe Moe","AI • Data • Business • Online / Offline");
+    button(intro,"View Full Teacher Profile",()->openTab(9),false);
     line(intro,"ဆရာငှားနိုင်သော အကြောင်းအရာများ",18,NAVY,true);
     line(intro,"• English & Language Learning\n• IT, Programming & AI\n• Business & Management\n• Mathematics & Science\n• Coursera Course Mentoring\n• TESOL, Teaching & Lesson Planning",14,INK,false);
     line(intro,"သင်ကြားမှုပုံစံ: Online / Offline / Hybrid\nSession: တစ်ဦးချင်း / အုပ်စု\nကြေးနှုန်း: ဆရာ၏အတွေ့အကြုံနှင့် သင်တန်းအချိန်အလိုက် သဘောတူညီရန်",13,MUTED,false);
@@ -357,7 +381,8 @@ public class MainActivity extends Activity {
   private void teacherProfile(){
     heading("Teacher Soe Moe • ဆရာ စိုးမိုး","AAII Learning Mentor • Course Guidance, Portfolio Support");
     LinearLayout bio=card(body);bio.setBackground(shape(0xffe9f5ff,18));
-    line(bio,"SOE MOE • TEACHER PROFILE",21,NAVY,true);
+    portraitCard(bio,"SOE MOE • ဆရာ စိုးမိုး","AAII Learning Mentor • Original Portrait");
+    line(bio,"TEACHER PROFILE",21,NAVY,true);
     line(bio,"AI • Data Science • Python • IT • Digital Education • Business",14,TEAL,true);
     line(bio,"AAII သင်ကြားရေး Mentor အဖြစ် Course ရွေးချယ်မှု၊ လေ့လာမည့်အစီအစဉ်၊ Project Design နှင့် Learning Portfolio တည်ဆောက်မှုကို ကူညီဆောင်ရွက်နိုင်ရန် ရည်ရွယ်ပါသည်။",14,INK,false);
     line(bio,"Verification: ကိုယ်ပိုင် Coursera Program Certificates ကို ဖုန်း၏ Private Wallet မှသာ လင့်ခ်ဖြင့်စစ်ဆေးနိုင်သည်။ မျက်နှာပြင်တွင် ပြသထားသည့်လက်မှတ်များကို Teacher License ဟု မယူဆပါနှင့်။",12,MUTED,false);
@@ -376,7 +401,7 @@ public class MainActivity extends Activity {
   private void bookingForm(){
     heading("Teacher Booking Request","ဆရာ စိုးမိုးနှင့် သင်တန်းညှိနှိုင်းရန် (လက်ရှိ Draft/Share ဝန်ဆောင်မှု)");
     LinearLayout head=card(body);
-    line(head,"Teacher Soe Moe • AAII Learning Mentor",17,NAVY,true);
+    portraitCard(head,"Teacher Soe Moe","Course guidance • Online / Offline Request");
     line(head,"ဘာသာရပ်အလိုက် Online / Offline သင်ကြားမှုနှင့် Project Coaching ကို ညှိနှိုင်းနိုင်ပါသည်။",13,INK,false);
     LinearLayout steps=card(body);line(steps,"1. Choose Subject   →   2. Pick Schedule   →   3. Send Request",13,TEAL,true);
     LinearLayout f=card(body);
@@ -463,7 +488,7 @@ public class MainActivity extends Activity {
   }
   private void settingsPage(){
     heading("Profile & Settings • ကိုယ်ရေးအချက်အလက်","AAII Learning Native Android • Offline-first preferences");
-    LinearLayout profile=card(body);line(profile,"Teacher Soe Moe • ဆရာ စိုးမိုး",20,NAVY,true);
+    LinearLayout profile=card(body);portraitCard(profile,"Teacher Soe Moe • ဆရာ စိုးမိုး","AAII Profile • Settings");
     line(profile,"AAII Course Guidance & Teaching Mentor Profile",13,TEAL,true);
     button(profile,"View Teacher Profile",()->openTab(9),false);
     LinearLayout learning=card(body);line(learning,"My Learning & Progress",17,NAVY,true);
