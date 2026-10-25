@@ -85,7 +85,7 @@ public class TvActivity extends Activity {
         try{JSONArray a=new JSONArray(prefs.getString("recent","[]"));for(int i=0;i<a.length();i++)recent.add(a.optString(i));}catch(Exception ignored){}
         loadCatalog();showBrowse();}
     private void loadCatalog(){
-        try(InputStream raw=getAssets().open("tv_catalog.json.gz");GZIPInputStream gzip=new GZIPInputStream(raw);ByteArrayOutputStream output=new ByteArrayOutputStream()){
+        try(InputStream gzip=getAssets().open("tv_catalog.json");ByteArrayOutputStream output=new ByteArrayOutputStream()){
             byte[] buffer=new byte[8192];int n;while((n=gzip.read(buffer))!=-1)output.write(buffer,0,n);
             JSONArray list=new JSONArray(output.toString("UTF-8"));
             LinkedHashSet<String> people=new LinkedHashSet<>(),types=new LinkedHashSet<>(),channels=new LinkedHashSet<>(),ids=new LinkedHashSet<>();
