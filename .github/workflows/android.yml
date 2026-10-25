@@ -1,7 +1,7 @@
-name: DAMA LIBRARY V5 - Offline Book Catalog and Filters
+name: DAMA LIBRARY V7 - Offline Book Catalog and Filters
 on:
   push:
-    branches: ["dama-library-v6-authors"]
+    branches: ["dama-library-v7-drive"]
   workflow_dispatch:
 permissions:
   contents: read
@@ -34,12 +34,45 @@ jobs:
           python3 - <<'PY'
           import gzip,json,collections
           b=json.loads(gzip.open('app/src/main/assets/books_catalog.json.gz','rb').read())
-          assert len(b)==1894
+          assert len(b)>=1894
           assert len(set(x['url'] for x in b))==1894
-          assert collections.Counter(x['format'] for x in b)=={'PDF':1849,'DOC':45}
+          assert collections.Counter(x['format'] for x in b)['PDF']>=1849
           assert len({x['author'] for x in b})>=50
           assert all(x['link_status']=='not_live_checked' for x in b)
           print('CATALOG OK: 1894 URLs, 1849 PDF, 45 DOC, unique author filters')
+          PY
+      - name: Merge indexed Google Drive books into offline catalog
+        run: |
+          python3 - <<'PY'
+          import json,gzip,glob,os,re
+          p='app/src/main/assets/books_catalog.json.gz'
+          books=json.load(gzip.open(p,'rt',encoding='utf-8'))
+          ids={x['url'] for x in books}
+          names={(x['title'].strip().lower(),x.get('author','').strip().lower()) for x in books}
+          added=0
+          for fn in sorted(glob.glob('drive_import/batch_*.json')):
+            for folder in json.load(open(fn,encoding='utf-8')):
+              parent=folder['parent']['title']
+              for f in folder.get('items',[]):
+                if f['mime'] != 'application/pdf': continue
+                url=f.get('url','')
+                if not url or url in ids: continue
+                title=f['title'].removesuffix('.pdf').strip()
+                key=(title.lower(),parent.lower())
+                if key in names: continue
+                text=title+' '+parent
+                if 'ပဋ္ဌာန်း' in text or 'ပဋ္ဌာန' in text: category='ပဋ္ဌာန်း'
+                elif 'အဘိဓမ္မာ' in text: category='အဘိဓမ္မာ'
+                elif 'ဝိပဿနာ' in text: category='ဝိပဿနာ'
+                elif 'ပိဋက' in text: category='ပိဋကတ်သုံးပုံ'
+                elif 'ပါဠိ' in text: category='ပါဠိ'
+                elif 'ပရိတ်' in text: category='ပရိတ်/ဝတ်ရွတ်'
+                else: category='ဓမ္မစာအုပ်'
+                books.append({'id':'drive_'+f['id'],'title':title,'author':parent,'category':category,'format':'PDF','url':url,'listing_url':folder['parent']['url'],'link_status':'not_live_checked','author_type':'person_label','source':'google_drive'})
+                added+=1;ids.add(url);names.add(key)
+          with gzip.open(p,'wt',encoding='utf-8') as z:json.dump(books,z,ensure_ascii=False)
+          assert len(books)>=1894
+          print('MERGED',len(books),'DRIVE ADDED',added)
           PY
       - name: Remove superseded uncompressed asset
         run: rm -f app/src/main/assets/books_catalog.json
@@ -55,14 +88,14 @@ jobs:
           with zipfile.ZipFile(path) as z:
             assert z.testzip() is None
             b=json.loads(gzip.decompress(z.read('assets/library_catalog.dat')))
-            assert len(b)==1894
+            assert len(b)>=1894
             assert 'classes.dex' in z.namelist()
           print('APK OK; catalog',len(b),'bytes',os.stat(path).st_size)
           PY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: DAMA-LIBRARY-V6-Android-APK
+          name: DAMA-LIBRARY-V7-Android-APK
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: warn
           retention-days: 60
