@@ -55,6 +55,17 @@ jobs:
             '1a57bd33984c6f53a3add24c66f0d9b375bcecd6de801bf8620f36f813a47004' 'aaii-learning/app/src/main/res/drawable-nodpi/aaii_logo_v47.webp' \
             'ec879d397c1457e85f680cf30c0697489982b067d06213079de02149ef046ef8' 'aaii-learning/app/src/main/res/drawable-nodpi/aaii_splash_v47.webp' \
             '0f525e479874a5bdeca79d9688c7500b385df4a4b4a8217ec06da6e88dd6a7d1' 'aaii-learning/app/src/main/res/drawable-nodpi/soe_moe_v47_hd.webp' | sha256sum -c -
+      - name: Validate required V4.9 interaction wiring
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP=aaii-learning/app/src/main/java/asia/aaii/learningpublic/MainActivity.java
+          grep -q "AAII LEARNING V4.9" "$APP"
+          grep -q "openCertificatesPortal()" "$APP"
+          grep -q "profilePopup()" "$APP"
+          grep -q "view.postDelayed(task,145)" "$APP"
+          grep -q "Test Pop Animation + Sound" "$APP"
+          test -s aaii-learning/app/src/main/res/raw/aaii_click.wav
       - name: Compile real native APK
         run: gradle -p aaii-learning --no-daemon --stacktrace :app:assembleDebug
       - name: Verify APK Signature
@@ -67,7 +78,7 @@ jobs:
           sha256sum "$APK" > aaii-learning/app/build/outputs/apk/debug/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: AAII-Learning-V4.7-FullHD-Installable-APK
+          name: AAII-Learning-V4.9-Visible-Functions-APK
           path: |
             aaii-learning/app/build/outputs/apk/debug/app-debug.apk
             aaii-learning/app/build/outputs/apk/debug/SHA256SUMS.txt

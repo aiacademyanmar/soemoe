@@ -50,7 +50,7 @@ public class MainActivity extends Activity {
     TextView label=txt(headline,13,WHITE,true);label.setGravity(Gravity.CENTER);tile.addView(label);
     TextView info=txt(note,10,0xffdce9f8,false);info.setGravity(Gravity.CENTER);tile.addView(info);
     LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(0,dp(122),1);lp.setMargins(dp(3),dp(3),dp(3),dp(3));
-    row.addView(tile,lp);tile.setOnClickListener(v->action.run());
+    row.addView(tile,lp);tap(tile,action);
   }
   private void dashboardRow(LinearLayout parent,String[] icons,String[] names,String[] sub,int[] color,int[] pages){
     LinearLayout row=new LinearLayout(this);row.setOrientation(0);parent.addView(row,new LinearLayout.LayoutParams(-1,-2));
@@ -76,8 +76,9 @@ public class MainActivity extends Activity {
     view.animate().cancel();view.setScaleX(1);view.setScaleY(1);
     view.animate().scaleX(0.94f).scaleY(0.94f).setDuration(65).withEndAction(
       ()->view.animate().scaleX(1).scaleY(1).setDuration(120).start()).start();
-    if(clickPool!=null&&clickId!=0&&prefs.getBoolean("click_enabled",true))clickPool.play(clickId,0.20f,0.20f,1,0,1);
-    task.run();
+    if(clickPool!=null&&clickId!=0&&prefs.getBoolean("click_enabled",true))
+      clickPool.play(clickId,0.65f,0.65f,1,0,1);
+    view.postDelayed(task,145);
   });}
   private void openCertificatesPortal(){
     new AlertDialog.Builder(this).setTitle("Coursera Organization Certificates")
@@ -87,8 +88,15 @@ public class MainActivity extends Activity {
   private void profilePopup(){
     Dialog dialog=new Dialog(this);LinearLayout panel=vertical();panel.setPadding(dp(18),dp(18),dp(18),dp(16));
     panel.setBackground(shape(0xfff3f8ff,22));
-    LinearLayout hero=card(panel);portraitCard(hero,"Teacher Soe Moe","AAII Learning • Profile / Certificate Wallet");
-    line(panel,"PROFILE • QUICK ACTIONS",19,NAVY,true);
+    LinearLayout hero=card(panel);
+    LinearLayout row=new LinearLayout(this);row.setOrientation(0);row.setGravity(Gravity.CENTER_VERTICAL);
+    row.addView(portrait(78,88));
+    LinearLayout title=vertical();title.setPadding(dp(14),0,0,0);
+    line(title,"Teacher Soe Moe",19,NAVY,true);
+    line(title,"AAII Learning • Profile & Certificates",12,INK,false);
+    row.addView(title,new LinearLayout.LayoutParams(0,-2,1));hero.addView(row);
+    line(panel,"MY PROFILE • V4.9",21,NAVY,true);
+    line(panel,"Choose a service below • အောက်က Menu ကို ရွေးပါ",12,MUTED,false);
     button(panel,"Teacher Profile",()->{dialog.dismiss();openTab(9);},true);
     button(panel,"My Certificates",()->{dialog.dismiss();openTab(5);},false);
     button(panel,"Coursera Organization Certificates ↗",()->{dialog.dismiss();openCertificatesPortal();},false);
@@ -244,7 +252,7 @@ public class MainActivity extends Activity {
     logo.setScaleType(ImageView.ScaleType.CENTER_CROP);
     LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(dp(44),dp(44));lp.setMargins(0,0,dp(8),0);
     brand.addView(logo,lp);brand.addView(txt("AAII Learning",23,GOLD,true));
-    line(head,"LEARN TODAY • BUILD TOMORROW",10,0xffcfe8fe,false);
+    line(head,"YOUR PATH TO GLOBAL LEARNING  •  V4.9",11,0xffcfe8fe,false);
     LinearLayout links=new LinearLayout(this);links.setOrientation(0);head.addView(links);
     TextView learningLink=txt("◉ My Learning",12,GOLD,true);links.addView(learningLink,new LinearLayout.LayoutParams(0,dp(36),1));
     learningLink.setOnClickListener(v->openTab(12));
@@ -271,6 +279,17 @@ public class MainActivity extends Activity {
     root.addView(footer,new LinearLayout.LayoutParams(-1,dp(77)));
   }
     private void home(){
+    LinearLayout whatsNew=coloredCard(body,0xff082b53,0xff115999);
+    line(whatsNew,"✦  AAII LEARNING V4.9 • NEW FUNCTIONS",19,GOLD,true);
+    line(whatsNew,"Certificate Links  •  Profile Popup  •  Pop Animation  •  Click Sound",13,WHITE,false);
+    button(whatsNew,"🎓  1. Open Coursera Certificates ↗",()->openCertificatesPortal(),true);
+    button(whatsNew,"👤  2. Open My Profile Popup",()->profilePopup(),false);
+    button(whatsNew,"🔊  3. Test Pop Animation + Click Sound",()->new AlertDialog.Builder(this)
+      .setTitle("AAII Learning • Interactive Controls")
+      .setMessage("Pop Animation + Click Sound ကို စမ်းသပ်ပြီးပါပြီ။ ဖုန်း Media Volume ကို စစ်ဆေးပါ။ Click Sound ကို Profile → Settings ထဲမှာ ဖွင့်/ပိတ်နိုင်သည်။")
+      .setPositiveButton("OK",null).show(),false);
+    button(whatsNew,"⚙  4. Sound Settings (ON / OFF)",()->openTab(11),false);
+    line(whatsNew,"ဒီအကွက်ကို Home မျက်နှာပြင်မှာ မမြင်ရပါက App Version အဟောင်း ဖြစ်နိုင်ပါသည်။",12,0xffe9eef9,false);
     LinearLayout hero=coloredCard(body,0xff071a35,0xff0b5186);
     ImageView brandLogo=new ImageView(this);brandLogo.setImageResource(R.drawable.aaii_logo_v47);
     brandLogo.setScaleType(ImageView.ScaleType.FIT_CENTER);
@@ -337,7 +356,7 @@ public class MainActivity extends Activity {
     button(x,"My Certificate Wallet",()->openTab(5),false);
   }
   private void sectionHome(String no,String name,String desc,Runnable open){
-    LinearLayout x=card(body);line(x,no+"    "+name,17,NAVY,true);line(x,desc,13,INK,false);button(x,"အသေးစိတ်ကြည့်မည်",open,false);
+    LinearLayout x=card(body);tap(x,open);line(x,no+"    "+name,17,NAVY,true);line(x,desc,13,INK,false);button(x,"အသေးစိတ်ကြည့်မည်",open,false);
   }
   private void courseList(){
     screenLabel("COURSES • 337","ဘာသာရပ်အလိုက် မြန်မာလိုရှင်းပြချက် • Search & Practice");
@@ -356,7 +375,7 @@ public class MainActivity extends Activity {
         String name=c.optString("title"),cat=c.optString("category"),provider=c.optString("provider");
         if(!(name+" "+cat+" "+provider+" "+c.optString("program")).toLowerCase(Locale.ROOT).contains(search.trim().toLowerCase(Locale.ROOT)))continue;
         matched++;if(shown>=limit)continue;shown++;
-        final int id=i;LinearLayout x=card(list);line(x,name,16,NAVY,true);line(x,provider+"  •  "+cat,12,TEAL,false);
+        final int id=i;LinearLayout x=card(list);tap(x,()->inspect(1,id));line(x,name,16,NAVY,true);line(x,provider+"  •  "+cat,12,TEAL,false);
         String preview=overview(cat,name);line(x,preview.length()>95?preview.substring(0,95)+"…":preview,13,INK,false);
         button(x,"မြန်မာလို အသေးစိတ်ရှင်းပြချက်",()->inspect(1,id),false);
       }
@@ -375,7 +394,7 @@ public class MainActivity extends Activity {
       spec?"ဆက်စပ် Courses များဖြင့် နက်ရှိုင်းစွာ အထူးပြုသင်ယူနိုင်သည်။":"လုပ်ငန်းခွင်နှင့် Career အတွက် ရည်ရွယ်သည့် Professional Learning Pathway များ။");
     int j=0;for(int i=0;i<programs.length();i++){JSONObject p=programs.optJSONObject(i);
       if(p==null||!type.equals(p.optString("type")))continue;final int id=i;j++;
-      LinearLayout x=card(body);line(x,String.format(Locale.US,"%02d",j)+"   "+p.optString("title"),17,NAVY,true);
+      LinearLayout x=card(body);tap(x,()->inspect(spec?2:3,id));line(x,String.format(Locale.US,"%02d",j)+"   "+p.optString("title"),17,NAVY,true);
       line(x,p.optString("provider")+"  •  "+type,12,TEAL,true);
       line(x,overview(type+" "+p.optString("title"),p.optString("title")),13,INK,false);
       button(x,"သင်ရိုးနှင့် မြန်မာရှင်းလင်းချက်",()->inspect(spec?2:3,id),false);
@@ -585,6 +604,7 @@ public class MainActivity extends Activity {
     LinearLayout c=card(body);line(c,"03  MY LEARNING & CERTIFICATES",17,NAVY,true);
     button(c,"View Learning Dashboard",()->openTab(12),false);
     button(c,"My Private Certificates",()->openTab(5),false);
+    button(c,"Coursera Organization → Certificates ↗",()->openCertificatesPortal(),false);
     LinearLayout d=card(body);line(d,"04  REQUEST HISTORY",17,NAVY,true);
     line(d,"Saved local drafts: "+drafts().length()+". Booking အတည်ပြုမှု သို့မဟုတ် Coursera Enrollment အတည်ပြုမှု မဟုတ်သေးပါ။",13,MUTED,false);
     button(d,"My Request Drafts",()->openTab(13),false);
@@ -799,10 +819,16 @@ public class MainActivity extends Activity {
     LinearLayout services=card(body);line(services,"Enrollment & Teacher Booking Requests",17,NAVY,true);
     line(services,"Local drafts: "+drafts().length(),13,INK,false);
     button(services,"View Request Drafts",()->openTab(13),false);
+    LinearLayout effects=card(body);
+    line(effects,"✨ POP ANIMATION & CLICK SOUND • V4.9",17,NAVY,true);
+    line(effects,"Button / Footer / Course Card ကို နှိပ်လျှင် Pop Effect နှင့် Click Sound ကြားနိုင်သည်။ Media Volume ဖွင့်ထားပါ။",13,MUTED,false);
+    button(effects,"Test Pop Animation + Sound",()->new AlertDialog.Builder(this).setTitle("Pop Effect is Active")
+       .setMessage("Click Sound ကို ကြားရပါသလား? ဖုန်း Media Volume နှင့် Sound Toggle ကို စစ်ဆေးပါ။")
+       .setPositiveButton("OK",null).show(),true);
     LinearLayout language=card(body);line(language,"Language Preference • ဘာသာစကား",17,NAVY,true);
     line(language,"သင်ယူမှုအထောက်အကူပြု preferred language သာဖြစ်ပြီး App UI တစ်ခုလုံး Localization မပြီးသေးပါ။",12,MUTED,false);
     CheckBox sound=new CheckBox(this);sound.setText("Click Sound • Enable / Disable");sound.setChecked(prefs.getBoolean("click_enabled",true));
-    sound.setOnCheckedChangeListener((v,enabled)->prefs.edit().putBoolean("click_enabled",enabled).apply());language.addView(sound);
+    sound.setOnCheckedChangeListener((v,enabled)->prefs.edit().putBoolean("click_enabled",enabled).apply());effects.addView(sound);
     Spinner spinner=requestSelect(language,"Preferred Learning Language",new String[]{"Myanmar (မြန်မာ)","English"});
     spinner.setSelection("en".equals(prefs.getString("study_lang","my"))?1:0);
     button(language,"Save Language Preference",()->{
@@ -824,6 +850,7 @@ public class MainActivity extends Activity {
     line(x,"ကိုယ်ပိုင် programs.json ကို ဖုန်းအတွင်း၌သာ ထည့်သွင်းနိုင်ပြီး GitHub Public Source ထဲ မတင်ပါ။ Coursera ကသာ Official Certificate ထုတ်ပေးပါသည်။",14,INK,false);
     button(x,"Private JSON Import",()->{Intent intent=new Intent(Intent.ACTION_OPEN_DOCUMENT);intent.setType("*/*");intent.addCategory(Intent.CATEGORY_OPENABLE);startActivityForResult(intent,404);},true);
     line(x,"Imported Certificates: "+certs.length(),13,TEAL,true);
+    line(x,"Organization Page (requires account login) • Direct Coursera URL",12,MUTED,false);
     button(x,"Coursera Organization • My Learning Certificates ↗",()->openCertificatesPortal(),true);
     line(x,"Organization Login လိုနိုင်သည်။ Individual verification အတွက် Private Wallet Link ကို သုံးပါ။",12,MUTED,false);
     EditText q=new EditText(this);q.setSingleLine(true);q.setHint("Find certificate / program");q.setText(certQuery);
