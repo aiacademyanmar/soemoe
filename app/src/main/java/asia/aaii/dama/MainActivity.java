@@ -37,8 +37,8 @@ import java.util.concurrent.Executors;
 /** DAMA RADIO V2 native Android: offline metadata and licensed portraits,
  * publisher-linked online audio and user-initiated private offline downloads. */
 public class MainActivity extends Activity {
-  final int BG=Color.rgb(5,31,29), DEEP=Color.rgb(2,23,22), CARD=Color.rgb(14,51,45), GOLD=Color.rgb(231,189,102), GOLDDIM=Color.rgb(171,137,72);
-  final int IVORY=Color.rgb(255,247,224), MUTED=Color.rgb(190,198,182), WHITE=Color.rgb(250,244,232), GREEN=Color.rgb(40,104,79);
+  final int BG=Color.rgb(4,28,28), DEEP=Color.rgb(2,20,21), CARD=Color.rgb(14,52,48), GOLD=Color.rgb(247,202,108), GOLDDIM=Color.rgb(183,147,82);
+  final int IVORY=Color.rgb(255,250,237), MUTED=Color.rgb(195,212,204), WHITE=Color.rgb(250,244,232), GREEN=Color.rgb(40,104,79);
   final Handler handler=new Handler(Looper.getMainLooper());
   final ExecutorService background=Executors.newSingleThreadExecutor();
   final ArrayList<Monk> monks=new ArrayList<>();
@@ -95,24 +95,51 @@ public class MainActivity extends Activity {
     if(next.equals("Home"))home();else if(next.equals("Radio"))browse();else if(next.equals("Playing"))nowPlaying();else if(next.equals("Collection"))collection();else if(next.equals("Library")){startActivity(new Intent(this,LibraryActivity.class));screen="Home";home();}else if(next.equals("TV"))other("DAMA TV","▶ YouTube တရားတော်", "https://www.dhammadownload.com/VideoInMyanmar.htm");else if(next.equals("Worship"))other("DAILY WORSHIP","✿ နေ့စဉ်ဝတ်ပြုခြင်း", "https://www.dhammadownload.com/");
     if(selected!=null&&!next.equals("Playing"))miniPlayer();bottomBar();
   }
-  void createTop(){LinearLayout bar=row();bar.setPadding(dp(15),dp(12),dp(15),dp(10));bar.setBackgroundColor(DEEP);
-    TextView menu=text("☰",25,GOLD,true);menu.setGravity(Gravity.CENTER);bar.addView(menu,lp(38,42));menu.setOnClickListener(v->menu());
-    LinearLayout title=vert();TextView main=text("DAMA  ◉  RADIO",19,GOLD,true);main.setGravity(Gravity.CENTER_HORIZONTAL);title.addView(main);TextView sub=text("ဓမ္မ ရေဒီယို • Listen to Dhamma",10,MUTED,false);sub.setGravity(Gravity.CENTER_HORIZONTAL);title.addView(sub);bar.addView(title,new LinearLayout.LayoutParams(0,dp(50),1));
-    TextView setting=text("⚙",24,GOLD,false);setting.setGravity(Gravity.CENTER);bar.addView(setting,lp(38,42));setting.setOnClickListener(v->new AlertDialog.Builder(this).setTitle("DAMA RADIO").setMessage("MP3 Library · Offline Metadata · Player\nSource: DhammaDownload\nCopyright: audio files remain hosted by the publisher.").setPositiveButton("OK",null).show());outer.addView(bar);
-  }
+  void createTop(){
+  LinearLayout bar=row();bar.setPadding(dp(16),dp(11),dp(16),dp(12));
+  bar.setBackground(new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,new int[]{0xff092b29,0xff123c36,0xff092925}));
+  TextView menu=text("☰",23,GOLD,true);menu.setGravity(Gravity.CENTER);
+  menu.setBackground(shape(0xff19453b,14,0));bar.addView(menu,lp(42,42));
+  menu.setOnClickListener(v->menu());
+  LinearLayout title=vert();title.setGravity(Gravity.CENTER);
+  TextView main=text("✿   DAMA RADIO",21,GOLD,true);main.setGravity(Gravity.CENTER);title.addView(main);
+  TextView sub=text("ဓမ္မအသံလွှင့် · LISTEN TO WISDOM",10,MUTED,false);sub.setGravity(Gravity.CENTER);title.addView(sub);
+  bar.addView(title,new LinearLayout.LayoutParams(0,dp(49),1));
+  TextView setting=text("⌕",27,GOLD,false);setting.setGravity(Gravity.CENTER);setting.setBackground(shape(0xff19453b,14,0));
+  bar.addView(setting,lp(42,42));setting.setOnClickListener(v->show("Radio"));outer.addView(bar);
+}
   void menu(){new AlertDialog.Builder(this).setTitle("DAMA APP").setItems(new String[]{"⌂  Home","♫  DAMA RADIO","▤  Favorites / Downloads","📚  DAMA LIBRARY","▶  DAMA TV","✿  Daily Worship","↻  Sync MP3 Catalog","Source Website"},(d,w)->{switch(w){case 0:show("Home");break;case 1:show("Radio");break;case 2:show("Collection");break;case 3:show("Library");break;case 4:show("TV");break;case 5:show("Worship");break;case 6:sync();break;case 7:open("https://www.dhammadownload.com/AudioInMyanmar.htm");break;}}).show();}
   ImageView picture(int res,int h){ImageView img=new ImageView(this);img.setImageResource(res);img.setScaleType(ImageView.ScaleType.CENTER_CROP);img.setBackground(shape(CARD,18,0));img.setClipToOutline(true);img.setLayoutParams(lp(-1,h));return img;}
-  void hero(){ android.widget.FrameLayout frame=new android.widget.FrameLayout(this);frame.setBackground(shape(CARD,17,GOLDDIM));frame.setClipToOutline(true);
-    ImageView picture=picture(R.drawable.radio_hero,190);frame.addView(picture,new android.widget.FrameLayout.LayoutParams(-1,dp(190)));
-    LinearLayout overlay=vert();overlay.setPadding(dp(17),dp(20),dp(15),dp(12));overlay.setBackground(new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,new int[]{0xE6031D1B,0x77031D1B,0x11031D1B}));
-    TextView live=text("●  DHAMMA STREAMING",11,0xffffdfaa,true);overlay.addView(live);overlay.addView(space(8));overlay.addView(text("DAMA RADIO",25,IVORY,true));TextView say=text("ဆရာတော်ကြီးများ၏ တရားတော်များ",16,IVORY,true);overlay.addView(say);overlay.addView(space(12));overlay.addView(text("ရှာဖွေ • ရွေးချယ် • နားဆင်",12,0xfff6d995,false));
-    frame.addView(overlay,new android.widget.FrameLayout.LayoutParams(-1,-1));body.addView(frame,lp(-1,190));body.addView(space(12));}
+  void hero(){
+  android.widget.FrameLayout frame=new android.widget.FrameLayout(this);frame.setBackground(shape(CARD,22,GOLDDIM));frame.setClipToOutline(true);
+  ImageView picture=picture(R.drawable.radio_hero,218);
+  frame.addView(picture,new android.widget.FrameLayout.LayoutParams(-1,dp(218)));
+  LinearLayout overlay=vert();overlay.setGravity(Gravity.CENTER_VERTICAL);overlay.setPadding(dp(22),dp(14),dp(22),dp(14));
+  overlay.setBackground(new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,new int[]{0xee051d1b,0xc5123d36,0x20062523}));
+  TextView kicker=text("✦  TODAY'S DHAMMA  ✦",10,0xffffdf9b,true);kicker.setLetterSpacing(.12f);overlay.addView(kicker);
+  overlay.addView(space(10));TextView h=text("အသံတရားဖြင့်\nစိတ်အေးချမ်းစေပါ",22,IVORY,true);overlay.addView(h);
+  overlay.addView(space(8));overlay.addView(text("ဆရာတော်ကြီးများ၏ တရားတော်များ",12,0xfff5dcaa,false));overlay.addView(space(17));
+  TextView cta=click("▶  စတင်နားထောင်ရန်",()->show("Radio"));cta.setTextColor(DEEP);cta.setBackground(shape(GOLD,24,0));
+  overlay.addView(cta,lp(178,43));frame.addView(overlay,new android.widget.FrameLayout.LayoutParams(-1,-1));
+  body.addView(frame,lp(-1,218));body.addView(space(17));
+}
   void summary(){LinearLayout r=row();r.setBackground(shape(CARD,14,GOLDDIM));r.setPadding(dp(12),dp(12),dp(8),dp(12));
     TextView qty=text("♫  "+catalog.size()+" MP3 links",14,GOLD,true);r.addView(qty,new LinearLayout.LayoutParams(0,-2,1));TextView n=text(monks.size()+" ဆရာတော်",12,MUTED,false);r.addView(n);body.addView(r);body.addView(space(10));}
   void catPills(){LinearLayout row=row();String[] titles={"☸ ပဋ္ဌာန်း","✿ ဝိပဿနာ","♬ ပရိတ်"};for(int i=0;i<3;i++){final int t=i;TextView bt=text(titles[i],12,GOLD,true);bt.setGravity(Gravity.CENTER);bt.setPadding(dp(7),dp(12),dp(7),dp(12));bt.setBackground(shape(CARD,13,GOLDDIM));LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(0,dp(46),1);p.setMargins(dp(3),0,dp(3),0);row.addView(bt,p);bt.setOnClickListener(v->{categoryFilter=t==0?1:t==1?2:3;show("Radio");});}body.addView(row);body.addView(space(15));}
-  void monkTiles(){heading("ဆရာတော်ကြီးများ");HorizontalScrollView horiz=new HorizontalScrollView(this);horiz.setHorizontalScrollBarEnabled(false);LinearLayout r=row();
-    for(int i=0;i<Math.min(monks.size(),20);i++){Monk monk=monks.get(i);LinearLayout tile=vert();tile.setGravity(Gravity.CENTER);tile.setPadding(dp(7),dp(8),dp(7),dp(7));tile.setBackground(shape(CARD,14,0));ImageView photo=monkPic(monk.id,60);tile.addView(photo,lp(60,60));TextView tx=text(monk.name,10,IVORY,false);tx.setMaxLines(2);tx.setGravity(Gravity.CENTER);tile.addView(tx,lp(83,39));r.addView(tile,lp(95,120));tile.setOnClickListener(v->{monkFilter=monk.id;show("Radio");});}
-    horiz.addView(r);body.addView(horiz);body.addView(space(14));}
+  void monkTiles(){
+  heading("ဆရာတော်ကြီးများ  ·  SAYADAWS");
+  HorizontalScrollView horiz=new HorizontalScrollView(this);horiz.setHorizontalScrollBarEnabled(false);
+  LinearLayout r=row();
+  for(int i=0;i<Math.min(monks.size(),20);i++){
+    Monk monk=monks.get(i);LinearLayout tile=vert();tile.setGravity(Gravity.CENTER);
+    tile.setPadding(dp(8),dp(10),dp(8),dp(9));tile.setBackground(shape(0xff143f38,17,GOLDDIM));
+    ImageView photo=monkPic(monk.id,66);tile.addView(photo,lp(66,66));tile.addView(space(7));
+    TextView tx=text(monk.name,11,IVORY,true);tx.setMaxLines(2);tx.setGravity(Gravity.CENTER);tile.addView(tx,lp(100,45));
+    LinearLayout.LayoutParams param=lp(116,146);param.setMargins(0,0,dp(10),0);r.addView(tile,param);
+    tile.setOnClickListener(v->{monkFilter=monk.id;show("Radio");});
+  }
+  horiz.addView(r);body.addView(horiz);body.addView(space(18));
+}
   ImageView monkPic(int id,int dim){ImageView img=new ImageView(this);int drawable=id==1?R.drawable.mogok_sayadaw:id==2?R.drawable.mahasi_sayadaw:id==4?R.drawable.nandamala_sayadaw:R.drawable.monk_symbol;img.setImageResource(drawable);img.setScaleType(ImageView.ScaleType.CENTER_CROP);img.setBackground(shape(CARD,dim/2,GOLDDIM));img.setClipToOutline(true);return img;}
   void home(){hero();summary();catPills();monkTiles();
     heading("တရားတော် နားထောင်ရန်");quickTrackList(6,false);body.addView(space(12));
@@ -135,7 +162,17 @@ public class MainActivity extends Activity {
   void filter(){if(listArea==null||!screen.equals("Radio"))return;results.clear();String q=query.toLowerCase(Locale.ROOT).trim();synchronized(catalog){for(Track t:catalog.values()){if(monkFilter>0&&t.monkId!=monkFilter)continue;if(categoryFilter>0&&!cat[categoryFilter].equals(group(t.title)))continue;if(!q.isEmpty()&&!(t.title+" "+t.monk).toLowerCase(Locale.ROOT).contains(q))continue;results.add(t);}}
     listArea.removeAllViews();listArea.addView(text("တရားတော် "+results.size()+" ပုဒ်",17,GOLD,true));listArea.addView(space(8));if(results.isEmpty()){listArea.addView(text("တရားတော်မတွေ့ပါ — အခြား Keyword ဖြင့်ရှာပါ / Sync လုပ်ပါ။",13,MUTED,false));return;}
     ListView list=new ListView(this);list.setDividerHeight(dp(3));list.setBackgroundColor(BG);list.setCacheColorHint(BG);list.setVerticalScrollBarEnabled(false);list.setAdapter(new BaseAdapter(){public int getCount(){return results.size();}public Object getItem(int i){return results.get(i);}public long getItemId(int i){return i;}public View getView(int i,View reuse,ViewGroup parent){return trackRow(results.get(i));}});list.setOnItemClickListener((p,v,index,id)->trackActions(results.get(index)));listArea.addView(list,lp(-1,530));listArea.addView(space(10));}
-  LinearLayout trackRow(Track t){LinearLayout r=row();r.setPadding(dp(9),dp(8),dp(6),dp(8));r.setBackground(shape(CARD,12,0));ImageView photo=monkPic(t.monkId,56);r.addView(photo,lp(56,56));LinearLayout labels=vert();labels.setPadding(dp(10),0,dp(7),0);TextView label=text(t.title,13,IVORY,true);label.setMaxLines(2);labels.addView(label);TextView who=text(t.monk,11,MUTED,false);who.setMaxLines(1);labels.addView(who);r.addView(labels,new LinearLayout.LayoutParams(0,-2,1));TextView btn=text("▶",23,GOLD,true);btn.setGravity(Gravity.CENTER);r.addView(btn,lp(35,53));return r;}
+  LinearLayout trackRow(Track t){
+  LinearLayout r=row();r.setPadding(dp(10),dp(11),dp(10),dp(11));r.setBackground(shape(0xff133b36,15,0));
+  ImageView photo=monkPic(t.monkId,54);r.addView(photo,lp(54,54));
+  LinearLayout labels=vert();labels.setPadding(dp(12),0,dp(6),0);
+  TextView name=text(t.title,14,IVORY,true);name.setMaxLines(2);labels.addView(name);
+  TextView who=text(t.monk,11,MUTED,false);who.setMaxLines(1);labels.addView(who);
+  TextView status=text(downloadFile(t).exists()?"● OFFLINE":"♫  MP3  ·  ONLINE",10,GOLD,false);labels.addView(status);
+  r.addView(labels,new LinearLayout.LayoutParams(0,-2,1));
+  TextView play=text("▶",16,DEEP,true);play.setGravity(Gravity.CENTER);play.setBackground(shape(GOLD,26,0));
+  r.addView(play,lp(40,40));return r;
+}
   void quickTrackList(int max,boolean onlyFav){int i=0;ArrayList<Track> data; synchronized(catalog){data=new ArrayList<>(catalog.values());}for(Track t:data){if(onlyFav&&!favorites.contains(t.url))continue;if(i++>=max)break;LinearLayout r=trackRow(t);body.addView(r,lp(-1,77));body.addView(space(7));r.setOnClickListener(v->trackActions(t));}if(i==0)body.addView(text("စာရင်းမရှိသေးပါ",12,MUTED,false));}
   void trackActions(Track t){String fav=favorites.contains(t.url)?"♥ Favorites မှဖယ်":"♡ Favorites ထည့်";String downloaded=downloadFile(t).exists()?"Offline နားထောင်":"↓ Offline Download";
     new AlertDialog.Builder(this).setTitle(t.title).setMessage(t.monk+"\n"+group(t.title)).setItems(new String[]{"▶  နားထောင်ရန်",fav,downloaded,"🔗 မူရင်း MP3 Link","↗ မူရင်းစာမျက်နှာ"},(d,i)->{switch(i){case 0:play(t);break;case 1:toggleFavorite(t);break;case 2:download(t);break;case 3:open(t.url);break;case 4:open(t.source==null||t.source.isEmpty()?"https://www.dhammadownload.com/":t.source);break;}}).show();}
@@ -145,8 +182,8 @@ public class MainActivity extends Activity {
   void pause(){if(player==null||!ready)return;try{if(player.isPlaying())player.pause();else player.start();show(screen);}catch(Exception ignored){}}
   void release(){try{if(player!=null){player.reset();player.release();}}catch(Exception ignored){}player=null;ready=false;}
   void miniPlayer(){miniBar=row();miniBar.setPadding(dp(14),dp(5),dp(12),dp(5));miniBar.setBackground(shape(CARD,13,GOLDDIM));TextView label=text("♫  "+selected.title,12,IVORY,true);label.setMaxLines(1);miniBar.addView(label,new LinearLayout.LayoutParams(0,-1,1));miniBar.addView(click("❯",()->show("Playing")));miniBar.addView(spaceX(6));miniBar.addView(click(player!=null&&ready&&player.isPlaying()?"Ⅱ":"▶",()->pause()));outer.addView(miniBar,lp(-1,58));miniBar.setOnClickListener(v->show("Playing"));}
-  void nowPlaying(){heading("NOW PLAYING  ·  တရားတော်နားဆင်ရန်");if(selected==null){body.addView(text("နားထောင်ရန် တရားတော် ရွေးချယ်ပါ",15,MUTED,false));return;}
-    ImageView artwork=picture(R.drawable.radio_pattana,255);body.addView(artwork,lp(-1,255));body.addView(space(18));TextView title=text(selected.title,20,IVORY,true);title.setGravity(Gravity.CENTER);body.addView(title);TextView monk=text(selected.monk,13,GOLD,false);monk.setGravity(Gravity.CENTER);body.addView(monk);body.addView(space(24));
+  void nowPlaying(){heading("✦  NOW PLAYING  ·  တရားတော်နားဆင်ရန်");if(selected==null){body.addView(text("နားထောင်ရန် တရားတော် ရွေးချယ်ပါ",15,MUTED,false));return;}
+    ImageView artwork=picture(R.drawable.radio_pattana,255);artwork.setBackground(shape(CARD,24,GOLD));body.addView(artwork,lp(-1,255));body.addView(space(18));TextView title=text(selected.title,20,IVORY,true);title.setGravity(Gravity.CENTER);body.addView(title);TextView monk=text(selected.monk,13,GOLD,false);monk.setGravity(Gravity.CENTER);body.addView(monk);body.addView(space(24));
     playSeek=new SeekBar(this);playSeek.setMax(1000);playSeek.setProgressTintList(android.content.res.ColorStateList.valueOf(GOLD));playSeek.setThumbTintList(android.content.res.ColorStateList.valueOf(GOLD));body.addView(playSeek);playSeek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onStartTrackingTouch(SeekBar s){}public void onStopTrackingTouch(SeekBar s){if(player!=null&&ready)try{player.seekTo((int)(player.getDuration()*(s.getProgress()/1000f)));}catch(Exception ignored){}}public void onProgressChanged(SeekBar s,int p,boolean user){}});
     timeLabel=text("00:00 / --:--",12,MUTED,false);timeLabel.setGravity(Gravity.CENTER);body.addView(timeLabel);handler.removeCallbacksAndMessages(null);ticker=()->{if(screen.equals("Playing")&&player!=null&&ready){try{int duration=player.getDuration(),current=player.getCurrentPosition();playSeek.setProgress(duration>0?Math.round(current*1000f/duration):0);timeLabel.setText(durationTime(current)+" / "+durationTime(duration));}catch(Exception ignored){}handler.postDelayed(ticker,1000);}};handler.postDelayed(ticker,400);
     body.addView(space(21));LinearLayout actions=row();actions.setGravity(Gravity.CENTER);TextView previous=click("❮❮",()->skip(-1));TextView play=click(player!=null&&ready&&player.isPlaying()?"Ⅱ  PAUSE":"▶  PLAY",()->pause());TextView next=click("❯❯",()->skip(1));actions.addView(previous);actions.addView(spaceX(12));actions.addView(play);actions.addView(spaceX(12));actions.addView(next);body.addView(actions);body.addView(space(15));
@@ -164,7 +201,22 @@ public class MainActivity extends Activity {
     toast("Download စတင်နေပါပြီ…");background.execute(()->{File tmp=new File(target.getPath()+".part");try{URL url=new URL(t.url);HttpURLConnection c=(HttpURLConnection)url.openConnection();c.setConnectTimeout(18000);c.setReadTimeout(45000);c.setInstanceFollowRedirects(true);if(c.getResponseCode()!=200)throw new IOException("HTTP "+c.getResponseCode());long length=c.getContentLengthLong();if(length>180L*1024L*1024L)throw new IOException("Audio file too large");try(InputStream in=c.getInputStream();FileOutputStream out=new FileOutputStream(tmp)){byte[] bytes=new byte[32768];int n;long total=0;while((n=in.read(bytes))!=-1){total+=n;if(total>180L*1024L*1024L)throw new IOException("Audio limit exceeded");out.write(bytes,0,n);}if(total<10000)throw new IOException("File is unexpectedly small");}if(!tmp.renameTo(target))throw new IOException("File move failed");handler.post(()->{toast("MP3 Download ပြီးပါပြီ · Offline ဖွင့်နိုင်ပါပြီ");if(screen.equals("Collection"))show("Collection");});}catch(Exception e){tmp.delete();handler.post(()->toast("Download မအောင်မြင်: "+e.getMessage()));}});
     }).setNegativeButton("မလုပ်တော့ပါ",null).show();}
   void other(String title,String b,String url){heading(title);ImageView img=picture(R.drawable.radio_hero,220);body.addView(img,lp(-1,220));body.addView(space(14));body.addView(text(b,18,IVORY,true));body.addView(space(14));body.addView(click("မူရင်းဓမ္မစာမျက်နှာသို့ သွားရန် ↗",()->open(url)));body.addView(space(16));body.addView(text("DAMA Radio V2 အဓိက MP3 Library ကို ပြန်သွားနိုင်ပါတယ်။",12,MUTED,false));body.addView(click("♫  DAMA RADIO",()->show("Radio")));}
-  void bottomBar(){LinearLayout nav=row();nav.setBackgroundColor(DEEP);nav.setPadding(dp(2),dp(7),dp(2),dp(7));String[] screens={"Home","Radio","Library","TV","Worship"};String[] icons={"⌂","♫","▤","▣","✿"};String[] burmese={"Home","Radio","Library","TV","Worship"};for(int i=0;i<screens.length;i++){final String target=screens[i];LinearLayout cell=vert();cell.setGravity(Gravity.CENTER);boolean active=screen.equals(target)||(screen.equals("Playing")&&i==1);TextView icon=text(icons[i],22,active?GOLD:MUTED,true);icon.setGravity(Gravity.CENTER);cell.addView(icon);TextView txt=text(burmese[i],10,active?GOLD:MUTED,active);txt.setGravity(Gravity.CENTER);cell.addView(txt);nav.addView(cell,new LinearLayout.LayoutParams(0,dp(55),1));cell.setOnClickListener(v->show(target));}outer.addView(nav,lp(-1,68));}
+  void bottomBar(){
+  LinearLayout nav=row();nav.setPadding(dp(4),dp(7),dp(4),dp(7));
+  nav.setBackground(new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,new int[]{0xff081d1d,0xff12312e,0xff081d1d}));
+  String[] screens={"Home","Radio","Library","TV","Worship"};
+  String[] icons={"⌂","♫","▤","▣","✿"};
+  String[] labels={"Home","Radio","Books","TV","Worship"};
+  for(int i=0;i<screens.length;i++){
+    final String target=screens[i];boolean active=screen.equals(target)||(screen.equals("Playing")&&i==1);
+    LinearLayout cell=vert();cell.setGravity(Gravity.CENTER);
+    if(active)cell.setBackground(shape(0xff285042,17,GOLDDIM));
+    TextView icon=text(icons[i],23,active?GOLD:MUTED,true);icon.setGravity(Gravity.CENTER);cell.addView(icon);
+    TextView caption=text(labels[i],10,active?GOLD:MUTED,active);caption.setGravity(Gravity.CENTER);cell.addView(caption);
+    LinearLayout.LayoutParams pp=new LinearLayout.LayoutParams(0,dp(57),1);pp.setMargins(dp(2),0,dp(2),0);
+    nav.addView(cell,pp);cell.setOnClickListener(v->show(target));
+  }outer.addView(nav,lp(-1,74));
+}
   void open(String url){try{startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse(url)));}catch(Exception ex){toast("Website မဖွင့်နိုင်ပါ");}}
   void saveCache(){File out=new File(getFilesDir(),CACHE_FILE),tmp=new File(getFilesDir(),CACHE_FILE+".tmp");try(FileOutputStream f=new FileOutputStream(tmp)){JSONArray a=new JSONArray();synchronized(catalog){for(Track t:catalog.values())a.put(t.json());}f.write(a.toString().getBytes(StandardCharsets.UTF_8));f.getFD().sync();if(!tmp.renameTo(out))throw new IOException("rename failed");}catch(Exception e){android.util.Log.e("DAMA","Unable to cache catalog",e);}}
   String fetch(String ref)throws Exception{URL url=new URL(ref);String host=url.getHost().toLowerCase(Locale.ROOT);if(!host.equals("dhammadownload.com")&&!host.equals("www.dhammadownload.com"))throw new IOException("host not allowed");HttpURLConnection conn=(HttpURLConnection)url.openConnection();conn.setConnectTimeout(16000);conn.setReadTimeout(26000);conn.setRequestProperty("User-Agent","DAMA-RADIO/2.0 Audio link index (no audio downloaded)");try{if(conn.getResponseCode()!=200)throw new IOException("HTTP "+conn.getResponseCode());ByteArrayOutputStream b=new ByteArrayOutputStream();try(InputStream in=conn.getInputStream()){byte[] array=new byte[8192];int n;while((n=in.read(array))!=-1){if(b.size()+n>5_000_000)throw new IOException("HTML too large");b.write(array,0,n);}}String enc=conn.getContentEncoding();String contentType=conn.getContentType();if(contentType!=null&&contentType.toLowerCase(Locale.ROOT).contains("charset=")){String ch=contentType.replaceAll("(?i).*charset=\\s*([A-Za-z0-9_-]+).*","$1");try{return b.toString(ch);}catch(Exception ignored){}}return b.toString("UTF-8");}finally{conn.disconnect();}}
