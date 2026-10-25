@@ -19,9 +19,9 @@ public final class FooterNav {
         footer.setGravity(Gravity.CENTER_VERTICAL);
         footer.setPadding(dp(activity,4),dp(activity,6),dp(activity,4),dp(activity,8));
         footer.setBackgroundColor(BG);
-        String[] names={"Home","Radio","Library","Reader","TV"};
-        String[] glyphs={"⌂","♫","▤","▣","▶"};
-        Class<?>[] targets={HomeActivity.class,MainActivity.class,LibraryActivity.class,ReaderShelfActivity.class,TvActivity.class};
+        String[] names={"Home","Radio","Library","Reader","TV","Voice"};
+        String[] glyphs={"⌂","♫","▤","▣","▶","☀"};
+        Class<?>[] targets={HomeActivity.class,MainActivity.class,LibraryActivity.class,ReaderShelfActivity.class,TvActivity.class,DailyVoiceActivity.class};
         for(int i=0;i<names.length;i++){
             final int index=i;
             boolean selected=names[i].equals(active);
