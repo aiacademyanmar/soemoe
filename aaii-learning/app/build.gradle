@@ -2,7 +2,7 @@ plugins { id 'com.android.application' }
 android {
   namespace 'asia.aaii.learningpublic'
   compileSdk 35
-  defaultConfig { applicationId 'asia.aaii.learningpublic.buildtest'; minSdk 24; targetSdk 35; versionCode 41; versionName '4.1.0-portrait-ui' }
+  defaultConfig { applicationId 'asia.aaii.learningpublic.buildtest'; minSdk 24; targetSdk 35; versionCode 42; versionName '4.2.0-native-design' }
   buildTypes { release { minifyEnabled false } }
   compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
 }

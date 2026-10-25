@@ -1,0 +1,3 @@
+# AAII Learning V4.2 Native UI/UX
+
+Visual styling update for home, course catalog, teacher profile, booking, learning paths and fixed footer: navy / cobalt / gold palette, tappable category chips, dashboard metric infographics and enhanced native Android cards. Retains functioning 337 Courses, 37 Specializations, 18 Professional, Private Wallet and request forms. Original Soe Moe portrait carried from V4.1, but previous source image asset must be separately revalidated before claiming successful display. Full 14-screen pixel-exact fidelity is not achieved; native interactive layouts are the implementation. Public-safe build excludes private credential links.

@@ -13,9 +13,9 @@ import java.io.*;
 import java.util.*;
 
 public class MainActivity extends Activity {
-  private final int NAVY=0xff102a43, TEAL=0xff087e86, GOLD=0xffd5a74f, INK=0xff17324c, MUTED=0xff64748b, BG=0xfff4f8fb, WHITE=0xffffffff;
+  private final int NAVY=0xff082b53, TEAL=0xff0969e8, GOLD=0xfff5be42, INK=0xff17324c, MUTED=0xff64748b, BG=0xfff3f8fe, WHITE=0xffffffff;
   private final String[] LABELS={"ပင်မ","သင်တန်း","အထူးပြု","Professional","ဆရာလမ်းကြောင်း"};
-  private final String[] ICONS={"⌂","▤","✦","★","♙"};
+  private final String[] ICONS={"⌂","▣","◈","✦","♙"};
   private JSONArray courses=new JSONArray(), programs=new JSONArray(),roadmaps=new JSONArray(),teachers=new JSONArray(),certs=new JSONArray();
   private SharedPreferences prefs;
   private LinearLayout root,body,footer;
@@ -41,6 +41,26 @@ public class MainActivity extends Activity {
   private LinearLayout vertical(){LinearLayout x=new LinearLayout(this);x.setOrientation(1);return x;}
   private void openTab(int p){page=p;search="";category="အားလုံး";limit=35;render();}
   private void inspect(int type,int index){detailType=type;detailIndex=index;page=6;render();}
+  private void pillRow(LinearLayout target,String[] names,int[] pages){
+    HorizontalScrollView h=new HorizontalScrollView(this);h.setHorizontalScrollBarEnabled(false);
+    LinearLayout row=new LinearLayout(this);row.setOrientation(0);h.addView(row);
+    for(int i=0;i<names.length;i++){final int destination=pages[i];TextView t=txt(names[i],12,TEAL,true);
+      t.setPadding(dp(13),dp(11),dp(13),dp(11));t.setBackground(shape(0xffeaf3ff,18));
+      LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-2,-2);p.setMargins(0,0,dp(7),0);row.addView(t,p);
+      t.setOnClickListener(v->openTab(destination));
+    }
+    target.addView(h);
+  }
+  private void statTiles(LinearLayout parent){
+    LinearLayout row=new LinearLayout(this);row.setOrientation(0);parent.addView(row);
+    String[] nums={"337","37","18","6"};String[] captions={"Courses","Specialize","Professional","Teacher Paths"};
+    int[] backgrounds={0xffe0f8ef,0xffe5f0ff,0xffffefd1,0xfff0e4ff};
+    for(int i=0;i<4;i++){LinearLayout tile=vertical();tile.setPadding(dp(4),dp(9),dp(4),dp(9));
+      tile.setGravity(Gravity.CENTER);tile.setBackground(shape(backgrounds[i],12));
+      line(tile,nums[i],19,NAVY,true);line(tile,captions[i],9,INK,false);
+      LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(0,-2,1);p.setMargins(dp(2),0,dp(2),0);row.addView(tile,p);
+    }
+  }
   private LinearLayout card(LinearLayout container){
     LinearLayout x=vertical();x.setPadding(dp(14),dp(12),dp(14),dp(12));x.setBackground(shape(WHITE,16));
     LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,-2);lp.setMargins(0,0,0,dp(11));container.addView(x,lp);return x;
@@ -144,27 +164,29 @@ public class MainActivity extends Activity {
     body=vertical();body.setPadding(dp(13),dp(12),dp(13),dp(14));scroll.addView(body);
     if(page==0)home();else if(page==1)courseList();else if(page==2)programList("Specialization");else if(page==3)programList("Professional Certificate");else if(page==4)teacher();else if(page==5)wallet();else if(page==7)enrollmentService();else if(page==8)hireTeacherService();else if(page==9)teacherProfile();else if(page==10)bookingForm();else if(page==11)settingsPage();else if(page==12)myLearning();else if(page==13)myRequests();else detail();
     footer=new LinearLayout(this);footer.setOrientation(LinearLayout.HORIZONTAL);footer.setBackgroundColor(WHITE);
-    footer.setPadding(dp(2),dp(3),dp(2),dp(5));
+    footer.setPadding(dp(5),dp(4),dp(5),dp(9));footer.setElevation(dp(8));
     int highlight=(page==7||page==8||page==11||page==12||page==13)?0:(page==9||page==10?4:(page==6?(detailType==1?1:detailType==2?2:detailType==3?3:4):page));
     for(int i=0;i<5;i++){final int tab=i;LinearLayout item=vertical();item.setGravity(Gravity.CENTER);
       if(highlight==i)item.setBackground(shape(0xffedf8f8,12));
       TextView icon=txt(ICONS[i],20,i==highlight?TEAL:MUTED,true);icon.setGravity(Gravity.CENTER);item.addView(icon);
       TextView label=txt(LABELS[i],i==3?9:10,i==highlight?TEAL:MUTED,true);label.setGravity(Gravity.CENTER);item.addView(label);
       footer.addView(item,new LinearLayout.LayoutParams(0,dp(65),1));item.setOnClickListener(v->openTab(tab));}
-    root.addView(footer,new LinearLayout.LayoutParams(-1,dp(73)));
+    root.addView(footer,new LinearLayout.LayoutParams(-1,dp(78)));
   }
   private void home(){
     LinearLayout hero=card(body);hero.setBackground(shape(NAVY,18));
-    line(hero,"Learn • Practice • Get Certified",13,GOLD,true);
+    line(hero,"✦  GLOBAL SKILLS  •  BURMESE GUIDANCE",12,GOLD,true);
     line(hero,"နိုင်ငံတကာ သင်ယူမှုလမ်းကြောင်း",21,WHITE,true);
     line(hero,"Coursera ၏ သင်တန်းစာမျက်နှာများဆီသို့ တိုက်ရိုက်သွားရောက်လေ့လာနိုင်ပြီး AAII မှ မြန်မာဘာသာဖြင့် အကြောင်းအရာများကို ရှင်းပြထားသည်။",14,0xffe3f2f2,false);
-    line(hero,courses.length()+" Courses   •   37 Specializations   •   18 Professional",14,GOLD,true);
-    button(hero,"သင်ယူရန် Course ရွေးချယ်မည်",()->openTab(1),true);
+    line(hero,"Explore • Learn • Practice • Build your career",13,GOLD,true);
+    button(hero,"🔎  Courses / Skills ရှာဖွေလေ့လာမည်",()->openTab(1),true);
+    statTiles(body);
     LinearLayout teacherHero=card(body);
     portraitCard(teacherHero,"Teacher Soe Moe • ဆရာ စိုးမိုး","Original portrait • Coursera learning guidance • AI, Data, Business, IT");
-    line(teacherHero,"337 Courses  •  37 Specializations  •  18 Professional Programs",12,TEAL,true);
+    line(teacherHero,"AI • Data Science • Python • IT • Business • Digital Education",12,TEAL,true);
     button(teacherHero,"Teacher Profile & Portfolio",()->openTab(9),false);
-    heading("AAII ဝန်ဆောင်မှုအသစ် ၂ ခု","သင်တန်းလျှောက်ထားရေးအကူအညီနှင့် ကိုယ်ပိုင်ဆရာရှာဖွေရေး");
+    heading("SERVICES • AAII ဝန်ဆောင်မှုများ","Enrollment Help  •  Hire a Teacher");
+    pillRow(body,new String[]{"Enrollment Assistance","Hire Teacher","My Certificates","My Learning"},new int[]{7,8,5,12});
     LinearLayout enrollment=card(body);
     line(enrollment,"01  COURSERA ENROLLMENT ASSISTANCE",15,TEAL,true);
     line(enrollment,"မြန်မာလို သင်တန်းရွေးချယ်မှု၊ Course/Specialization/Professional Certificate ကွာခြားချက်၊ သင်တန်းကြေး၊ Financial Aid ရရှိနိုင်မှုနှင့် ကိုယ်တိုင် Enrollment လုပ်နည်းကို ကူညီလမ်းညွှန်ပေးရန် Request တင်နိုင်သည်။",13,INK,false);
@@ -178,6 +200,8 @@ public class MainActivity extends Activity {
     line(personal,"သင်ယူပြီးစီးမှု၊ ပညာရေးလက်မှတ်များနှင့် ကိုယ်တိုင်ပေးပို့ရန် ပြင်ထားသော Service Request Draft များကို ဖုန်းထဲမှာ ကြည့်နိုင်သည်။",13,INK,false);
     button(personal,"My Learning Dashboard",()->openTab(12),false);
     button(personal,"Profile & Settings",()->openTab(11),false);
+    heading("POPULAR LEARNING PATHS","ဘာသာရပ်အလိုက် သင်ယူမှုလမ်းကြောင်း");
+    pillRow(body,new String[]{"AI & Data","Business","Teaching","IT & Computer"},new int[]{1,3,4,1});
     sectionHome("01","COURSE / သင်တန်း","ဘာသာရပ်တစ်ခုချင်းကို သီးခြားလေ့လာခြင်း၊ အကြောင်းအရာ၊ Practical Task၊ Coursera Link",()->openTab(1));
     sectionHome("02","SPECIALIZATION / အထူးပြု","ဆက်စပ်ဘာသာရပ်အစုံကို လေ့လာ၍ Project နှင့် နည်းပညာဆိုင်ရာအထူးပြုကျွမ်းကျင်မှု တည်ဆောက်ခြင်း",()->openTab(2));
     sectionHome("03","PROFESSIONAL CERTIFICATE","အလုပ်အကိုင်အတွက် Skill Pathway၊ Project၊ လေ့ကျင့်ခန်းနှင့် Official Program Link",()->openTab(3));
@@ -190,6 +214,10 @@ public class MainActivity extends Activity {
     LinearLayout x=card(body);line(x,no+"    "+name,17,NAVY,true);line(x,desc,13,INK,false);button(x,"အသေးစိတ်ကြည့်မည်",open,false);
   }
   private void courseList(){
+    LinearLayout titleBanner=card(body);titleBanner.setBackground(shape(0xffe4f1ff,15));
+    line(titleBanner,"337 COURSES • EXPLORE YOUR FUTURE",17,NAVY,true);
+    line(titleBanner,"Browse courses by interest, then tap a card for Myanmar explanations and guided exercises.",12,INK,false);
+    pillRow(titleBanner,new String[]{"AI & Data","Business","Teacher","Professional"},new int[]{1,3,4,3});
     heading("COURSES • "+courses.length(),"ဘာသာရပ်တစ်ခုချင်းကို မြန်မာလို အဓိပ္ပာယ်၊ လေ့ကျင့်ခန်းနှင့်တကွ ရှင်းပြထားသည်။");
     EditText searchBox=new EditText(this);searchBox.setSingleLine(true);searchBox.setTextSize(15);searchBox.setHint("Search Course / ဘာသာရပ်ရှာရန်");
     searchBox.setText(search);searchBox.setBackground(shape(WHITE,12));searchBox.setPadding(dp(14),dp(14),dp(14),dp(14));
@@ -379,6 +407,9 @@ public class MainActivity extends Activity {
 
   
   private void teacherProfile(){
+    LinearLayout ribbon=card(body);ribbon.setBackground(shape(NAVY,17));
+    line(ribbon,"AAII LEARNING • TEACHER MARKETPLACE",13,GOLD,true);
+    line(ribbon,"Teacher Profile • Portfolio • Booking Request",16,WHITE,true);
     heading("Teacher Soe Moe • ဆရာ စိုးမိုး","AAII Learning Mentor • Course Guidance, Portfolio Support");
     LinearLayout bio=card(body);bio.setBackground(shape(0xffe9f5ff,18));
     portraitCard(bio,"SOE MOE • ဆရာ စိုးမိုး","AAII Learning Mentor • Original Portrait");
@@ -399,6 +430,8 @@ public class MainActivity extends Activity {
     button(p,"Browse Courses with Mentor Support",()->openTab(1),false);
   }
   private void bookingForm(){
+    LinearLayout ribbon=card(body);ribbon.setBackground(shape(0xffe8f6fe,16));
+    line(ribbon,"01 Choose Subject   →   02 Schedule   →   03 Share Request",13,TEAL,true);
     heading("Teacher Booking Request","ဆရာ စိုးမိုးနှင့် သင်တန်းညှိနှိုင်းရန် (လက်ရှိ Draft/Share ဝန်ဆောင်မှု)");
     LinearLayout head=card(body);
     portraitCard(head,"Teacher Soe Moe","Course guidance • Online / Offline Request");
