@@ -2,7 +2,7 @@ plugins { id 'com.android.application' }
 android {
   namespace 'asia.aaii.learningpublic'
   compileSdk 35
-  defaultConfig { applicationId 'asia.aaii.learningpublic.buildtest'; minSdk 24; targetSdk 35; versionCode 49; versionName '4.9.0-visible-interactions' }
+  defaultConfig { applicationId 'asia.aaii.learningpublic.buildtest'; minSdk 24; targetSdk 35; versionCode 50; versionName '5.0.0-provider-categories' }
   buildTypes { release { minifyEnabled false } }
   compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
 }

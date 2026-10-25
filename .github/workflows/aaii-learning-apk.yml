@@ -66,6 +66,18 @@ jobs:
           grep -q "view.postDelayed(task,145)" "$APP"
           grep -q "Test Pop Animation + Sound" "$APP"
           test -s aaii-learning/app/src/main/res/raw/aaii_click.wav
+      - name: Validate provider category screens and logo assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP=aaii-learning/app/src/main/java/asia/aaii/learningpublic/MainActivity.java
+          grep -q "CORPORATE / COMPANIES" "$APP"
+          grep -q "UNIVERSITIES" "$APP"
+          grep -q "providerDirectory()" "$APP"
+          grep -q "providerBadge" "$APP"
+          for asset in google meta googlecloud microsoft adobe university partner; do
+            test -s "aaii-learning/app/src/main/res/drawable/provider_${asset}.xml"
+          done
       - name: Compile real native APK
         run: gradle -p aaii-learning --no-daemon --stacktrace :app:assembleDebug
       - name: Verify APK Signature
@@ -78,7 +90,7 @@ jobs:
           sha256sum "$APK" > aaii-learning/app/build/outputs/apk/debug/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: AAII-Learning-V4.9-Visible-Functions-APK
+          name: AAII-Learning-V5.0-Providers-APK
           path: |
             aaii-learning/app/build/outputs/apk/debug/app-debug.apk
             aaii-learning/app/build/outputs/apk/debug/SHA256SUMS.txt

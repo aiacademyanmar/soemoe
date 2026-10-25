@@ -25,6 +25,8 @@ public class MainActivity extends Activity {
   private String search="",category="အားလုံး";
   private android.media.SoundPool clickPool;private int clickId=0;
   private static final String ORGANIZATION_CERTIFICATES="https://www.coursera.org/organizations/mpsgei-guyanese-citizens/my-learning?myLearningTab=CERTIFICATES";
+  private int providerGroup=0; // 0 All, 1 Corporate, 2 University, 3 Learning Partner
+  private String selectedProvider="";
   private int certPage=0;
   private String certQuery="";
   private int dp(int v){return (int)(v*getResources().getDisplayMetrics().density+0.5f);}
@@ -252,7 +254,7 @@ public class MainActivity extends Activity {
     logo.setScaleType(ImageView.ScaleType.CENTER_CROP);
     LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(dp(44),dp(44));lp.setMargins(0,0,dp(8),0);
     brand.addView(logo,lp);brand.addView(txt("AAII Learning",23,GOLD,true));
-    line(head,"YOUR PATH TO GLOBAL LEARNING  •  V4.9",11,0xffcfe8fe,false);
+    line(head,"YOUR PATH TO GLOBAL LEARNING  •  V5.0",11,0xffcfe8fe,false);
     LinearLayout links=new LinearLayout(this);links.setOrientation(0);head.addView(links);
     TextView learningLink=txt("◉ My Learning",12,GOLD,true);links.addView(learningLink,new LinearLayout.LayoutParams(0,dp(36),1));
     learningLink.setOnClickListener(v->openTab(12));
@@ -262,10 +264,10 @@ public class MainActivity extends Activity {
     tap(profileLink,()->profilePopup());
     ScrollView scroll=new ScrollView(this);scroll.setFillViewport(false);root.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
     body=vertical();body.setPadding(dp(13),dp(12),dp(13),dp(14));scroll.addView(body);
-    if(page==0)home();else if(page==1)courseList();else if(page==2)programList("Specialization");else if(page==3)programList("Professional Certificate");else if(page==4)teacher();else if(page==5)wallet();else if(page==7)enrollmentService();else if(page==8)hireTeacherService();else if(page==9)teacherProfile();else if(page==10)bookingForm();else if(page==11)settingsPage();else if(page==12)myLearning();else if(page==13)myRequests();else if(page==14)servicesHub();else if(page==15)aiTools();else detail();
+    if(page==0)home();else if(page==1)courseList();else if(page==2)programList("Specialization");else if(page==3)programList("Professional Certificate");else if(page==4)teacher();else if(page==5)wallet();else if(page==7)enrollmentService();else if(page==8)hireTeacherService();else if(page==9)teacherProfile();else if(page==10)bookingForm();else if(page==11)settingsPage();else if(page==12)myLearning();else if(page==13)myRequests();else if(page==14)servicesHub();else if(page==15)aiTools();else if(page==16)providerDirectory();else detail();
     footer=new LinearLayout(this);footer.setOrientation(LinearLayout.HORIZONTAL);footer.setBackgroundColor(0xff061b37);
     footer.setPadding(dp(4),dp(3),dp(4),dp(8));footer.setElevation(dp(10));
-    int highlight=(page==15?2:page==1||page==2||page==3||page==4||page==6?1:
+    int highlight=(page==15?2:page==1||page==2||page==3||page==4||page==6||page==16?1:
       (page==7||page==8||page==9||page==10||page==13||page==14?3:
         (page==11||page==5||page==12?4:0)));
     for(int i=0;i<LABELS.length;i++){
@@ -279,6 +281,22 @@ public class MainActivity extends Activity {
     root.addView(footer,new LinearLayout.LayoutParams(-1,dp(77)));
   }
     private void home(){
+    LinearLayout partners=coloredCard(body,0xff082b53,0xff125c9c);
+    line(partners,"🎓 PROVIDER CATEGORIES • CORPORATE & UNIVERSITY",16,GOLD,true);
+    line(partners,"171 Corporate Courses   •   143 University Courses   •   23 Learning Partner Courses",13,WHITE,false);
+    LinearLayout logoRow=new LinearLayout(this);logoRow.setOrientation(0);
+    logoRow.setGravity(Gravity.CENTER_VERTICAL);partners.addView(logoRow);
+    for(String provider:new String[]{"Google","Meta","Microsoft","Google Cloud","University of Pennsylvania"}){
+      LinearLayout wrap=new LinearLayout(this);wrap.setBackground(shape(0xffffffff,12));wrap.setGravity(Gravity.CENTER);
+      LinearLayout.LayoutParams layout=new LinearLayout.LayoutParams(0,dp(49),1);layout.setMargins(dp(2),dp(8),dp(2),dp(6));
+      logoRow.addView(wrap,layout);
+      ImageView img=new ImageView(this);img.setImageResource(providerIcon(provider));img.setScaleType(ImageView.ScaleType.FIT_CENTER);
+      wrap.addView(img,new LinearLayout.LayoutParams(dp(30),dp(30)));
+      final String p=provider;tap(wrap,()->{providerGroup=providerType(p);selectedProvider=p;page=1;search="";limit=35;render();});
+    }
+    button(partners,"Explore Corporate / Company Courses",()->{providerGroup=1;selectedProvider="";openTab(16);},true);
+    button(partners,"Explore University Courses",()->{providerGroup=2;selectedProvider="";openTab(16);},false);
+    button(partners,"All Providers • Search by Logo / Name",()->{providerGroup=0;selectedProvider="";openTab(16);},false);
     LinearLayout whatsNew=coloredCard(body,0xff082b53,0xff115999);
     line(whatsNew,"✦  AAII LEARNING V4.9 • NEW FUNCTIONS",19,GOLD,true);
     line(whatsNew,"Certificate Links  •  Profile Popup  •  Pop Animation  •  Click Sound",13,WHITE,false);
@@ -358,8 +376,116 @@ public class MainActivity extends Activity {
   private void sectionHome(String no,String name,String desc,Runnable open){
     LinearLayout x=card(body);tap(x,open);line(x,no+"    "+name,17,NAVY,true);line(x,desc,13,INK,false);button(x,"အသေးစိတ်ကြည့်မည်",open,false);
   }
+
+  private int providerType(String provider){
+    String p=provider==null?"":provider.trim();
+    if(p.startsWith("University ")||p.startsWith("University of ")||
+      p.contains(" University")||p.startsWith("Johns Hopkins")||
+      p.startsWith("California Institute of the Arts")||
+      p.startsWith("Parsons School of Design")||p.startsWith("École Nationale"))
+      return 2;
+    switch(p){
+      case "Google":case "Google Cloud":case "Meta":case "Microsoft":case "IBM":
+      case "Amazon Web Services":case "Adobe":case "Palo Alto Networks":return 1;
+      default:return 3;
+    }
+  }
+  private String providerGroupName(int group){
+    if(group==1)return "CORPORATE / COMPANIES";
+    if(group==2)return "UNIVERSITIES";
+    if(group==3)return "LEARNING PARTNERS";return "ALL PROVIDERS";
+  }
+  private int providerIcon(String provider){
+    switch(provider){
+      case "Google":return R.drawable.provider_google;
+      case "Google Cloud":return R.drawable.provider_googlecloud;
+      case "Meta":return R.drawable.provider_meta;
+      case "Microsoft":return R.drawable.provider_microsoft;
+      case "Adobe":return R.drawable.provider_adobe;
+      default:return providerType(provider)==2?R.drawable.provider_university:R.drawable.provider_partner;
+    }
+  }
+  private int providerCount(JSONArray source,int group,String specificType){
+    int count=0;
+    for(int i=0;i<source.length();i++){JSONObject x=source.optJSONObject(i);if(x==null)continue;
+      if(!specificType.isEmpty()&&!specificType.equals(x.optString("type")))continue;
+      if(group!=0&&providerType(x.optString("provider"))!=group)continue;
+      count++;
+    }return count;
+  }
+  private LinearLayout providerBadge(LinearLayout card,String provider,int count){
+    LinearLayout row=new LinearLayout(this);row.setOrientation(0);row.setGravity(Gravity.CENTER_VERTICAL);
+    LinearLayout.LayoutParams wrap=new LinearLayout.LayoutParams(-1,-2);
+    wrap.setMargins(0,dp(3),0,dp(7));card.addView(row,wrap);
+    LinearLayout logoWrap=new LinearLayout(this);logoWrap.setOrientation(0);
+    logoWrap.setGravity(Gravity.CENTER);logoWrap.setBackground(shape(0xfff3f7ff,12));
+    LinearLayout.LayoutParams logoLp=new LinearLayout.LayoutParams(dp(57),dp(57));logoLp.setMargins(0,0,dp(11),0);row.addView(logoWrap,logoLp);
+    if(provider.equals("IBM")||provider.equals("Amazon Web Services")){
+      TextView letters=txt(provider.equals("IBM")?"IBM":"aws",provider.equals("IBM")?19:17,
+        provider.equals("IBM")?0xff1261a0:0xffe38920,true);
+      letters.setGravity(Gravity.CENTER);logoWrap.addView(letters);
+    }else{
+      ImageView logo=new ImageView(this);logo.setImageResource(providerIcon(provider));
+      logo.setScaleType(ImageView.ScaleType.FIT_CENTER);
+      logoWrap.addView(logo,new LinearLayout.LayoutParams(dp(38),dp(38)));
+    }
+    LinearLayout info=vertical();row.addView(info,new LinearLayout.LayoutParams(0,-2,1));
+    line(info,provider,15,NAVY,true);
+    line(info,providerGroupName(providerType(provider)).toLowerCase(Locale.ROOT),11,TEAL,false);
+    if(count>=0)line(info,count+" Courses",12,MUTED,true);
+    return row;
+  }
+  private void providerFilters(LinearLayout host,JSONArray source,String typeFilter){
+    LinearLayout banner=card(host);
+    line(banner,"PROVIDER CATEGORIES  •  အဖွဲ့အစည်းအလိုက်",16,NAVY,true);
+    HorizontalScrollView scroll=new HorizontalScrollView(this);scroll.setHorizontalScrollBarEnabled(false);banner.addView(scroll);
+    LinearLayout tabs=new LinearLayout(this);tabs.setOrientation(0);scroll.addView(tabs);
+    String[] labels={"All","Corporate","University","Learning Partners"};
+    for(int i=0;i<4;i++){
+      final int group=i;int count=providerCount(source,i,typeFilter);
+      TextView chip=txt(labels[i]+"  "+count,12,providerGroup==i?WHITE:NAVY,true);
+      chip.setPadding(dp(12),dp(10),dp(12),dp(10));
+      chip.setBackground(shape(providerGroup==i?TEAL:0xffe9f3ff,15));
+      LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-2,-2);lp.setMargins(0,dp(9),dp(7),dp(5));
+      tabs.addView(chip,lp);
+      tap(chip,()->{providerGroup=group;selectedProvider="";limit=35;render();});
+    }
+    if(!selectedProvider.isEmpty()){
+      line(banner,"✓ Selected: "+selectedProvider,13,TEAL,true);
+      button(banner,"Clear Provider Filter",()->{selectedProvider="";providerGroup=0;render();},false);
+    }
+    button(banner,"View All Corporate & University Providers ↗",()->openTab(16),false);
+  }
+  private void providerDirectory(){
+    screenLabel("PROVIDERS • COMPANY & UNIVERSITY","Corporate Logos • University Courses • Learning Partners");
+    LinearLayout notice=card(body);line(notice,"Browse Learning Providers",19,NAVY,true);
+    line(notice,"Provider အလိုက် သင်တန်းများကို ရှာနိုင်ပါသည်။ Logo/Name များမှာ Provider ကို ခွဲခြားပြသရန်သာဖြစ်ပြီး AAII ၏ တရားဝင် Partner/Agency အဖြစ် မဆိုလိုပါ။",13,INK,false);
+    providerFilters(body,courses,"");
+    java.util.HashMap<String,Integer> count=new java.util.HashMap<>();
+    for(int i=0;i<courses.length();i++){JSONObject x=courses.optJSONObject(i);if(x==null)continue;
+      String provider=x.optString("provider");count.put(provider,count.getOrDefault(provider,0)+1);
+    }
+    java.util.ArrayList<String> names=new java.util.ArrayList<>(count.keySet());
+    java.util.Collections.sort(names,(a,b)->{
+      int priorityA=providerType(a)==providerGroup?0:1,priorityB=providerType(b)==providerGroup?0:1;
+      if(priorityA!=priorityB)return priorityA-priorityB;
+      int cn=count.get(b)-count.get(a);return cn!=0?cn:a.compareToIgnoreCase(b);
+    });
+    int shown=0;
+    for(String provider:names){
+      if(providerGroup!=0&&providerType(provider)!=providerGroup)continue;
+      int amount=count.get(provider);LinearLayout card=card(body);
+      providerBadge(card,provider,amount);
+      button(card,"View "+amount+" Courses ↗",()->{
+        providerGroup=providerType(provider);selectedProvider=provider;search="";limit=35;page=1;render();
+      },false);
+      shown++;
+    }
+    if(shown==0)line(notice,"No course providers in this category.",13,MUTED,false);
+  }
   private void courseList(){
-    screenLabel("COURSES • 337","ဘာသာရပ်အလိုက် မြန်မာလိုရှင်းပြချက် • Search & Practice");
+    screenLabel("COURSES • 337","Corporate • University • Learning Partners");
+    providerFilters(body,courses,"");
     LinearLayout titleBanner=card(body);titleBanner.setBackground(shape(0xffe4f1ff,15));
     line(titleBanner,"337 COURSES • EXPLORE YOUR FUTURE",17,NAVY,true);
     line(titleBanner,"Browse courses by interest, then tap a card for Myanmar explanations and guided exercises.",12,INK,false);
@@ -373,9 +499,12 @@ public class MainActivity extends Activity {
       list.removeAllViews();int matched=0,shown=0;
       for(int i=0;i<courses.length();i++){JSONObject c=courses.optJSONObject(i);if(c==null)continue;
         String name=c.optString("title"),cat=c.optString("category"),provider=c.optString("provider");
+        if(providerGroup!=0&&providerType(provider)!=providerGroup)continue;
+        if(!selectedProvider.isEmpty()&&!selectedProvider.equalsIgnoreCase(provider))continue;
         if(!(name+" "+cat+" "+provider+" "+c.optString("program")).toLowerCase(Locale.ROOT).contains(search.trim().toLowerCase(Locale.ROOT)))continue;
         matched++;if(shown>=limit)continue;shown++;
-        final int id=i;LinearLayout x=card(list);tap(x,()->inspect(1,id));line(x,name,16,NAVY,true);line(x,provider+"  •  "+cat,12,TEAL,false);
+        final int id=i;LinearLayout x=card(list);tap(x,()->inspect(1,id));
+        providerBadge(x,provider,-1);line(x,name,16,NAVY,true);line(x,provider+"  •  "+cat,12,TEAL,false);
         String preview=overview(cat,name);line(x,preview.length()>95?preview.substring(0,95)+"…":preview,13,INK,false);
         button(x,"မြန်မာလို အသေးစိတ်ရှင်းပြချက်",()->inspect(1,id),false);
       }
@@ -388,13 +517,19 @@ public class MainActivity extends Activity {
     fill.run();
   }
   private void programList(String type){
+    providerFilters(body,programs,type);
     if("Specialization".equals(type))screenLabel("SPECIALIZATIONS • 37","Multiple connected courses • Guided learning paths");
     else screenLabel("PROFESSIONAL CERTIFICATES • 18","Job-ready skills • Real-world project roadmaps");
     boolean spec="Specialization".equals(type);heading(spec?"SPECIALIZATIONS • 37":"PROFESSIONAL CERTIFICATES • 18",
       spec?"ဆက်စပ် Courses များဖြင့် နက်ရှိုင်းစွာ အထူးပြုသင်ယူနိုင်သည်။":"လုပ်ငန်းခွင်နှင့် Career အတွက် ရည်ရွယ်သည့် Professional Learning Pathway များ။");
     int j=0;for(int i=0;i<programs.length();i++){JSONObject p=programs.optJSONObject(i);
-      if(p==null||!type.equals(p.optString("type")))continue;final int id=i;j++;
-      LinearLayout x=card(body);tap(x,()->inspect(spec?2:3,id));line(x,String.format(Locale.US,"%02d",j)+"   "+p.optString("title"),17,NAVY,true);
+      if(p==null||!type.equals(p.optString("type")))continue;
+      if(providerGroup!=0&&providerType(p.optString("provider"))!=providerGroup)continue;
+      if(!selectedProvider.isEmpty()&&!selectedProvider.equalsIgnoreCase(p.optString("provider")))continue;
+      final int id=i;j++;
+      LinearLayout x=card(body);tap(x,()->inspect(spec?2:3,id));
+      providerBadge(x,p.optString("provider"),-1);
+      line(x,String.format(Locale.US,"%02d",j)+"   "+p.optString("title"),17,NAVY,true);
       line(x,p.optString("provider")+"  •  "+type,12,TEAL,true);
       line(x,overview(type+" "+p.optString("title"),p.optString("title")),13,INK,false);
       button(x,"သင်ရိုးနှင့် မြန်မာရှင်းလင်းချက်",()->inspect(spec?2:3,id),false);
