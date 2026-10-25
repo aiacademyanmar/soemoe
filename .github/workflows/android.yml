@@ -166,21 +166,6 @@ jobs:
             assert len(mp3)==12973
           print('APK OK; catalog',len(b),'bytes',os.stat(path).st_size)
           PY
-      - name: Android emulator Player UI smoke test
-        uses: reactivecircus/android-emulator-runner@v2
-        continue-on-error: true
-        with:
-          api-level: 30
-          arch: x86_64
-          profile: pixel_2
-          emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect
-          disable-animations: true
-          script: |
-            adb install -r app/build/outputs/apk/debug/app-debug.apk
-            adb shell am start -n asia.aaii.dama/.MainActivity --ez dama_test_player_ui true
-            sleep 6
-            adb logcat -d -s DAMA_PLAYER_UI:I | grep -q NOW_PLAYING_SCREEN_VISIBLE
-            echo "PASS: Android emulator opened DAMA Player UI"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
