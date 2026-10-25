@@ -115,13 +115,54 @@ public class TvActivity extends Activity {
         LinearLayout heading=col();heading.setPadding(dp(12),0,0,0);heading.addView(text(title,20,GOLD,true));heading.addView(text("ဓမ္မရုပ်သံ • In-App YouTube Player",10,MUTED,false));header.addView(heading,new LinearLayout.LayoutParams(0,dp(50),1));
         TextView home=button("DAMA",()->{releasePlayer();finish();});header.addView(home);root.addView(header);
     }
+    private void featuredVideoAndCategories(){
+        if(!videos.isEmpty()){
+            Video featured=videos.get(0);
+            FrameLayout tile=new FrameLayout(this);tile.setBackground(bg(CARD,14,GOLD));tile.setClipToOutline(true);
+            ImageView photo=new ImageView(this);tile.addView(photo,new FrameLayout.LayoutParams(-1,-1));
+            PremiumMedia.youtubeThumbnail(photo,featured.id);
+            TextView label=text("▶ FEATURED VIDEO  ·  "+featured.title,15,IVORY,true);
+            label.setMaxLines(2);label.setPadding(dp(12),dp(13),dp(12),dp(10));
+            label.setBackgroundColor(0xbd09291f);
+            tile.addView(label,new FrameLayout.LayoutParams(-1,dp(75),Gravity.BOTTOM));
+            filterPanel.addView(tile,wh(-1,136));
+            PremiumMedia.tap(tile,()->openVideo(featured));
+        }
+        TextView header=text("☸  CATEGORIES  ·  VIDEO COUNTS",13,GOLD,true);
+        header.setPadding(0,dp(9),0,dp(6));filterPanel.addView(header);
+        HorizontalScrollView sc=new HorizontalScrollView(this);sc.setHorizontalScrollBarEnabled(false);
+        LinearLayout row=row();LinkedHashMap<String,Integer> counts=new LinkedHashMap<>();
+        for(Video v:videos)counts.put(v.category,counts.getOrDefault(v.category,0)+1);
+        for(java.util.Map.Entry<String,Integer> entry:counts.entrySet()){
+            String category=entry.getKey();
+            LinearLayout tile=col();tile.setPadding(dp(12),dp(8),dp(12),dp(8));
+            tile.setBackground(bg(CARD,12,0xff897348));
+            tile.addView(text(category,12,IVORY,true));
+            tile.addView(text(entry.getValue()+" videos",11,GOLD,true));
+            LinearLayout.LayoutParams p=wh(-2,58);p.setMargins(0,0,dp(8),0);row.addView(tile,p);
+            PremiumMedia.tap(tile,()->{int index=categories.indexOf(category);if(index>0){categoryIndex=index;categorySelect.setSelection(index);filterList();}});
+        }
+        sc.addView(row);filterPanel.addView(sc);gap(filterPanel,8);
+        LinearLayout monksRow=row();
+        int[] photos={R.drawable.mogok_sayadaw,R.drawable.mahasi_sayadaw,R.drawable.nandamala_sayadaw};
+        String[] names={"မိုးကုတ်","မဟာစည်","နန္ဒမာလာ"};
+        for(int i=0;i<photos.length;i++){
+            final String keyword=names[i];
+            LinearLayout item=col();item.setGravity(Gravity.CENTER);item.setBackground(bg(CARD,12,0xff7b693e));
+            ImageView avatar=new ImageView(this);avatar.setImageResource(photos[i]);avatar.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            item.addView(avatar,wh(60,60));item.addView(text(keyword,10,GOLD,true));
+            LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(0,dp(88),1);p.setMargins(0,0,dp(7),0);monksRow.addView(item,p);
+            PremiumMedia.tap(item,()->{query=keyword;queryInput.setText(keyword);filterList();});
+        }
+        filterPanel.addView(monksRow);gap(filterPanel,8);
+    }
     private void showBrowse(){selected=null;releasePlayer();reset("DAMA TV");
         ScrollView headerScroll=new ScrollView(this);headerScroll.setFillViewport(false);headerScroll.setVerticalScrollBarEnabled(false);
         filterPanel=col();filterPanel.setPadding(dp(14),dp(12),dp(14),dp(3));
         headerScroll.addView(filterPanel);
         // Keep the scrollable video list and phone footer allocated real screen height.
         // Header filters scroll INSIDE their own capped area.
-        int maxFilterHeight=Math.min(dp(315),
+        int maxFilterHeight=Math.min(dp(440),
             Math.max(dp(155),getResources().getDisplayMetrics().heightPixels-dp(285)));
         root.addView(headerScroll,new LinearLayout.LayoutParams(-1,maxFilterHeight));
         LinearLayout brand=row();brand.setPadding(dp(12),dp(10),dp(12),dp(10));brand.setBackground(bg(CARD,14,0xffa6894a));
@@ -131,6 +172,7 @@ public class TvActivity extends Activity {
         words.addView(text(videos.size()+" video links • Offline Catalog",11,GOLD,false));
         words.addView(text("အင်တာနက်ဖြင့် APK ထဲမှာ တိုက်ရိုက်ကြည့်ရန်",10,MUTED,false));
         brand.addView(words,new LinearLayout.LayoutParams(0,-2,1));filterPanel.addView(brand);gap(filterPanel,9);
+        featuredVideoAndCategories();
         queryInput=new EditText(this);queryInput.setSingleLine(true);queryInput.setTextColor(IVORY);queryInput.setHintTextColor(MUTED);queryInput.setTextSize(13);
         queryInput.setHint("⌕ Video ခေါင်းစဉ် / ဆရာတော် ရှာရန်");queryInput.setPadding(dp(14),dp(10),dp(14),dp(10));queryInput.setBackground(bg(DARK,12,0xff796a4c));queryInput.setText(query);
         filterPanel.addView(queryInput,wh(-1,48));gap(filterPanel,8);
@@ -177,10 +219,15 @@ public class TvActivity extends Activity {
             filtered.add(v);
         }
         if(section.equals("Recent"))filtered.sort(Comparator.comparingInt(v->{int n=recent.indexOf(v.id);return n<0?1000:n;}));
-        resultCount.setText("Videos: "+filtered.size()+" / "+videos.size()+" • Tap to play inside DAMA TV");
+        resultCount.setText(String.format(Locale.US,"VIDEOS: %,d / %,d • Tap to play",filtered.size(),videos.size()));
         videoList.setAdapter(new BaseAdapter(){public int getCount(){return filtered.size();}public Object getItem(int p){return filtered.get(p);}public long getItemId(int p){return p;}
             public View getView(int index,View old,ViewGroup parent){Video v=filtered.get(index);LinearLayout item=row();item.setPadding(dp(8),dp(10),dp(7),dp(10));item.setBackground(bg(CARD,13,0));
-                LinearLayout art=col();art.setGravity(Gravity.CENTER);art.setBackground(bg(DARK,9,0xff94763b));TextView play=text("▶",26,GOLD,true);play.setGravity(Gravity.CENTER);art.addView(play);item.addView(art,wh(73,68));
+                FrameLayout art=new FrameLayout(TvActivity.this);art.setBackground(bg(DARK,10,0xff94763b));art.setClipToOutline(true);
+                ImageView thumb=new ImageView(TvActivity.this);art.addView(thumb,new FrameLayout.LayoutParams(-1,-1));
+                PremiumMedia.youtubeThumbnail(thumb,v.id);
+                TextView play=text("▶",20,GOLD,true);play.setGravity(Gravity.CENTER);play.setBackground(bg(0xab082a22,24,GOLD));
+                art.addView(play,new FrameLayout.LayoutParams(dp(38),dp(38),Gravity.CENTER));
+                item.addView(art,wh(118,77));
                 LinearLayout info=col();info.setPadding(dp(10),dp(2),dp(2),0);TextView title=text(v.title,13,IVORY,true);title.setMaxLines(2);info.addView(title);
                 TextView monk=text(v.sayadaw,10,GOLD,false);monk.setMaxLines(1);info.addView(monk);
                 TextView detail=text(v.category+" • "+duration(v.duration),10,MUTED,false);info.addView(detail);item.addView(info,new LinearLayout.LayoutParams(0,-2,1));

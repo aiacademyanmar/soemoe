@@ -1,7 +1,7 @@
-name: DAMA APP V16 - TV Footer and Myanmar TTS
+name: DAMA APP V17 - Premium Library and TV Covers
 on:
   push:
-    branches: ["dama-tv-footer-tts-v16"]
+    branches: ["dama-premium-lib-tv-v17"]
   workflow_dispatch:
 permissions:
   contents: read
@@ -246,6 +246,21 @@ jobs:
           assert 'activeSpeechId' in voice
           print('TV footer / fullscreen and Myanmar TTS diagnostics validated')
           PY
+      - name: Verify premium book cover, video thumbnails and fast taps
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          r=Path('app/src/main/java/asia/aaii/dama')
+          a=(r/'PremiumMedia.java').read_text()
+          b=(r/'LibraryActivity.java').read_text()
+          c=(r/'TvActivity.java').read_text()
+          assert 'youtubeThumbnail' in a and 'offlinePdfFirstPage' in a
+          assert 'featuredBooks' in b and 'featuredSayadaws' in b
+          assert 'featuredVideoAndCategories' in c
+          assert 'PremiumMedia.youtubeThumbnail' in c
+          assert 'FooterNav.attach(this,root,"TV")' in c
+          print('V17 PREMIUM BOOKS + TV THUMBNAILS VALIDATED')
+          PY
       - name: Build installable debug APK
         run: gradle --no-daemon assembleDebug
       - name: Verify embedded data and APK consistency
@@ -269,7 +284,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: DAMA-APP-V16-TV-Footer-TTS-APK
+          name: DAMA-APP-V17-Premium-Library-TV-APK
           path: |
             app/build/outputs/apk/debug/*.apk
             photo_license_report.json

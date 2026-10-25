@@ -43,7 +43,7 @@ public class LibraryActivity extends Activity {
     int dp(int v){return (int)(v*getResources().getDisplayMetrics().density+.5f);} LinearLayout vert(){LinearLayout x=new LinearLayout(this);x.setOrientation(1);return x;}LinearLayout row(){LinearLayout x=new LinearLayout(this);x.setOrientation(0);x.setGravity(Gravity.CENTER_VERTICAL);return x;}
     GradientDrawable shape(int c,int r,int border){GradientDrawable g=new GradientDrawable();g.setColor(c);g.setCornerRadius(dp(r));if(border!=0)g.setStroke(dp(1),border);return g;}
     TextView t(String s,int size,int color,boolean bold){TextView x=new TextView(this);x.setText(s);x.setTextColor(color);x.setTextSize(size);x.setGravity(Gravity.CENTER_VERTICAL);if(bold)x.setTypeface(Typeface.DEFAULT,Typeface.BOLD);return x;}
-    TextView btn(String text,Runnable fn){TextView b=t(text,12,GOLD,true);b.setPadding(dp(10),dp(9),dp(10),dp(9));b.setGravity(Gravity.CENTER);b.setBackground(shape(CARD,12,0xff856d45));b.setOnClickListener(v->fn.run());return b;}
+    TextView btn(String text,Runnable fn){TextView b=t(text,12,GOLD,true);b.setPadding(dp(10),dp(9),dp(10),dp(9));b.setGravity(Gravity.CENTER);b.setBackground(shape(CARD,12,0xff856d45));PremiumMedia.tap(b,fn);return b;}
     void msg(String s){Toast.makeText(this,s,Toast.LENGTH_LONG).show();}
     void authorProgressUI(){
         int linkedAuthor=0,linkedCat=0,persons=0;LinkedHashSet<String> allPeople=new LinkedHashSet<>(),allCollections=new LinkedHashSet<>();
@@ -137,6 +137,72 @@ public class LibraryActivity extends Activity {
         p.setMargins(dp(3),0,dp(3),0);row.addView(tile,p);
         tile.setOnClickListener(v->click.run());
     }
+
+    void featuredSayadaws(){
+        TextView title=t("✦  FEATURED SAYADAWS",16,GOLD,true);
+        title.setPadding(dp(2),dp(18),0,dp(9));page.addView(title);
+        HorizontalScrollView horizontal=new HorizontalScrollView(this);
+        horizontal.setHorizontalScrollBarEnabled(false);
+        LinearLayout gallery=row();
+        int[] photos={R.drawable.mogok_sayadaw,R.drawable.mahasi_sayadaw,R.drawable.nandamala_sayadaw};
+        String[] names={"မိုးကုတ်ဆရာတော်","မဟာစည်ဆရာတော်","နန္ဒမာလာဘိဝံသဆရာတော်"};
+        for(int i=0;i<photos.length;i++){
+            LinearLayout tile=vert();tile.setPadding(dp(9),dp(9),dp(9),dp(9));tile.setGravity(Gravity.CENTER);
+            tile.setBackground(shape(0xff153d34,16,0xff977845));
+            ImageView portrait=new ImageView(this);
+            portrait.setImageResource(photos[i]);portrait.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            portrait.setBackground(shape(0xff294737,55,GOLD));portrait.setClipToOutline(true);
+            tile.addView(portrait,new LinearLayout.LayoutParams(dp(84),dp(84)));
+            TextView name=t(names[i],11,IVORY,true);name.setMaxLines(2);
+            name.setGravity(Gravity.CENTER);tile.addView(name,new LinearLayout.LayoutParams(dp(102),dp(42)));
+            LinearLayout.LayoutParams margin=new LinearLayout.LayoutParams(dp(124),dp(151));
+            margin.setMargins(0,0,dp(9),0);gallery.addView(tile,margin);
+            PremiumMedia.tap(tile,()->openAuthorDirectory());
+        }
+        horizontal.addView(gallery);page.addView(horizontal);
+        TextView note=t("ဆရာတော်ပုံများ — Wikimedia Commons မူရင်းများ (Credit ပါဝင်သည်)။",10,MUTED,false);
+        note.setPadding(dp(3),dp(4),0,dp(1));page.addView(note);
+    }
+    void featuredBooks(){
+        TextView title=t("▣  FEATURED BOOKS  •  COVER GALLERY",16,GOLD,true);
+        title.setPadding(dp(3),dp(18),0,dp(10));page.addView(title);
+        HorizontalScrollView horizontal=new HorizontalScrollView(this);
+        horizontal.setHorizontalScrollBarEnabled(false);
+        LinearLayout rack=row();
+        int limit=Math.min(books.size(),12);
+        for(int i=0;i<limit;i++){
+            Book book=books.get(i);
+            LinearLayout box=vert();box.setGravity(Gravity.TOP);
+            View art=PremiumMedia.decorativeBookCover(this,book.title,book.category,i,112,155);
+            box.addView(art,new LinearLayout.LayoutParams(dp(112),dp(155)));
+            TextView name=t(book.title,11,IVORY,true);name.setMaxLines(2);
+            name.setGravity(Gravity.CENTER);box.addView(name,new LinearLayout.LayoutParams(dp(112),dp(42)));
+            LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(dp(122),dp(202));
+            p.setMargins(dp(2),0,dp(9),0);rack.addView(box,p);
+            PremiumMedia.tap(box,()->details(book));
+        }
+        horizontal.addView(rack);page.addView(horizontal);
+        TextView caution=t("Cover Gallery သည် စာအုပ်အမည်ဖြင့် ဖန်တီးထားသော ဒီဇိုင်းအဖုံးဖြစ်ပြီး မူရင်းစာအုပ် Cover မဟုတ်ပါ။ Offline PDF ရှိလျှင် စာမျက်နှာပထမပုံကို ပြနိုင်သည်။",10,MUTED,false);
+        caution.setPadding(dp(3),dp(7),0,0);page.addView(caution);
+    }
+    void categoryBookCounts(){
+        TextView heading=t("☸  CATEGORY LIBRARY",16,GOLD,true);heading.setPadding(dp(3),dp(17),0,dp(9));page.addView(heading);
+        HashMap<String,Integer> counts=new HashMap<>();
+        for(Book book:books)counts.put(book.category,counts.getOrDefault(book.category,0)+1);
+        HorizontalScrollView sc=new HorizontalScrollView(this);sc.setHorizontalScrollBarEnabled(false);
+        LinearLayout cells=row();
+        for(String cat:categories){
+            final String select=cat;
+            int n=cat.equals("အားလုံး")?books.size():counts.getOrDefault(cat,0);
+            LinearLayout tile=vert();tile.setPadding(dp(12),dp(12),dp(12),dp(12));
+            tile.setBackground(shape(cat.equals(category)?0xff305e43:0xff143d35,13,0xff8d7548));
+            TextView name=t(cat,12,IVORY,true);name.setMaxLines(2);tile.addView(name);
+            TextView total=t(String.format(java.util.Locale.US,"%,d books",n),11,GOLD,true);tile.addView(total);
+            LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(dp(126),dp(72));p.setMargins(0,0,dp(8),0);cells.addView(tile,p);
+            PremiumMedia.tap(tile,()->{category=select;filter();});
+        }
+        sc.addView(cells);page.addView(sc);
+    }
     void draw(){main=vert();main.setBackgroundColor(BG);setContentView(main);
         if(android.os.Build.VERSION.SDK_INT>=35){main.setOnApplyWindowInsetsListener((v,insets)->{
             android.graphics.Insets bars=insets.getInsets(android.view.WindowInsets.Type.systemBars());
@@ -160,6 +226,9 @@ public class LibraryActivity extends Activity {
         addPremiumStat(overview,String.valueOf(authorNames.size()),"AUTHORS / SETS");
         addPremiumStat(overview,String.valueOf(offlineCount),"OFFLINE PDFs");
         page.addView(overview);
+        featuredSayadaws();
+        featuredBooks();
+        categoryBookCounts();
         TextView tagline=t("Discover · Read · Remember",15,GOLD,true);
         tagline.setPadding(dp(2),dp(17),0,dp(8));page.addView(tagline);
         LinearLayout quick=row();
@@ -242,14 +311,15 @@ public class LibraryActivity extends Activity {
             glass.setCornerRadius(dp(17));glass.setStroke(dp(1),0xff54634b);
             card.setBackground(glass);card.setElevation(dp(2));
             LinearLayout line=row();
-            LinearLayout jacket=vert();jacket.setGravity(Gravity.CENTER);
-            int[] colors={0xff735634,0xff63423c,0xff2a554b,0xff455b68,0xff684d37};
-            jacket.setBackground(shape(colors[i%colors.length],11,0xffb5904f));
-            TextView ornament=t("☸",30,0xffffdf9a,true);ornament.setGravity(Gravity.CENTER);
-            jacket.addView(ornament);
-            TextView brand=t("DHAMMA",9,0xffffe2aa,true);brand.setGravity(Gravity.CENTER);
-            jacket.addView(brand);
-            line.addView(jacket,new LinearLayout.LayoutParams(dp(75),dp(94)));
+            FrameLayout coverFrame=new FrameLayout(this);
+            View coverArt=PremiumMedia.decorativeBookCover(this,book.title,book.category,i,75,94);
+            coverFrame.addView(coverArt,new FrameLayout.LayoutParams(dp(75),dp(94)));
+            if(local(book).isFile()&&book.pdf()){
+                ImageView preview=new ImageView(this);preview.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                coverFrame.addView(preview,new FrameLayout.LayoutParams(dp(75),dp(94)));
+                PremiumMedia.offlinePdfFirstPage(preview,local(book));
+            }
+            line.addView(coverFrame,new LinearLayout.LayoutParams(dp(75),dp(94)));
             LinearLayout info=vert();info.setPadding(dp(13),dp(4),dp(5),0);
             TextView category=t("✦ "+book.category,10,GOLD,true);category.setMaxLines(1);
             info.addView(category);
@@ -262,7 +332,7 @@ public class LibraryActivity extends Activity {
             line.addView(info,new LinearLayout.LayoutParams(0,-2,1));
             TextView detail=t("⋮",24,GOLD,true);detail.setGravity(Gravity.CENTER);
             line.addView(detail,new LinearLayout.LayoutParams(dp(26),dp(46)));
-            detail.setOnClickListener(v->details(book));line.setOnClickListener(v->details(book));
+            PremiumMedia.tap(detail,()->details(book));PremiumMedia.tap(line,()->details(book));
             card.addView(line);
             LinearLayout actions=row();actions.setPadding(0,dp(10),0,0);
             TextView read=btn("▣  READ",()->{
