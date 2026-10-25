@@ -47,7 +47,7 @@ public class MainActivity extends Activity {
   final HashSet<String> favorites=new HashSet<>();
   final ArrayList<String> recent=new ArrayList<>();
   final String CACHE_FILE="dama_radio_catalog_v2.json";
-  String screen="Home",query="",libraryMode="Favorites";
+  String screen="Home",query="",libraryMode="Favorites",priorScreen="Home";
   int monkFilter=0, categoryFilter=0, seekInterval=1000;
   String[] cat={"အားလုံး","ပဋ္ဌာန်း","ဝိပဿနာ","ပါဠိ / ပရိတ်","အခြား"};
   LinearLayout outer,body,miniBar,listArea;
@@ -90,25 +90,112 @@ public class MainActivity extends Activity {
     File cache=new File(getFilesDir(),CACHE_FILE);if(cache.exists())try(FileInputStream in=new FileInputStream(cache);ByteArrayOutputStream out=new ByteArrayOutputStream()){byte[] b=new byte[8192];int n;while((n=in.read(b))!=-1)out.write(b,0,n);JSONArray rows=new JSONArray(out.toString("UTF-8"));for(int i=0;i<rows.length();i++){JSONObject j=rows.optJSONObject(i);if(j!=null)addCatalog(new Track(j));}}catch(Exception ignored){}
   }
   @Override public void onCreate(Bundle b){super.onCreate(b);getWindow().setStatusBarColor(DEEP);getWindow().setNavigationBarColor(DEEP);initData();show("Home");}
-  void show(String next){screen=next;outer=vert();outer.setBackgroundColor(BG);setContentView(outer);
+  void show(String next){if(next.equals("Menu")&&!screen.equals("Menu"))priorScreen=screen;screen=next;outer=vert();outer.setBackgroundColor(BG);setContentView(outer);applySafeInsets(outer);
     createTop(); ScrollView scroll=new ScrollView(this);scroll.setFillViewport(false);scroll.setVerticalScrollBarEnabled(false);outer.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));body=vert();body.setPadding(dp(15),dp(13),dp(15),dp(14));scroll.addView(body);
-    if(next.equals("Home"))home();else if(next.equals("Radio"))browse();else if(next.equals("Playing"))nowPlaying();else if(next.equals("Collection"))collection();else if(next.equals("Library")){startActivity(new Intent(this,LibraryActivity.class));screen="Home";home();}else if(next.equals("TV"))other("DAMA TV","▶ YouTube တရားတော်", "https://www.dhammadownload.com/VideoInMyanmar.htm");else if(next.equals("Worship"))other("DAILY WORSHIP","✿ နေ့စဉ်ဝတ်ပြုခြင်း", "https://www.dhammadownload.com/");
+    if(next.equals("Home"))home();else if(next.equals("Radio"))browse();else if(next.equals("Playing"))nowPlaying();else if(next.equals("Collection"))collection();else if(next.equals("Menu"))menuScreen();else if(next.equals("Library")){startActivity(new Intent(this,LibraryActivity.class));screen="Home";home();}else if(next.equals("TV"))other("DAMA TV","▶ YouTube တရားတော်", "https://www.dhammadownload.com/VideoInMyanmar.htm");else if(next.equals("Worship"))other("DAILY WORSHIP","✿ နေ့စဉ်ဝတ်ပြုခြင်း", "https://www.dhammadownload.com/");
     if(selected!=null&&!next.equals("Playing"))miniPlayer();bottomBar();
   }
+  /** Android 15 enforces edge-to-edge. Keep our native footer ABOVE OS gestures/buttons. */
+  void applySafeInsets(LinearLayout root){
+      if(android.os.Build.VERSION.SDK_INT>=35){
+          root.setOnApplyWindowInsetsListener((v,insets)->{
+              android.graphics.Insets safe=insets.getInsets(
+                  android.view.WindowInsets.Type.systemBars() |
+                  android.view.WindowInsets.Type.displayCutout());
+              v.setPadding(0,safe.top,0,safe.bottom);
+              return insets;
+          });
+          root.requestApplyInsets();
+      }
+      if(android.os.Build.VERSION.SDK_INT>=29){
+          getWindow().setNavigationBarContrastEnforced(false);
+      }
+  }
+  LinearLayout menuTile(String mark,String title,String description,Runnable clickAction){
+      LinearLayout tile=vert();tile.setPadding(dp(14),dp(14),dp(12),dp(12));
+      GradientDrawable bg=new GradientDrawable(GradientDrawable.Orientation.TL_BR,
+          new int[]{0xff194c41,0xff0c332e});
+      bg.setCornerRadius(dp(18));bg.setStroke(dp(1),0xff765f39);
+      tile.setBackground(bg);tile.setElevation(dp(3));
+      TextView icon=text(mark,30,GOLD,true);tile.addView(icon);
+      tile.addView(space(8));
+      TextView t=text(title,15,IVORY,true);tile.addView(t);
+      TextView sub=text(description,11,MUTED,false);
+      sub.setMaxLines(2);tile.addView(sub);
+      tile.setOnClickListener(v->clickAction.run());
+      return tile;
+  }
+  void menuOption(String symbol,String name,String info,Runnable task){
+      LinearLayout panel=row();panel.setPadding(dp(15),dp(10),dp(14),dp(10));
+      panel.setBackground(shape(CARD,14,0xff385e51));
+      TextView mark=text(symbol,23,GOLD,true);mark.setGravity(Gravity.CENTER);
+      panel.addView(mark,lp(38,43));
+      LinearLayout words=vert();words.setPadding(dp(12),0,0,0);
+      words.addView(text(name,14,IVORY,true));
+      words.addView(text(info,11,MUTED,false));
+      panel.addView(words,new LinearLayout.LayoutParams(0,-2,1));
+      panel.addView(text("›",24,GOLD,true));
+      body.addView(panel,lp(-1,64));body.addView(space(9));panel.setOnClickListener(v->task.run());
+  }
+  void menuScreen(){
+      LinearLayout intro=vert();intro.setPadding(dp(20),dp(22),dp(20),dp(18));
+      GradientDrawable plate=new GradientDrawable(GradientDrawable.Orientation.TL_BR,
+          new int[]{0xff254c40,0xff092b29,0xff102b26});
+      plate.setCornerRadius(dp(22));plate.setStroke(dp(1),GOLDDIM);
+      intro.setBackground(plate);
+      TextView emblem=text("✿",52,GOLD,true);emblem.setGravity(Gravity.CENTER);intro.addView(emblem);
+      TextView title=text("DAMA APP",24,GOLD,true);title.setGravity(Gravity.CENTER);intro.addView(title);
+      TextView message=text("Listen  •  Read  •  Watch  •  Worship",12,IVORY,false);
+      message.setGravity(Gravity.CENTER);intro.addView(message);
+      TextView mm=text("ဓမ္မအလင်းဖြင့် နေ့စဉ်ဘဝကို ဖြည့်ဆည်းပါ",12,MUTED,false);
+      mm.setGravity(Gravity.CENTER);intro.addView(mm);
+      body.addView(intro,lp(-1,-2));body.addView(space(19));
+      heading("အဓိက ကဏ္ဍများ");
+      LinearLayout first=row(),second=row();
+      LinearLayout.LayoutParams a=new LinearLayout.LayoutParams(0,dp(156),1);a.setMargins(0,0,dp(8),0);
+      LinearLayout.LayoutParams b=new LinearLayout.LayoutParams(0,dp(156),1);b.setMargins(dp(8),0,0,0);
+      first.addView(menuTile("♫","DAMA RADIO","တရားတော် MP3 များ",()->show("Radio")),a);
+      first.addView(menuTile("▤","DAMA LIBRARY","ဓမ္မစာအုပ်များ",()->show("Library")),b);
+      second.addView(menuTile("▶","DAMA TV","တရားတော်ဗီဒီယို",()->show("TV")),
+         new LinearLayout.LayoutParams(0,dp(156),1));
+      second.addView(menuTile("✿","DAILY WORSHIP","နေ့စဉ် ဝတ်ပြုမှု",()->show("Worship")),
+         new LinearLayout.LayoutParams(0,dp(156),1));
+      body.addView(first);body.addView(space(12));body.addView(second);body.addView(space(19));
+      heading("မြန်ဆန်သော လုပ်ဆောင်ချက်များ");
+      menuOption("♡","Favorites / Downloads","ကြိုက်နှစ်သက်ရာနှင့် Offline Audio",()->show("Collection"));
+      menuOption("⌕","တရားတော် ရှာဖွေရန်","ဆရာတော်၊ ခေါင်းစဉ်၊ ပဋ္ဌာန်း",()->show("Radio"));
+      menuOption("↻","MP3 Catalog Sync","မူရင်းစာမျက်နှာများမှ Link အသစ်များ",()->sync());
+      menuOption("⌂","Home Dashboard","ပင်မစာမျက်နှာ ပြန်ဖွင့်ရန်",()->show("Home"));
+      TextView source=click("မူရင်း DhammaDownload Website  ↗",
+         ()->open("https://www.dhammadownload.com/"));
+      body.addView(source,lp(-1,50));body.addView(space(20));
+      TextView version=text("DAMA RADIO  •  V6  •  Native Android",11,MUTED,false);
+      version.setGravity(Gravity.CENTER);body.addView(version);
+  }
   void createTop(){
-  LinearLayout bar=row();bar.setPadding(dp(16),dp(11),dp(16),dp(12));
-  bar.setBackground(new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,new int[]{0xff092b29,0xff123c36,0xff092925}));
-  TextView menu=text("☰",23,GOLD,true);menu.setGravity(Gravity.CENTER);
-  menu.setBackground(shape(0xff19453b,14,0));bar.addView(menu,lp(42,42));
-  menu.setOnClickListener(v->menu());
-  LinearLayout title=vert();title.setGravity(Gravity.CENTER);
-  TextView main=text("✿   DAMA RADIO",21,GOLD,true);main.setGravity(Gravity.CENTER);title.addView(main);
-  TextView sub=text("ဓမ္မအသံလွှင့် · LISTEN TO WISDOM",10,MUTED,false);sub.setGravity(Gravity.CENTER);title.addView(sub);
-  bar.addView(title,new LinearLayout.LayoutParams(0,dp(49),1));
-  TextView setting=text("⌕",27,GOLD,false);setting.setGravity(Gravity.CENTER);setting.setBackground(shape(0xff19453b,14,0));
-  bar.addView(setting,lp(42,42));setting.setOnClickListener(v->show("Radio"));outer.addView(bar);
+    LinearLayout bar=row();bar.setPadding(dp(16),dp(12),dp(16),dp(13));
+    bar.setBackground(new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,
+       new int[]{0xff061f1d,0xff17413a,0xff062521}));
+    TextView menu=text(screen.equals("Menu")?"‹":"☰",25,GOLD,true);
+    menu.setGravity(Gravity.CENTER);menu.setBackground(shape(0xff1a4b40,13,0xff58755a));
+    bar.addView(menu,lp(44,44));menu.setOnClickListener(v->{
+       if(screen.equals("Menu"))show(priorScreen.equals("Menu")?"Home":priorScreen);
+       else menu();
+    });
+    LinearLayout name=vert();name.setGravity(Gravity.CENTER);
+    TextView brand=text("DAMA  ✿  RADIO",21,GOLD,true);brand.setGravity(Gravity.CENTER);
+    name.addView(brand);
+    TextView subtitle=text(screen.equals("Menu")?"DISCOVER • LISTEN • LEARN":"ဓမ္မအလင်း • ရွှေရောင်အသံ",10,MUTED,false);
+    subtitle.setGravity(Gravity.CENTER);name.addView(subtitle);
+    bar.addView(name,new LinearLayout.LayoutParams(0,dp(51),1));
+    TextView find=text(screen.equals("Menu")?"✕":"⌕",25,GOLD,true);
+    find.setGravity(Gravity.CENTER);find.setBackground(shape(0xff1a4b40,13,0xff58755a));
+    bar.addView(find,lp(44,44));find.setOnClickListener(v->{
+       if(screen.equals("Menu"))show(priorScreen.equals("Menu")?"Home":priorScreen);
+       else show("Radio");
+    });outer.addView(bar);
 }
-  void menu(){new AlertDialog.Builder(this).setTitle("DAMA APP").setItems(new String[]{"⌂  Home","♫  DAMA RADIO","▤  Favorites / Downloads","📚  DAMA LIBRARY","▶  DAMA TV","✿  Daily Worship","↻  Sync MP3 Catalog","Source Website"},(d,w)->{switch(w){case 0:show("Home");break;case 1:show("Radio");break;case 2:show("Collection");break;case 3:show("Library");break;case 4:show("TV");break;case 5:show("Worship");break;case 6:sync();break;case 7:open("https://www.dhammadownload.com/AudioInMyanmar.htm");break;}}).show();}
+  void menu(){show("Menu");}
   ImageView picture(int res,int h){ImageView img=new ImageView(this);img.setImageResource(res);img.setScaleType(ImageView.ScaleType.CENTER_CROP);img.setBackground(shape(CARD,18,0));img.setClipToOutline(true);img.setLayoutParams(lp(-1,h));return img;}
   void hero(){
   android.widget.FrameLayout frame=new android.widget.FrameLayout(this);frame.setBackground(shape(CARD,22,GOLDDIM));frame.setClipToOutline(true);
@@ -202,20 +289,38 @@ public class MainActivity extends Activity {
     }).setNegativeButton("မလုပ်တော့ပါ",null).show();}
   void other(String title,String b,String url){heading(title);ImageView img=picture(R.drawable.radio_hero,220);body.addView(img,lp(-1,220));body.addView(space(14));body.addView(text(b,18,IVORY,true));body.addView(space(14));body.addView(click("မူရင်းဓမ္မစာမျက်နှာသို့ သွားရန် ↗",()->open(url)));body.addView(space(16));body.addView(text("DAMA Radio V2 အဓိက MP3 Library ကို ပြန်သွားနိုင်ပါတယ်။",12,MUTED,false));body.addView(click("♫  DAMA RADIO",()->show("Radio")));}
   void bottomBar(){
-  LinearLayout nav=row();nav.setPadding(dp(4),dp(7),dp(4),dp(7));
-  nav.setBackground(new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,new int[]{0xff081d1d,0xff12312e,0xff081d1d}));
-  String[] screens={"Home","Radio","Library","TV","Worship"};
-  String[] icons={"⌂","♫","▤","▣","✿"};
-  String[] labels={"Home","Radio","Books","TV","Worship"};
-  for(int i=0;i<screens.length;i++){
-    final String target=screens[i];boolean active=screen.equals(target)||(screen.equals("Playing")&&i==1);
-    LinearLayout cell=vert();cell.setGravity(Gravity.CENTER);
-    if(active)cell.setBackground(shape(0xff285042,17,GOLDDIM));
-    TextView icon=text(icons[i],23,active?GOLD:MUTED,true);icon.setGravity(Gravity.CENTER);cell.addView(icon);
-    TextView caption=text(labels[i],10,active?GOLD:MUTED,active);caption.setGravity(Gravity.CENTER);cell.addView(caption);
-    LinearLayout.LayoutParams pp=new LinearLayout.LayoutParams(0,dp(57),1);pp.setMargins(dp(2),0,dp(2),0);
-    nav.addView(cell,pp);cell.setOnClickListener(v->show(target));
-  }outer.addView(nav,lp(-1,74));
+    LinearLayout footer=vert();footer.setPadding(dp(11),dp(6),dp(11),dp(8));
+    footer.setBackgroundColor(BG);
+    LinearLayout nav=row();nav.setGravity(Gravity.CENTER_VERTICAL);
+    nav.setPadding(dp(6),dp(8),dp(6),dp(8));
+    GradientDrawable panel=new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,
+        new int[]{0xff092922,0xff17453b,0xff0b2c29});
+    panel.setCornerRadius(dp(23));panel.setStroke(dp(1),GOLD);
+    nav.setBackground(panel);nav.setElevation(dp(10));
+    String[] routes={"Home","Radio","Library","TV","Worship"};
+    String[] glyph={"⌂","♫","▤","▶","✿"};
+    String[] labels={"Home","Radio","Books","TV","Worship"};
+    for(int i=0;i<routes.length;i++){
+       final String dest=routes[i];
+       boolean active=screen.equals(dest)||(screen.equals("Playing")&&i==1)
+                      ||(screen.equals("Collection")&&i==1);
+       LinearLayout cell=vert();cell.setGravity(Gravity.CENTER);
+       if(active){
+           GradientDrawable selectedBg=new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
+               new int[]{0xff496043,0xff285044});
+           selectedBg.setCornerRadius(dp(16));selectedBg.setStroke(dp(1),0xffc2a15c);
+           cell.setBackground(selectedBg);
+       }
+       TextView ic=text(glyph[i],23,active?GOLD:IVORY,true);ic.setGravity(Gravity.CENTER);
+       TextView label=text(labels[i],10,active?GOLD:MUTED,active);label.setGravity(Gravity.CENTER);
+       cell.addView(ic);cell.addView(label);
+       cell.setContentDescription(labels[i]+" tab");
+       LinearLayout.LayoutParams item=new LinearLayout.LayoutParams(0,dp(58),1);
+       item.setMargins(dp(2),0,dp(2),0);nav.addView(cell,item);
+       cell.setOnClickListener(v->show(dest));
+    }
+    footer.addView(nav,lp(-1,74));
+    outer.addView(footer,lp(-1,88));
 }
   void open(String url){try{startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse(url)));}catch(Exception ex){toast("Website မဖွင့်နိုင်ပါ");}}
   void saveCache(){File out=new File(getFilesDir(),CACHE_FILE),tmp=new File(getFilesDir(),CACHE_FILE+".tmp");try(FileOutputStream f=new FileOutputStream(tmp)){JSONArray a=new JSONArray();synchronized(catalog){for(Track t:catalog.values())a.put(t.json());}f.write(a.toString().getBytes(StandardCharsets.UTF_8));f.getFD().sync();if(!tmp.renameTo(out))throw new IOException("rename failed");}catch(Exception e){android.util.Log.e("DAMA","Unable to cache catalog",e);}}
