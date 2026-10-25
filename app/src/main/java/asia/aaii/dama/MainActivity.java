@@ -10,6 +10,10 @@ import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.media.AudioAttributes;
+import android.media.AudioManager;
+import android.media.AudioFocusRequest;
+import android.content.Context;
+import android.os.SystemClock;
 import android.media.MediaPlayer;
 import android.media.PlaybackParams;
 import android.net.Uri;
@@ -54,7 +58,13 @@ public class MainActivity extends Activity {
   TextView counter,information,miniLabel;
   EditText searchBox;
   MediaPlayer player; Track selected;
-  boolean ready=false,syncing=false,repeat=false;
+  boolean ready=false,syncing=false,repeat=false,shuffle=false,buffering=false;
+  String playerState="Idle",lastPlayerError="";
+  TextView stateLabel,miniStateLabel;
+  Runnable sleepJob;long sleepUntilMs=0;
+  int playerGeneration=0;
+  AudioManager audioManager;AudioFocusRequest audioFocusRequest;
+  boolean focusGranted=false;
   float speed=1f;
   SeekBar playSeek;
   TextView timeLabel;
@@ -89,7 +99,7 @@ public class MainActivity extends Activity {
     for(String f:new String[]{"seed_tracks.json","full_catalog.json"}){JSONArray rows=assetArray(f);for(int i=0;i<rows.length();i++){JSONObject j=rows.optJSONObject(i);if(j!=null)addCatalog(new Track(j));}}
     File cache=new File(getFilesDir(),CACHE_FILE);if(cache.exists())try(FileInputStream in=new FileInputStream(cache);ByteArrayOutputStream out=new ByteArrayOutputStream()){byte[] b=new byte[8192];int n;while((n=in.read(b))!=-1)out.write(b,0,n);JSONArray rows=new JSONArray(out.toString("UTF-8"));for(int i=0;i<rows.length();i++){JSONObject j=rows.optJSONObject(i);if(j!=null)addCatalog(new Track(j));}}catch(Exception ignored){}
   }
-  @Override public void onCreate(Bundle b){super.onCreate(b);getWindow().setStatusBarColor(DEEP);getWindow().setNavigationBarColor(DEEP);initData();show("Home");}
+  @Override public void onCreate(Bundle b){super.onCreate(b);getWindow().setStatusBarColor(DEEP);getWindow().setNavigationBarColor(DEEP);initData();audioManager=(AudioManager)getSystemService(Context.AUDIO_SERVICE);lastPlayerError=settings.getString("last_player_error","");show("Home");}
   void show(String next){if(next.equals("Menu")&&!screen.equals("Menu"))priorScreen=screen;screen=next;outer=vert();outer.setBackgroundColor(BG);setContentView(outer);applySafeInsets(outer);
     createTop(); ScrollView scroll=new ScrollView(this);scroll.setFillViewport(false);scroll.setVerticalScrollBarEnabled(false);outer.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));body=vert();body.setPadding(dp(15),dp(13),dp(15),dp(14));scroll.addView(body);
     if(next.equals("Home"))home();else if(next.equals("Radio"))browse();else if(next.equals("Playing"))nowPlaying();else if(next.equals("Collection"))collection();else if(next.equals("Menu"))menuScreen();else if(next.equals("Library")){startActivity(new Intent(this,LibraryActivity.class));screen="Home";home();}else if(next.equals("TV"))other("DAMA TV","▶ YouTube တရားတော်", "https://www.dhammadownload.com/VideoInMyanmar.htm");else if(next.equals("Worship"))other("DAILY WORSHIP","✿ နေ့စဉ်ဝတ်ပြုခြင်း", "https://www.dhammadownload.com/");
@@ -166,6 +176,7 @@ public class MainActivity extends Activity {
       menuOption("⌕","တရားတော် ရှာဖွေရန်","ဆရာတော်၊ ခေါင်းစဉ်၊ ပဋ္ဌာန်း",()->show("Radio"));
       menuOption("↻","MP3 Catalog Sync","မူရင်းစာမျက်နှာများမှ Link အသစ်များ",()->sync());
       menuOption("⌂","Home Dashboard","ပင်မစာမျက်နှာ ပြန်ဖွင့်ရန်",()->show("Home"));
+      menuOption("!","Player Error Report","နောက်ဆုံး Audio Error နှင့် ဖြေရှင်းနည်း",()->playerErrorReport());
       TextView source=click("မူရင်း DhammaDownload Website  ↗",
          ()->open("https://www.dhammadownload.com/"));
       body.addView(source,lp(-1,50));body.addView(space(20));
@@ -265,20 +276,355 @@ public class MainActivity extends Activity {
     new AlertDialog.Builder(this).setTitle(t.title).setMessage(t.monk+"\n"+group(t.title)).setItems(new String[]{"▶  နားထောင်ရန်",fav,downloaded,"🔗 မူရင်း MP3 Link","↗ မူရင်းစာမျက်နှာ"},(d,i)->{switch(i){case 0:play(t);break;case 1:toggleFavorite(t);break;case 2:download(t);break;case 3:open(t.url);break;case 4:open(t.source==null||t.source.isEmpty()?"https://www.dhammadownload.com/":t.source);break;}}).show();}
   void toggleFavorite(Track t){if(!favorites.add(t.url))favorites.remove(t.url);settings.edit().putStringSet("favorites",new HashSet<>(favorites)).apply();toast(favorites.contains(t.url)?"Favorites ထဲထည့်ပြီးပါပြီ":"Favorites မှဖယ်ရှားပြီးပါပြီ");if(screen.equals("Collection"))show("Collection");}
   void rememberRecent(Track t){recent.remove(t.url);recent.add(0,t.url);while(recent.size()>50)recent.remove(recent.size()-1);settings.edit().putString("recent",new JSONArray(recent).toString()).apply();}
-  void play(Track t){selected=t;ready=false;release();rememberRecent(t);File f=downloadFile(t);try{player=new MediaPlayer();player.setAudioAttributes(new AudioAttributes.Builder().setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).setUsage(AudioAttributes.USAGE_MEDIA).build());if(f.exists())player.setDataSource(f.getAbsolutePath());else player.setDataSource(this,Uri.parse(t.url));player.setOnPreparedListener(p->{ready=true;try{p.start();if(speed!=1f)p.setPlaybackParams(p.getPlaybackParams().setSpeed(speed));}catch(Exception ignored){}show("Playing");});player.setOnCompletionListener(p->{if(repeat){p.seekTo(0);p.start();}else show("Playing");});player.setOnErrorListener((p,code,extra)->{ready=false;handler.post(()->new AlertDialog.Builder(this).setTitle("Audio ဖွင့်မရပါ").setMessage("Link ကို မူရင်း Website တွင် ဖွင့်စမ်းပါ။ (code "+code+")").setPositiveButton("Website",(d,w)->open(t.url)).setNegativeButton("OK",null).show());return true;});player.prepareAsync();show("Playing");}catch(Exception ex){toast("MP3 ဖွင့်မရပါ");show("Radio");}}
-  void pause(){if(player==null||!ready)return;try{if(player.isPlaying())player.pause();else player.start();show(screen);}catch(Exception ignored){}}
-  void release(){try{if(player!=null){player.reset();player.release();}}catch(Exception ignored){}player=null;ready=false;}
-  void miniPlayer(){miniBar=row();miniBar.setPadding(dp(14),dp(5),dp(12),dp(5));miniBar.setBackground(shape(CARD,13,GOLDDIM));TextView label=text("♫  "+selected.title,12,IVORY,true);label.setMaxLines(1);miniBar.addView(label,new LinearLayout.LayoutParams(0,-1,1));miniBar.addView(click("❯",()->show("Playing")));miniBar.addView(spaceX(6));miniBar.addView(click(player!=null&&ready&&player.isPlaying()?"Ⅱ":"▶",()->pause()));outer.addView(miniBar,lp(-1,58));miniBar.setOnClickListener(v->show("Playing"));}
-  void nowPlaying(){heading("✦  NOW PLAYING  ·  တရားတော်နားဆင်ရန်");if(selected==null){body.addView(text("နားထောင်ရန် တရားတော် ရွေးချယ်ပါ",15,MUTED,false));return;}
-    ImageView artwork=picture(R.drawable.radio_pattana,255);artwork.setBackground(shape(CARD,24,GOLD));body.addView(artwork,lp(-1,255));body.addView(space(18));TextView title=text(selected.title,20,IVORY,true);title.setGravity(Gravity.CENTER);body.addView(title);TextView monk=text(selected.monk,13,GOLD,false);monk.setGravity(Gravity.CENTER);body.addView(monk);body.addView(space(24));
-    playSeek=new SeekBar(this);playSeek.setMax(1000);playSeek.setProgressTintList(android.content.res.ColorStateList.valueOf(GOLD));playSeek.setThumbTintList(android.content.res.ColorStateList.valueOf(GOLD));body.addView(playSeek);playSeek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onStartTrackingTouch(SeekBar s){}public void onStopTrackingTouch(SeekBar s){if(player!=null&&ready)try{player.seekTo((int)(player.getDuration()*(s.getProgress()/1000f)));}catch(Exception ignored){}}public void onProgressChanged(SeekBar s,int p,boolean user){}});
-    timeLabel=text("00:00 / --:--",12,MUTED,false);timeLabel.setGravity(Gravity.CENTER);body.addView(timeLabel);handler.removeCallbacksAndMessages(null);ticker=()->{if(screen.equals("Playing")&&player!=null&&ready){try{int duration=player.getDuration(),current=player.getCurrentPosition();playSeek.setProgress(duration>0?Math.round(current*1000f/duration):0);timeLabel.setText(durationTime(current)+" / "+durationTime(duration));}catch(Exception ignored){}handler.postDelayed(ticker,1000);}};handler.postDelayed(ticker,400);
-    body.addView(space(21));LinearLayout actions=row();actions.setGravity(Gravity.CENTER);TextView previous=click("❮❮",()->skip(-1));TextView play=click(player!=null&&ready&&player.isPlaying()?"Ⅱ  PAUSE":"▶  PLAY",()->pause());TextView next=click("❯❯",()->skip(1));actions.addView(previous);actions.addView(spaceX(12));actions.addView(play);actions.addView(spaceX(12));actions.addView(next);body.addView(actions);body.addView(space(15));
-    LinearLayout actions2=row();actions2.addView(click(favorites.contains(selected.url)?"♥":"♡",()->toggleFavorite(selected)));actions2.addView(spaceX(7));actions2.addView(click(speed+"x",()->{speed=speed==1f?1.25f:speed==1.25f?1.5f:speed==1.5f?2f:1f;if(player!=null&&ready)try{player.setPlaybackParams(player.getPlaybackParams().setSpeed(speed));}catch(Exception ignored){}show("Playing");}));actions2.addView(spaceX(7));actions2.addView(click(repeat?"↻ On":"↻ Off",()->{repeat=!repeat;show("Playing");}));actions2.addView(spaceX(7));actions2.addView(click("↓ Offline",()->download(selected)));body.addView(actions2);
-    body.addView(space(21));addCollectionCard("စာရင်း ပြန်ကြည့်ရန်",R.drawable.radio_meditation,2);footnote();
+  void play(Track track){
+  if(track==null||track.url==null||(!track.url.startsWith("https://")&&!track.url.startsWith("http://"))){
+     recordPlayerError("SOURCE_INVALID","MP3 လင့်ခ်မမှန်ပါ။");showPlayerErrorDialog();return;
   }
+  release();
+  selected=track;playerState="Loading";buffering=true;ready=false;
+  rememberRecent(track);
+  final int generation=++playerGeneration;
+  final File saved=downloadFile(track);
+  try{
+      MediaPlayer instance=new MediaPlayer();player=instance;
+      instance.setAudioAttributes(new AudioAttributes.Builder()
+          .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+          .setUsage(AudioAttributes.USAGE_MEDIA).build());
+      if(saved.exists())instance.setDataSource(saved.getAbsolutePath());
+      else instance.setDataSource(this,Uri.parse(track.url));
+      instance.setOnPreparedListener(p->{
+         if(player!=p||generation!=playerGeneration)return;
+         ready=true;buffering=false;playerState="Ready";
+         if(!requestPlayerAudioFocus()){
+            playerState="Paused";toast("အခြား App တစ်ခုက Audio အသုံးပြုနေပါတယ်။");
+         }else{
+            try{
+              p.start();playerState="Playing";
+              if(speed!=1f)applySpeed(false);
+            }catch(Exception ex){
+              recordPlayerError("PREPARED_START",ex.toString());release();showPlayerErrorDialog();return;
+            }
+         }
+         if(screen.equals("Playing"))show("Playing");else updatePlayerStatus();
+      });
+      instance.setOnInfoListener((p,what,extra)->{
+         if(p!=player)return true;
+         if(what==MediaPlayer.MEDIA_INFO_BUFFERING_START){buffering=true;playerState="Buffering";updatePlayerStatus();}
+         else if(what==MediaPlayer.MEDIA_INFO_BUFFERING_END){buffering=false;playerState=p.isPlaying()?"Playing":"Paused";updatePlayerStatus();}
+         return false;
+      });
+      instance.setOnCompletionListener(p->{
+         if(p!=player)return;
+         if(repeat){try{p.seekTo(0);p.start();playerState="Playing";}catch(Exception ignored){playerState="Stopped";}}
+         else if(shuffle){skip(1);}
+         else {playerState="Completed";updatePlayerStatus();}
+      });
+      instance.setOnErrorListener((p,what,extra)->{
+         if(p!=player||generation!=playerGeneration)return true;
+         String reason=errorMeaning(what,extra);
+         recordPlayerError("MP_"+what+"/"+extra,reason);
+         release();
+         playerState="Error";
+         handler.post(()->{updatePlayerStatus();showPlayerErrorDialog();});
+         return true;
+      });
+      instance.prepareAsync();
+      show("Playing");
+  }catch(Exception ex){
+      recordPlayerError("DATA_SOURCE",ex.getClass().getSimpleName()+": "+ex.getMessage());
+      release();playerState="Error";show("Playing");showPlayerErrorDialog();
+  }
+}
+  void pause(){
+  if(player==null||!ready){
+    if(selected!=null&&player==null){play(selected);}
+    else toast("အသံဖိုင် ပြင်ဆင်နေပါတယ်…");
+    return;
+  }
+  try{
+    if(player.isPlaying()){player.pause();playerState="Paused";}
+    else{
+      if(!requestPlayerAudioFocus()){toast("Audio Focus မရနိုင်သေးပါ");return;}
+      if(playerState.equals("Completed"))player.seekTo(0);
+      player.start();playerState="Playing";
+    }
+    updatePlayerStatus();
+    if(screen.equals("Playing"))show("Playing");
+  }catch(Exception ex){
+    recordPlayerError("PLAY_PAUSE",ex.toString());release();playerState="Error";showPlayerErrorDialog();
+  }
+}
+  void release(){
+  ++playerGeneration;
+  MediaPlayer old=player;player=null;ready=false;buffering=false;
+  if(old!=null){try{old.setOnPreparedListener(null);old.setOnInfoListener(null);old.setOnErrorListener(null);old.setOnCompletionListener(null);old.reset();old.release();}catch(Exception ignored){try{old.release();}catch(Exception unused){}}}
+  abandonPlayerAudioFocus();
+}
+  void miniPlayer(){
+  miniBar=vert();miniBar.setPadding(dp(10),dp(7),dp(10),dp(6));
+  GradientDrawable panel=new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,
+     new int[]{0xff173b34,0xff0a2c29});
+  panel.setCornerRadius(dp(14));panel.setStroke(dp(1),GOLDDIM);miniBar.setBackground(panel);
+  LinearLayout line=row();
+  ImageView cover=new ImageView(this);cover.setImageResource(R.drawable.radio_pattana);
+  cover.setScaleType(ImageView.ScaleType.CENTER_CROP);cover.setBackground(shape(CARD,9,0));
+  cover.setClipToOutline(true);line.addView(cover,lp(43,43));
+  LinearLayout labelGroup=vert();labelGroup.setPadding(dp(10),0,dp(3),0);
+  TextView label=text(selected.title,11,IVORY,true);label.setMaxLines(1);label.setSingleLine(true);label.setEllipsize(android.text.TextUtils.TruncateAt.END);
+  labelGroup.addView(label);
+  miniStateLabel=text("♫  "+selected.monk+"  •  "+playerState,10,MUTED,false);miniStateLabel.setSingleLine(true);
+  labelGroup.addView(miniStateLabel);line.addView(labelGroup,new LinearLayout.LayoutParams(0,-2,1));
+  TextView open=text("⌃",22,GOLD,true);open.setGravity(Gravity.CENTER);line.addView(open,lp(30,43));open.setOnClickListener(v->show("Playing"));
+  TextView toggle=text(ready&&player!=null&&player.isPlaying()?"Ⅱ":"▶",18,DEEP,true);
+  toggle.setGravity(Gravity.CENTER);toggle.setBackground(shape(GOLD,18,0));line.addView(toggle,lp(39,39));
+  toggle.setOnClickListener(v->pause());labelGroup.setOnClickListener(v->show("Playing"));
+  miniBar.addView(line);
+  ProgressBar progress=new ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal);
+  progress.setMax(1000);
+  progress.setProgressTintList(android.content.res.ColorStateList.valueOf(GOLD));
+  progress.setProgressBackgroundTintList(android.content.res.ColorStateList.valueOf(0xff33544c));
+  if(ready&&player!=null)try{int length=player.getDuration();progress.setProgress(length>0?player.getCurrentPosition()*1000/length:0);}catch(Exception ignored){}
+  LinearLayout.LayoutParams p=lp(-1,3);p.topMargin=dp(6);miniBar.addView(progress,p);
+  LinearLayout.LayoutParams wrap=lp(-1,77);wrap.setMargins(dp(9),0,dp(9),0);outer.addView(miniBar,wrap);
+}
+  String playbackStatusText(){
+    String msg=buffering?"Buffering • အင်တာနက်ကြောင့် ခဏစောင့်နေသည်":playerState;
+    if("Loading".equals(msg))msg="Loading • တရားတော် ဖွင့်ရန်ပြင်ဆင်နေသည်";
+    if("Playing".equals(msg))msg="♫  တရားတော် ဖွင့်နေပါသည်";
+    if("Paused".equals(msg))msg="Ⅱ  ခေတ္တရပ်ထားသည်";
+    if("Completed".equals(msg))msg="✔  တရားတော် ပြီးဆုံးပါပြီ";
+    if("Error".equals(msg))msg="!  Player Error — Help ကိုနှိပ်ပါ";
+    return msg;
+  }
+  void updatePlayerStatus(){
+    if(stateLabel!=null&&screen.equals("Playing")){stateLabel.setText(playbackStatusText());stateLabel.setTextColor("Error".equals(playerState)?0xffff8e88:MUTED);}
+    if(miniStateLabel!=null&&!screen.equals("Playing")&&selected!=null)miniStateLabel.setText("♫  "+selected.monk+"  •  "+playbackStatusText());
+  }
+  TextView roundPlayerButton(String label,int height,boolean main,Runnable action){
+    TextView button=text(label,main?25:16,main?DEEP:GOLD,true);
+    button.setGravity(Gravity.CENTER);button.setBackground(shape(main?GOLD:CARD,35,main?0:GOLDDIM));
+    button.setOnClickListener(v->action.run());button.setLayoutParams(lp(height,height));return button;
+  }
+  TextView playerAction(String label,Runnable action){
+    TextView item=text(label,11,GOLD,true);item.setGravity(Gravity.CENTER);
+    item.setBackground(shape(CARD,14,0xff557359));item.setOnClickListener(v->action.run());return item;
+  }
+  void seekBy(int delta){
+    if(player==null||!ready){toast("Audio Ready မဖြစ်သေးပါ");return;}
+    try{int max=player.getDuration();if(max<=0){toast("ဤ MP3 မှာ Seek မရနိုင်ပါ");return;}
+      int where=(int)Math.max(0,Math.min((long)max,(long)player.getCurrentPosition()+delta));
+      player.seekTo(where);
+      if(timeLabel!=null)timeLabel.setText(durationTime(where));
+    }catch(Exception ex){recordPlayerError("SEEK_15_SEC",ex.toString());toast("Seek မအောင်မြင်ပါ");}
+  }
+  void applySpeed(boolean refresh){
+    if(player!=null&&ready)try{
+      boolean paused=!player.isPlaying();
+      PlaybackParams params=player.getPlaybackParams();params.setSpeed(speed);
+      player.setPlaybackParams(params);if(paused)player.pause();
+    }catch(Exception ex){recordPlayerError("SPEED",ex.toString());toast("Playback Speed ပြောင်းမရပါ");}
+    if(refresh&&screen.equals("Playing"))show("Playing");
+  }
+  void speedMenu(){
+    String[] labels={"0.75×  Slow","1.0×  Normal","1.25×","1.5×","1.75×","2.0×"};
+    float[] values={.75f,1f,1.25f,1.5f,1.75f,2f};
+    new AlertDialog.Builder(this).setTitle("Playback Speed").setSingleChoiceItems(labels,-1,(dialog,choice)->{
+      speed=values[choice];applySpeed(true);dialog.dismiss();
+    }).setNegativeButton("Cancel",null).show();
+  }
+  void sleepMenu(){
+    String[] options={"Off","10 minutes","20 minutes","30 minutes","45 minutes","60 minutes"};
+    int[] minutes={0,10,20,30,45,60};
+    new AlertDialog.Builder(this).setTitle("⏱ Sleep Timer").setItems(options,(d,i)->{
+      if(sleepJob!=null)handler.removeCallbacks(sleepJob);
+      if(minutes[i]==0){sleepUntilMs=0;sleepJob=null;toast("Sleep Timer OFF");}
+      else{
+        sleepUntilMs=SystemClock.elapsedRealtime()+minutes[i]*60000L;
+        sleepJob=()->{
+          sleepUntilMs=0;if(player!=null&&ready&&player.isPlaying()){
+            try{player.pause();playerState="Paused";updatePlayerStatus();}
+            catch(Exception ex){recordPlayerError("SLEEP_TIMER",ex.toString());}
+          }
+        };
+        handler.postDelayed(sleepJob,minutes[i]*60000L);
+        toast("Sleep Timer "+minutes[i]+" minutes");
+      }
+      if(screen.equals("Playing"))show("Playing");
+    }).show();
+  }
+  void queueMenu(){
+    ArrayList<Track> tracks=new ArrayList<>();synchronized(catalog){tracks.addAll(catalog.values());}
+    if(tracks.isEmpty()){toast("Queue မရှိသေးပါ");return;}
+    int current=0;for(int i=0;i<tracks.size();i++)if(selected!=null&&tracks.get(i).url.equals(selected.url)){current=i;break;}
+    int start=Math.max(0,current-4),end=Math.min(tracks.size(),current+20);
+    String[] labels=new String[end-start];
+    for(int i=start;i<end;i++)labels[i-start]=(i==current?"▶ ":"♫ ")+tracks.get(i).title+"\n"+tracks.get(i).monk;
+    final int offset=start;
+    new AlertDialog.Builder(this).setTitle("PLAY QUEUE • "+tracks.size()+" tracks")
+      .setItems(labels,(d,index)->play(tracks.get(offset+index))).setNegativeButton("Close",null).show();
+  }
+  boolean requestPlayerAudioFocus(){
+    if(audioManager==null)return true;
+    try{
+      if(audioFocusRequest==null){
+        audioFocusRequest=new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+          .setAudioAttributes(new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA)
+            .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build())
+          .setOnAudioFocusChangeListener(change->{
+            if(change==AudioManager.AUDIOFOCUS_LOSS||change==AudioManager.AUDIOFOCUS_LOSS_TRANSIENT){
+              handler.post(()->{
+                if(player!=null&&ready)try{if(player.isPlaying()){player.pause();playerState="Paused";updatePlayerStatus();}}
+                catch(Exception ignored){}
+              });
+            } else if(change==AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK){
+              handler.post(()->{if(player!=null)try{player.setVolume(.3f,.3f);}catch(Exception ignored){}});
+            } else if(change==AudioManager.AUDIOFOCUS_GAIN){
+              handler.post(()->{if(player!=null)try{player.setVolume(1f,1f);}catch(Exception ignored){}});
+            }
+          }).build();
+      }
+      focusGranted=audioManager.requestAudioFocus(audioFocusRequest)==AudioManager.AUDIOFOCUS_REQUEST_GRANTED;
+      return focusGranted;
+    }catch(Exception ex){recordPlayerError("AUDIO_FOCUS",ex.toString());return false;}
+  }
+  void abandonPlayerAudioFocus(){
+    if(audioManager!=null&&audioFocusRequest!=null&&focusGranted){
+      try{audioManager.abandonAudioFocusRequest(audioFocusRequest);}catch(Exception ignored){}
+    }focusGranted=false;
+  }
+  String errorMeaning(int what,int extra){
+    switch(extra){
+      case -1004:return "Network/Connection Error (MEDIA_ERROR_IO) • Internet သို့မဟုတ် Server စစ်ပါ။";
+      case -1007:return "Corrupt/Malformed MP3 (MEDIA_ERROR_MALFORMED).";
+      case -1010:return "Unsupported Audio Format (MEDIA_ERROR_UNSUPPORTED).";
+      case -110:return "Server Timeout (MEDIA_ERROR_TIMED_OUT) • Retry လုပ်ပါ။";
+      default: return "Audio Decoder/Media Server Error "+what+"/"+extra+".";
+    }
+  }
+  void recordPlayerError(String code,String reason){
+    String title=selected==null?"Unknown track":selected.title;
+    lastPlayerError="DAMA RADIO V7\nError: "+code+"\nReason: "+reason+
+      "\nTrack: "+title+"\nTime: "+new java.util.Date().toString()+
+      "\nHint: Check network, permissions, or open publisher source.\n"+
+      "This report records application error state, not proof of full MP3 playback.";
+    if(settings!=null)settings.edit().putString("last_player_error",lastPlayerError).apply();
+    android.util.Log.e("DAMA_PLAYER",lastPlayerError);
+  }
+  void playerErrorReport(){
+    String message=lastPlayerError.isEmpty()?"No player errors recorded on this device yet.\n\nIf MP3 fails, Retry or open source website.":lastPlayerError;
+    new AlertDialog.Builder(this).setTitle("DAMA PLAYER • Error Report")
+      .setMessage(message)
+      .setPositiveButton("Copy Report",(d,w)->{
+        android.content.ClipboardManager clip=(android.content.ClipboardManager)getSystemService(Context.CLIPBOARD_SERVICE);
+        if(clip!=null)clip.setPrimaryClip(android.content.ClipData.newPlainText("DAMA Player Error",message));
+        toast("Report ကို Copy လုပ်ပြီးပါပြီ");
+      }).setNeutralButton("Retry",(d,w)->{if(selected!=null)play(selected);else toast("MP3 ရွေးချယ်ပါ");})
+      .setNegativeButton("Close",null).show();
+  }
+  void showPlayerErrorDialog(){
+    if(isFinishing()||isDestroyed())return;
+    String issue=lastPlayerError.isEmpty()?"Audio မဖွင့်နိုင်ပါ":lastPlayerError;
+    new AlertDialog.Builder(this).setTitle("!  MP3 Playback Error")
+      .setMessage(issue)
+      .setPositiveButton("Retry",(d,w)->{if(selected!=null)play(selected);})
+      .setNeutralButton("Publisher Link",(d,w)->{if(selected!=null)open(selected.url);})
+      .setNegativeButton("Close",(d,w)->{}).show();
+  }
+  void nowPlaying(){
+  if(selected==null){heading("♫  NOW PLAYING");body.addView(text("နားဆင်လိုသော တရားတော်ကို ရွေးချယ်ပါ။",15,MUTED,false));return;}
+  LinearLayout top=row();
+  TextView back=click("‹  စာရင်းသို့",()->show("Radio"));top.addView(back);
+  TextView titleTop=text("NOW PLAYING  ✦",12,GOLD,true);titleTop.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
+  top.addView(titleTop,new LinearLayout.LayoutParams(0,dp(44),1));body.addView(top);body.addView(space(12));
+  android.widget.FrameLayout artFrame=new android.widget.FrameLayout(this);
+  GradientDrawable artShape=shape(CARD,24,GOLD);artFrame.setBackground(artShape);artFrame.setClipToOutline(true);
+  ImageView artwork=picture(R.drawable.radio_pattana,235);artFrame.addView(artwork,new android.widget.FrameLayout.LayoutParams(-1,dp(235)));
+  TextView watermark=text("  ✿ DAMA RADIO  ",12,IVORY,true);
+  watermark.setPadding(dp(13),dp(7),dp(13),dp(7));
+  watermark.setBackground(shape(0xcc09221d,12,GOLDDIM));
+  android.widget.FrameLayout.LayoutParams mark=new android.widget.FrameLayout.LayoutParams(-2,-2,Gravity.BOTTOM|Gravity.CENTER_HORIZONTAL);
+  mark.bottomMargin=dp(12);artFrame.addView(watermark,mark);
+  body.addView(artFrame,lp(-1,235));body.addView(space(17));
+  TextView sermon=text(selected.title,21,IVORY,true);sermon.setGravity(Gravity.CENTER);body.addView(sermon);
+  TextView sayadaw=text(selected.monk,14,GOLD,false);sayadaw.setGravity(Gravity.CENTER);
+  body.addView(sayadaw);body.addView(space(13));
+  stateLabel=text(playbackStatusText(),12,playerState.equals("Error")?0xffff7d7d:MUTED,false);
+  stateLabel.setGravity(Gravity.CENTER);stateLabel.setPadding(0,dp(7),0,dp(7));
+  stateLabel.setBackground(shape(CARD,16,GOLDDIM));body.addView(stateLabel,lp(-1,33));body.addView(space(12));
+  playSeek=new SeekBar(this);playSeek.setMax(1000);
+  playSeek.setProgressTintList(android.content.res.ColorStateList.valueOf(GOLD));
+  playSeek.setProgressBackgroundTintList(android.content.res.ColorStateList.valueOf(0xff3f5a54));
+  playSeek.setThumbTintList(android.content.res.ColorStateList.valueOf(GOLD));
+  body.addView(playSeek,lp(-1,35));
+  playSeek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
+    public void onStartTrackingTouch(SeekBar s){}
+    public void onStopTrackingTouch(SeekBar s){
+      if(player!=null&&ready)try{long length=player.getDuration();if(length>0)player.seekTo((int)(length*s.getProgress()/1000));}
+      catch(Exception ex){recordPlayerError("SEEK",ex.toString());}
+    }
+    public void onProgressChanged(SeekBar s,int p,boolean fromUser){}
+  });
+  LinearLayout clocks=row();
+  TextView elapsed=text("00:00",11,MUTED,false);timeLabel=elapsed;
+  clocks.addView(elapsed,new LinearLayout.LayoutParams(0,-2,1));
+  TextView duration=text("--:--",11,MUTED,false);duration.setGravity(Gravity.RIGHT);
+  clocks.addView(duration,new LinearLayout.LayoutParams(0,-2,1));body.addView(clocks);
+  if(ticker!=null)handler.removeCallbacks(ticker);
+  final SeekBar seekRef=playSeek;final TextView currentRef=elapsed,wholeRef=duration;
+  ticker=new Runnable(){public void run(){
+    if(!screen.equals("Playing")||seekRef!=playSeek||player==null)return;
+    if(ready)try{
+      int length=player.getDuration(),current=player.getCurrentPosition();
+      seekRef.setProgress(length>0?(int)(current*1000L/length):0);
+      currentRef.setText(durationTime(current));wholeRef.setText(durationTime(length));
+    }catch(Exception ignored){}
+    handler.postDelayed(this,950);
+  }};
+  handler.postDelayed(ticker,250);
+  body.addView(space(16));
+  LinearLayout transport=row();transport.setGravity(Gravity.CENTER);
+  transport.addView(roundPlayerButton("❮❮",45,false,()->skip(-1)));transport.addView(spaceX(9));
+  transport.addView(roundPlayerButton("−15",48,false,()->seekBy(-15000)));transport.addView(spaceX(10));
+  transport.addView(roundPlayerButton(ready&&player!=null&&player.isPlaying()?"Ⅱ":"▶",65,true,()->pause()));transport.addView(spaceX(10));
+  transport.addView(roundPlayerButton("+15",48,false,()->seekBy(15000)));transport.addView(spaceX(9));
+  transport.addView(roundPlayerButton("❯❯",45,false,()->skip(1)));
+  body.addView(transport);body.addView(space(17));
+  LinearLayout modes=row();modes.setGravity(Gravity.CENTER);
+  modes.addView(playerAction(shuffle?"Shuffle ON":"Shuffle",()->{shuffle=!shuffle;show("Playing");}),new LinearLayout.LayoutParams(0,dp(41),1));
+  modes.addView(playerAction(repeat?"Repeat ON":"Repeat 1",()->{repeat=!repeat;show("Playing");}),new LinearLayout.LayoutParams(0,dp(41),1));
+  modes.addView(playerAction(speed+"×",()->speedMenu()),new LinearLayout.LayoutParams(0,dp(41),1));
+  modes.addView(playerAction("⏱ Sleep",()->sleepMenu()),new LinearLayout.LayoutParams(0,dp(41),1));
+  body.addView(modes);body.addView(space(11));
+  LinearLayout utilities=row();utilities.setGravity(Gravity.CENTER);
+  utilities.addView(playerAction(favorites.contains(selected.url)?"♥ Saved":"♡ Save",()->toggleFavorite(selected)),new LinearLayout.LayoutParams(0,dp(40),1));
+  utilities.addView(playerAction("↓ Offline",()->download(selected)),new LinearLayout.LayoutParams(0,dp(40),1));
+  utilities.addView(playerAction("☰ Queue",()->queueMenu()),new LinearLayout.LayoutParams(0,dp(40),1));
+  utilities.addView(playerAction("! Help",()->playerErrorReport()),new LinearLayout.LayoutParams(0,dp(40),1));
+  body.addView(utilities);
+  body.addView(space(15));
+  if(playerState.equals("Error")){
+    TextView retry=click("↻  Retry MP3 or open source website",()->showPlayerErrorDialog());
+    retry.setTextColor(0xffffbbbb);body.addView(retry);body.addView(space(9));
+  }
+  TextView source=click("↗  မူရင်း တရားတော် Link ကိုဖွင့်ရန်",()->open(selected.url));
+  body.addView(source);body.addView(space(17));
+  if(sleepUntilMs>SystemClock.elapsedRealtime()){
+    TextView sleep=text("⏱  Sleep timer active",11,GOLD,false);body.addView(sleep);
+  }
+  TextView note=text("MediaPlayer • MP3 Streaming • Offline Downloaded Audio supported. အသံမဖွင့်နိုင်ပါက Help မှ Error ကိုကြည့်နိုင်ပါသည်။",11,MUTED,false);
+  body.addView(note);body.addView(space(24));
+}
   String durationTime(int ms){int seconds=Math.max(0,ms/1000);return String.format(Locale.US,"%02d:%02d",seconds/60,seconds%60);}
-  void skip(int delta){if(selected==null)return;ArrayList<Track> choices=new ArrayList<>();synchronized(catalog){choices.addAll(catalog.values());}int at=-1;for(int i=0;i<choices.size();i++)if(choices.get(i).url.equals(selected.url)){at=i;break;}if(at>=0&&!choices.isEmpty())play(choices.get((at+delta+choices.size())%choices.size()));}
+  void skip(int delta){
+  if(selected==null)return;
+  ArrayList<Track> tracks=new ArrayList<>();synchronized(catalog){tracks.addAll(catalog.values());}
+  if(tracks.isEmpty())return;
+  int at=-1;for(int i=0;i<tracks.size();i++)if(tracks.get(i).url.equals(selected.url)){at=i;break;}
+  int next;
+  if(shuffle&&tracks.size()>1){next=new Random().nextInt(tracks.size()-1);if(next>=at&&at>=0)next++;}
+  else next=(at+delta+tracks.size())%tracks.size();
+  play(tracks.get(Math.max(0,Math.min(next,tracks.size()-1))));
+}
   void collection(){heading("သိမ်းထားသော တရားတော်များ");LinearLayout tabs=row();for(String mode:new String[]{"Favorites","Downloads","Recent"}){TextView b=click(mode,()->{libraryMode=mode;show("Collection");});tabs.addView(b,new LinearLayout.LayoutParams(0,-2,1));}body.addView(tabs);body.addView(space(15));
     int found=0;for(Track t:new ArrayList<>(catalog.values())){boolean yes=libraryMode.equals("Favorites")?favorites.contains(t.url):libraryMode.equals("Downloads")?downloadFile(t).exists():recent.contains(t.url);if(!yes)continue;LinearLayout r=trackRow(t);body.addView(r,lp(-1,72));body.addView(space(8));r.setOnClickListener(v->trackActions(t));found++;}if(found==0)body.addView(text("ဤကဏ္ဍတွင် မရှိသေးပါ။ တရားတော်ကို နားထောင်ပြီး Favorites/Download ပြုလုပ်နိုင်ပါတယ်။",13,MUTED,false));footnote();
   }
@@ -327,5 +673,9 @@ public class MainActivity extends Activity {
   String fetch(String ref)throws Exception{URL url=new URL(ref);String host=url.getHost().toLowerCase(Locale.ROOT);if(!host.equals("dhammadownload.com")&&!host.equals("www.dhammadownload.com"))throw new IOException("host not allowed");HttpURLConnection conn=(HttpURLConnection)url.openConnection();conn.setConnectTimeout(16000);conn.setReadTimeout(26000);conn.setRequestProperty("User-Agent","DAMA-RADIO/2.0 Audio link index (no audio downloaded)");try{if(conn.getResponseCode()!=200)throw new IOException("HTTP "+conn.getResponseCode());ByteArrayOutputStream b=new ByteArrayOutputStream();try(InputStream in=conn.getInputStream()){byte[] array=new byte[8192];int n;while((n=in.read(array))!=-1){if(b.size()+n>5_000_000)throw new IOException("HTML too large");b.write(array,0,n);}}String enc=conn.getContentEncoding();String contentType=conn.getContentType();if(contentType!=null&&contentType.toLowerCase(Locale.ROOT).contains("charset=")){String ch=contentType.replaceAll("(?i).*charset=\\s*([A-Za-z0-9_-]+).*","$1");try{return b.toString(ch);}catch(Exception ignored){}}return b.toString("UTF-8");}finally{conn.disconnect();}}
   void sync(){if(syncing){toast("Sync လုပ်နေဆဲပါ");return;}syncing=true;toast("ဆရာတော် MP3 စာရင်း Sync စတင်နေပါပြီ");background.execute(()->{int ok=0,errors=0,count=0;for(Monk m:monks){try{String html=fetch(m.source);List<Track> added=CatalogParser.parse(html,m.source,m.id,m.name);int previous=catalog.size();for(Track t:added){t.category=group(t.title);addCatalog(t);}count+=catalog.size()-previous;ok++;}catch(Exception e){errors++;}final int progress=ok+errors;handler.post(()->{if(information!=null&&screen.equals("Radio"))information.setText("Sync "+progress+"/"+monks.size()+" · "+catalog.size()+" MP3 Links");});try{Thread.sleep(800);}catch(Exception ignored){}}
     saveCache();syncing=false;final int add=count,fail=errors;handler.post(()->{toast("Sync ပြီးပါပြီ · MP3 "+catalog.size()+" · အသစ် "+add+" · Page Errors "+fail);show("Radio");});});}
-  @Override public void onDestroy(){handler.removeCallbacksAndMessages(null);release();background.shutdownNow();super.onDestroy();}
+  @Override public void onDestroy(){
+  if(ticker!=null)handler.removeCallbacks(ticker);
+  if(sleepJob!=null)handler.removeCallbacks(sleepJob);
+  release();background.shutdownNow();super.onDestroy();
+}
 }
