@@ -1,7 +1,7 @@
-name: DAMA RADIO V5 - Premium UI and Audio Link QA
+name: DAMA RADIO V6 - Premium Menu Safe Footer
 on:
   push:
-    branches: ["dama-radio-redesign-v5"]
+    branches: ["dama-radio-menu-v6"]
   workflow_dispatch:
 permissions:
   contents: read
@@ -83,7 +83,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: DAMA-LIBRARY-V4-Android-APK
+          name: DAMA-RADIO-V6-Menu-Safe-APK
           path: |
             app/build/outputs/apk/debug/*.apk
             mp3_playback_link_qa.json
