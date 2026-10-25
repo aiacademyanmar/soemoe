@@ -51,7 +51,7 @@ public class LibraryActivity extends Activity {
         }
         LinearLayout frame=vert();frame.setPadding(dp(13),dp(12),dp(13),dp(12));frame.setBackground(shape(CARD,16,0xff947243));
         TextView heading=t("AUTHOR × CATEGORY LINKING",13,GOLD,true);frame.addView(heading);
-        TextView note=t("စာအုပ် ၁,၈၉၄ အုပ်၏ Index ချိတ်ဆက်မှု",11,IVORY,false);frame.addView(note);
+        TextView note=t("စာအုပ် "+books.size()+" အုပ်၏ Index ချိတ်ဆက်မှု",11,IVORY,false);frame.addView(note);
         addLinkBar(frame,"စာရေးသူ / စာအုပ်စု အမည်ချိတ်ထားမှု",linkedAuthor,books.size());
         addLinkBar(frame,"Category ချိတ်ထားမှု",linkedCat,books.size());
         addLinkBar(frame,"စာရေးသူအမည် အောက်ရှိစာအုပ်",persons,books.size());
@@ -78,15 +78,59 @@ public class LibraryActivity extends Activity {
 
     JSONArray load(String p){try(InputStream original=getAssets().open(p);InputStream in=p.endsWith(".dat")?new java.util.zip.GZIPInputStream(original):original){ByteArrayOutputStream out=new ByteArrayOutputStream();byte[] b=new byte[65536];int n;while((n=in.read(b))>0)out.write(b,0,n);return new JSONArray(out.toString("UTF-8"));}catch(Exception e){return new JSONArray();}}
     @Override public void onCreate(Bundle b){super.onCreate(b);getWindow().setStatusBarColor(DEEP);getWindow().setNavigationBarColor(DEEP);prefs=getSharedPreferences("dama_books",0);favorites=new HashSet<>(prefs.getStringSet("saved",new HashSet<>())); LinkedHashMap<String,Book> uniq=new LinkedHashMap<>(); for(String f:new String[]{"library_catalog.dat"}){JSONArray x=load(f);for(int i=0;i<x.length();i++){JSONObject j=x.optJSONObject(i);if(j==null)continue;Book v=new Book(j);if(v.url.startsWith("http"))uniq.putIfAbsent(v.url,v);}}books.addAll(uniq.values());draw();}
+    void addPremiumStat(LinearLayout row,String value,String caption){
+        LinearLayout tile=vert();tile.setGravity(Gravity.CENTER);tile.setPadding(dp(5),dp(9),dp(5),dp(9));
+        tile.setBackground(shape(0xff174238,14,0xff645f45));
+        TextView count=t(value,19,GOLD,true);count.setGravity(Gravity.CENTER);tile.addView(count);
+        TextView name=t(caption,9,MUTED,false);name.setGravity(Gravity.CENTER);tile.addView(name);
+        LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(0,dp(75),1);
+        p.setMargins(dp(3),dp(10),dp(3),0);row.addView(tile,p);
+    }
+    void addPremiumShortcut(LinearLayout row,String glyph,String label,String sub,Runnable click){
+        LinearLayout tile=vert();tile.setGravity(Gravity.CENTER_HORIZONTAL);
+        tile.setPadding(dp(4),dp(9),dp(4),dp(6));
+        tile.setBackground(shape(0xff183f36,15,0xff78704f));
+        TextView ico=t(glyph,25,GOLD,true);ico.setGravity(Gravity.CENTER);tile.addView(ico);
+        TextView name=t(label,12,IVORY,true);name.setGravity(Gravity.CENTER);tile.addView(name);
+        TextView desc=t(sub,9,MUTED,false);desc.setGravity(Gravity.CENTER);tile.addView(desc);
+        LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(0,dp(106),1);
+        p.setMargins(dp(3),0,dp(3),0);row.addView(tile,p);
+        tile.setOnClickListener(v->click.run());
+    }
     void draw(){main=vert();main.setBackgroundColor(BG);setContentView(main);
-        LinearLayout hdr=row();hdr.setPadding(dp(14),dp(14),dp(14),dp(10));hdr.setBackgroundColor(DEEP);TextView back=t("‹",32,GOLD,true);hdr.addView(back,new LinearLayout.LayoutParams(dp(43),dp(43)));back.setOnClickListener(v->finish());LinearLayout title=vert();title.addView(t("DAMA LIBRARY",22,GOLD,true));title.addView(t("ဓမ္မစာအုပ်များ • Offline Catalog",10,MUTED,false));hdr.addView(title,new LinearLayout.LayoutParams(0,-2,1));main.addView(hdr);
+        if(android.os.Build.VERSION.SDK_INT>=35){main.setOnApplyWindowInsetsListener((v,insets)->{
+            android.graphics.Insets bars=insets.getInsets(android.view.WindowInsets.Type.systemBars());
+            v.setPadding(bars.left,bars.top,bars.right,bars.bottom);return insets;
+        });main.requestApplyInsets();}
+        LinearLayout hdr=row();hdr.setPadding(dp(14),dp(14),dp(14),dp(10));hdr.setBackground(new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,new int[]{DEEP,0xff17443a,DEEP}));TextView back=t("‹",32,GOLD,true);hdr.addView(back,new LinearLayout.LayoutParams(dp(43),dp(43)));back.setOnClickListener(v->finish());LinearLayout title=vert();title.addView(t("DAMA LIBRARY",22,GOLD,true));title.addView(t("ဓမ္မစာအုပ်များ • Offline Catalog",10,MUTED,false));hdr.addView(title,new LinearLayout.LayoutParams(0,-2,1));
+        TextView readerShortcut=btn("▣  READER",()->startActivity(new Intent(this,ReaderShelfActivity.class)));
+        readerShortcut.setBackground(shape(0xff285547,13,0xffbb9254));
+        hdr.addView(readerShortcut);main.addView(hdr);
         ScrollView scroll=new ScrollView(this);main.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));page=vert();page.setPadding(dp(12),dp(14),dp(12),dp(12));scroll.addView(page);
-        android.widget.FrameLayout hero=new android.widget.FrameLayout(this);hero.setBackground(shape(CARD,20,GOLD));hero.setClipToOutline(true);ImageView cover=new ImageView(this);cover.setImageResource(R.drawable.radio_hero);cover.setScaleType(ImageView.ScaleType.CENTER_CROP);hero.addView(cover,new android.widget.FrameLayout.LayoutParams(-1,dp(157)));LinearLayout words=vert();words.setPadding(dp(20),dp(20),dp(6),dp(9));words.setBackground(new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,new int[]{0xe900201b,0x9000201b,0x00102018}));words.addView(t("DAMA LIBRARY",24,GOLD,true));words.addView(t("ဓမ္မစာအုပ်များ စုစည်းရာ",15,IVORY,true));words.addView(t("Read • Learn • Keep",10,IVORY,false));hero.addView(words,new android.widget.FrameLayout.LayoutParams(-1,-1));page.addView(hero,new LinearLayout.LayoutParams(-1,dp(157)));
-        page.addView(t("စာအုပ် "+books.size()+" အုပ် (DhammaDownload + Google Drive)",12,GOLD,true));
+        android.widget.FrameLayout hero=new android.widget.FrameLayout(this);hero.setBackground(shape(CARD,20,GOLD));hero.setClipToOutline(true);ImageView cover=new ImageView(this);cover.setImageResource(R.drawable.dama_library_v12_hero);cover.setScaleType(ImageView.ScaleType.CENTER_CROP);hero.addView(cover,new android.widget.FrameLayout.LayoutParams(-1,dp(157)));LinearLayout words=vert();words.setPadding(dp(10),dp(10),dp(6),dp(6));words.setBackground(new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,new int[]{0xe900201b,0x9000201b,0x00102018}));words.addView(t("DAMA LIBRARY",24,GOLD,true));words.addView(t("ဓမ္မစာအုပ်များ စုစည်းရာ",15,IVORY,true));words.addView(t("Read • Learn • Keep",10,IVORY,false));/* DAMA Library original branded art includes its own typography. */page.addView(hero,new LinearLayout.LayoutParams(-1,dp(185)));
+        LinearLayout overview=row();
+        java.util.HashSet<String> authorNames=new java.util.HashSet<>();
+        for(Book book:books)if(!book.author.trim().isEmpty())authorNames.add(book.author);
+        int offlineCount=0;
+        File folder=getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS);
+        if(folder==null)folder=getFilesDir();
+        File[] stored=new File(folder,"DAMA-Library").listFiles(f->f.isFile()&&f.getName().endsWith(".pdf")&&f.length()>0);
+        offlineCount=stored==null?0:stored.length;
+        addPremiumStat(overview,String.valueOf(books.size()),"EBOOK LINKS");
+        addPremiumStat(overview,String.valueOf(authorNames.size()),"AUTHORS / SETS");
+        addPremiumStat(overview,String.valueOf(offlineCount),"OFFLINE PDFs");
+        page.addView(overview);
+        TextView tagline=t("Discover · Read · Remember",15,GOLD,true);
+        tagline.setPadding(dp(2),dp(17),0,dp(8));page.addView(tagline);
+        LinearLayout quick=row();
+        addPremiumShortcut(quick,"▣","EBOOK READER","Continue reading",()->startActivity(new Intent(this,ReaderShelfActivity.class)));
+        addPremiumShortcut(quick,"☸","SAYADAWS","Author directory",()->openAuthorDirectory());
+        addPremiumShortcut(quick,"♡","FAVORITES","Saved books",()->{favoritesOnly=!favoritesOnly;offlineOnly=false;filter();});
+        page.addView(quick);
         page.addView(t("စာအုပ်အမည်၊ စာရေးသူနှင့် လင့်ခ်များ Offline ပါဝင်သည်။ Link အလုပ်လုပ်မှုကို တစ်ခုချင်းစစ်ဆေးရန် လိုအပ်သည်။",10,MUTED,false));
-        authorProgressUI();
-        search=new EditText(this);search.setSingleLine(true);search.setTextColor(DEEP);search.setHintTextColor(0xff777777);search.setTextSize(14);search.setPadding(dp(13),dp(5),dp(13),dp(5));search.setBackground(shape(0xfffcf8ec,12,0));search.setHint("စာအုပ် / ဆရာတော် / PDF ရှာရန်…");search.setText(query);page.addView(search,new LinearLayout.LayoutParams(-1,dp(49)));search.addTextChangedListener(new TextWatcher(){public void beforeTextChanged(CharSequence s,int st,int c,int a){}public void onTextChanged(CharSequence s,int st,int b,int c){query=s.toString();filter();}public void afterTextChanged(Editable e){}});
-        page.addView(t("ဆရာတော် · စာရေးသူ · ကျမ်းစုစည်းမှု",16,GOLD,true));
+        // Detailed author progress remains available in code; compact metrics lead this screen.
+        search=new EditText(this);search.setSingleLine(true);search.setTextColor(IVORY);search.setHintTextColor(0xffa7bcaf);search.setTextSize(14);search.setPadding(dp(13),dp(5),dp(13),dp(5));search.setBackground(shape(0xff183e37,15,0xffab8650));search.setHint("စာအုပ် / ဆရာတော် / PDF ရှာရန်…");search.setText(query);page.addView(search,new LinearLayout.LayoutParams(-1,dp(52)));search.addTextChangedListener(new TextWatcher(){public void beforeTextChanged(CharSequence s,int st,int c,int a){}public void onTextChanged(CharSequence s,int st,int b,int c){query=s.toString();filter();}public void afterTextChanged(Editable e){}});
+        TextView authorTitle=t("✦  ဆရာတော် · စာရေးသူ · ကျမ်းစုစည်းမှု",16,GOLD,true);authorTitle.setPadding(0,dp(13),0,dp(3));page.addView(authorTitle);
         page.addView(t("အမည်နှိပ်ပြီး သက်ဆိုင်ရာစာအုပ်တွေကို တန်းကြည့်နိုင်ပါသည်။",10,MUTED,false));
         HorizontalScrollView authorscroll=new HorizontalScrollView(this);authorscroll.setHorizontalScrollBarEnabled(false);LinearLayout authorrow=row();
         LinkedHashMap<String,Integer> counts=new LinkedHashMap<>();for(Book book:books){if(!book.author.isEmpty())counts.put(book.author,counts.getOrDefault(book.author,0)+1);}
@@ -128,37 +172,70 @@ public class LibraryActivity extends Activity {
         list.removeAllViews();rendered=0;counter.setText("စာအုပ် "+visible.size()+" အုပ် • "+category+(authorFilter.isEmpty()?"":" • "+authorFilter));showMore();}
     // Quick actions are visible on every card: tap Read to download-then-open in this app;
     // tap Save to download without leaving the Library screen.
+    // Branded cover tiles are decorative; publisher-specific book jackets are not impersonated.
     void showMore(){
-        int end=Math.min(visible.size(),rendered+35);
-        for(int i=rendered;i<end;i++) {
-            Book b=visible.get(i);
-            LinearLayout holder=vert();holder.setPadding(dp(8),dp(7),dp(8),dp(8));
-            holder.setBackground(shape(CARD,13,0));
-            LinearLayout.LayoutParams itemParams=new LinearLayout.LayoutParams(-1,-2);itemParams.setMargins(0,0,0,dp(9));
+        int end=Math.min(visible.size(),rendered+28);
+        for(int i=rendered;i<end;i++){
+            final Book book=visible.get(i);
+            LinearLayout card=vert();card.setPadding(dp(12),dp(12),dp(12),dp(12));
+            GradientDrawable glass=new GradientDrawable(GradientDrawable.Orientation.TL_BR,
+                     new int[]{0xff1a473f,0xff0e322f});
+            glass.setCornerRadius(dp(17));glass.setStroke(dp(1),0xff54634b);
+            card.setBackground(glass);card.setElevation(dp(2));
             LinearLayout line=row();
-            android.widget.FrameLayout icon=new android.widget.FrameLayout(this);
-            icon.setBackground(shape(new int[]{0xff70572f,0xff8b3f32,0xff28594c,0xff3e5260}[i%4],8,GOLD));
-            TextView glyph=t("☸",31,GOLD,true);glyph.setGravity(Gravity.CENTER);
-            icon.addView(glyph,new android.widget.FrameLayout.LayoutParams(-1,-1));
-            line.addView(icon,new LinearLayout.LayoutParams(dp(54),dp(70)));
-            LinearLayout words=vert();words.setPadding(dp(12),dp(1),dp(5),0);
-            TextView title=t(b.title,13,IVORY,true);title.setMaxLines(2);words.addView(title);
-            TextView author=t((b.isCollection()?"▤ စာအုပ်စု: ":"☸ ")+b.author,11,MUTED,false);author.setMaxLines(1);words.addView(author);
-            words.addView(t((b.pdf()?"PDF":"DOC")+" · "+b.category+(local(b).exists()?" · Offline ✓":"")+" · "+stateLabel(b),10,GOLD,false));
-            line.addView(words,new LinearLayout.LayoutParams(0,-2,1));
-            line.addView(btn("⋮",()->details(b)));
-            holder.addView(line);line.setOnClickListener(v->details(b));
-            LinearLayout actions=row();actions.setPadding(0,dp(5),0,0);
-            TextView readNow=btn(b.url.contains("drive.google.com/file/d/")?"📖 Drive မှဖတ်ရန်":b.pdf()?"📖 တန်းဖတ်ရန်":"↗ DOC ဖွင့်ရန်",()->{if(b.url.contains("drive.google.com/file/d/"))open(b.url);else if(b.pdf())openOrDownload(b,true);else open(b.url);});
-            TextView save=btn(b.url.contains("drive.google.com/file/d/")?"↓ Drive Download":local(b).exists()?"✓ သိမ်းပြီး":"↓ Download",()->{if(b.url.contains("drive.google.com/file/d/"))open(b.url);else if(b.pdf())openOrDownload(b,false);else open(b.url);});
-            LinearLayout.LayoutParams l=new LinearLayout.LayoutParams(0,-2,1);l.setMargins(0,0,dp(6),0);
-            actions.addView(readNow,l);actions.addView(save,new LinearLayout.LayoutParams(0,-2,1));
-            holder.addView(actions);list.addView(holder,itemParams);
+            LinearLayout jacket=vert();jacket.setGravity(Gravity.CENTER);
+            int[] colors={0xff735634,0xff63423c,0xff2a554b,0xff455b68,0xff684d37};
+            jacket.setBackground(shape(colors[i%colors.length],11,0xffb5904f));
+            TextView ornament=t("☸",30,0xffffdf9a,true);ornament.setGravity(Gravity.CENTER);
+            jacket.addView(ornament);
+            TextView brand=t("DHAMMA",9,0xffffe2aa,true);brand.setGravity(Gravity.CENTER);
+            jacket.addView(brand);
+            line.addView(jacket,new LinearLayout.LayoutParams(dp(75),dp(94)));
+            LinearLayout info=vert();info.setPadding(dp(13),dp(4),dp(5),0);
+            TextView category=t("✦ "+book.category,10,GOLD,true);category.setMaxLines(1);
+            info.addView(category);
+            TextView title=t(book.title,15,IVORY,true);title.setMaxLines(2);
+            title.setPadding(0,dp(5),0,dp(4));info.addView(title);
+            TextView author=t(book.author,11,MUTED,false);author.setMaxLines(1);
+            info.addView(author);
+            TextView status=t(book.pdf()?(local(book).exists()?"●  PDF  •  OFFLINE":"○  PDF  •  ONLINE"):"○  DOC  •  ONLINE",10,GOLD,false);
+            info.addView(status);
+            line.addView(info,new LinearLayout.LayoutParams(0,-2,1));
+            TextView detail=t("⋮",24,GOLD,true);detail.setGravity(Gravity.CENTER);
+            line.addView(detail,new LinearLayout.LayoutParams(dp(26),dp(46)));
+            detail.setOnClickListener(v->details(book));line.setOnClickListener(v->details(book));
+            card.addView(line);
+            LinearLayout actions=row();actions.setPadding(0,dp(10),0,0);
+            TextView read=btn("▣  READ",()->{
+                if(book.url.contains("drive.google.com/file/d/"))open(book.url);
+                else if(book.pdf())openOrDownload(book,true);
+                else open(book.url);
+            });
+            read.setBackground(shape(GOLD,11,0));read.setTextColor(DEEP);
+            LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(0,dp(43),1);
+            p.setMargins(0,0,dp(7),0);actions.addView(read,p);
+            TextView download=btn(local(book).exists()?"✓ SAVED":"↓ SAVE",()->{
+                if(book.url.contains("drive.google.com/file/d/"))open(book.url);
+                else if(book.pdf())openOrDownload(book,false);
+                else open(book.url);
+            });
+            actions.addView(download,new LinearLayout.LayoutParams(0,dp(43),1));
+            TextView favorite=btn(favorites.contains(book.id)?"♥":"♡",()->{
+                if(!favorites.add(book.id))favorites.remove(book.id);
+                prefs.edit().putStringSet("saved",new HashSet<>(favorites)).apply();filter();
+            });
+            LinearLayout.LayoutParams favP=new LinearLayout.LayoutParams(dp(45),dp(43));
+            favP.setMargins(dp(7),0,0,0);actions.addView(favorite,favP);
+            card.addView(actions);
+            LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(-1,-2);
+            cp.setMargins(0,0,0,dp(11));list.addView(card,cp);
         }
         rendered=end;
         if(rendered<visible.size()){
-            TextView more=btn("နောက်ထပ် စာအုပ်များ "+(visible.size()-rendered)+" ›",()->{list.removeViewAt(list.getChildCount()-1);showMore();});
-            list.addView(more);
+            TextView more=btn("နောက်ထပ်စာအုပ် "+(visible.size()-rendered)+" အုပ်  ↓",()->{
+                list.removeViewAt(list.getChildCount()-1);showMore();
+            });
+            more.setPadding(dp(14),dp(15),dp(14),dp(15));list.addView(more);
         }
     }
     String linkState(Book b){return prefs.getString("link_"+b.id,"UNCHECKED");}

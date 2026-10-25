@@ -26,7 +26,7 @@ import java.util.concurrent.Executors;
  * PDFs remain within the app's private document directory; no external viewer needed.
  */
 public class PdfReaderActivity extends Activity {
-    private final int BG = 0xff031e1c, GOLD = 0xffe4b767, PALE = 0xfffff6de;
+    private final int BG = 0xff031e1c, GOLD = 0xfff4c475, PALE = 0xfffff6de;
     private final Object rendererLock = new Object();
     private final ExecutorService worker = Executors.newSingleThreadExecutor();
     private ParcelFileDescriptor input;
@@ -65,9 +65,14 @@ public class PdfReaderActivity extends Activity {
             if (pageCount < 1) throw new IllegalArgumentException("Empty PDF");
             LinearLayout rootLayout = new LinearLayout(this); rootLayout.setOrientation(1);
             rootLayout.setBackgroundColor(BG); setContentView(rootLayout);
+            if(android.os.Build.VERSION.SDK_INT>=35)rootLayout.setOnApplyWindowInsetsListener((v,insets)->{android.graphics.Insets bars=insets.getInsets(android.view.WindowInsets.Type.systemBars());v.setPadding(bars.left,bars.top,bars.right,bars.bottom);return insets;});
             TextView header=control("‹    "+(title == null ? "DAMA PDF READER" : title),this::finish);
             header.setTextSize(16); header.setMaxLines(2);header.setGravity(Gravity.CENTER_VERTICAL);
-            rootLayout.addView(header,new LinearLayout.LayoutParams(-1,dp(59)));
+            header.setBackgroundColor(0xff143d33);
+            rootLayout.addView(header,new LinearLayout.LayoutParams(-1,dp(67)));
+            TextView readerTag=control("DAMA  ✦  EBOOK READER    •    Native PDF",()->{});
+            readerTag.setTextSize(11);readerTag.setTextColor(0xffbbcebc);readerTag.setBackgroundColor(0xff0c2926);
+            rootLayout.addView(readerTag,new LinearLayout.LayoutParams(-1,dp(30)));
             TextView hint = new TextView(this); hint.setText("လက်နှစ်ချောင်းဖြင့် Zoom • ပုံကို နှစ်ချက်ထိ၍ Zoom • ဆွဲရွှေ့ကြည့်နိုင်သည်");
             hint.setTextColor(PALE);hint.setGravity(Gravity.CENTER);hint.setTextSize(11);
             rootLayout.addView(hint,new LinearLayout.LayoutParams(-1,dp(35)));
@@ -79,12 +84,13 @@ public class PdfReaderActivity extends Activity {
             zoomRow.addView(control("+",()->view.changeZoom(1.33f)),new LinearLayout.LayoutParams(dp(56),dp(49)));
             zoomRow.addView(control("Reset",()->view.resetZoom()),new LinearLayout.LayoutParams(dp(75),dp(49)));
             rootLayout.addView(zoomRow);
-            LinearLayout pager = new LinearLayout(this);pager.setGravity(Gravity.CENTER);pager.setBackgroundColor(0xff102f2a);
+            LinearLayout pager = new LinearLayout(this);pager.setGravity(Gravity.CENTER);pager.setBackgroundColor(0xff163f36);
             pager.addView(control("◀  ရှေ့",()->render(current-1)),new LinearLayout.LayoutParams(0,dp(58),1));
             counter=new TextView(this);counter.setTextColor(PALE);counter.setGravity(Gravity.CENTER);
             counter.setTextSize(14);pager.addView(counter,new LinearLayout.LayoutParams(0,dp(58),1));
             pager.addView(control("နောက်  ▶",()->render(current+1)),new LinearLayout.LayoutParams(0,dp(58),1));
             rootLayout.addView(pager);
+            FooterNav.attach(this,rootLayout,"Reader");
             render(Math.min(current,pageCount-1));
         } catch(Exception ex) {
             Toast.makeText(this,"PDF ဖွင့်မရပါ: "+ex.getMessage(),Toast.LENGTH_LONG).show();
