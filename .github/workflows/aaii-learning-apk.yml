@@ -129,6 +129,20 @@ jobs:
           grep -q 'soeMoeCourseCertificate' "$MAIN"
           grep -q 'soeMoeRelatedProgramCertificate' "$MAIN"
           grep -q 'Soe Moe Certificate & Teacher Support' "$MAIN"
+      - name: Validate responsive mobile home
+        shell: bash
+        run: |
+          set -euo pipefail
+          HOME=aaii-learning/app/src/main/java/asia/aaii/learningpublic/MobileHomeActivity.java
+          test -s "$HOME"
+          grep -q 'private void footer' "$HOME"
+          grep -q 'private void programs' "$HOME"
+          grep -q 'private void quickLinks' "$HOME"
+          grep -q 'private void providers' "$HOME"
+          grep -q 'personal_credentials' "$HOME"
+          grep -q 'MobileHomeActivity.class' aaii-learning/app/src/main/java/asia/aaii/learningpublic/SplashActivity.java
+          grep -q 'MobileHomeActivity.class' aaii-learning/app/src/main/java/asia/aaii/learningpublic/MainActivity.java
+          grep -q 'MobileHomeActivity' aaii-learning/app/src/main/AndroidManifest.xml
       - name: Compile real native APK
         run: gradle -p aaii-learning --no-daemon --stacktrace :app:assembleDebug
       - name: Verify APK Signature
@@ -141,7 +155,7 @@ jobs:
           sha256sum "$APK" > aaii-learning/app/build/outputs/apk/debug/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: AAII-Learning-V5.6-Mobile-SoeMoe-Certificates-APK
+          name: AAII-Learning-V5.7-Responsive-Native-APK
           path: |
             aaii-learning/app/build/outputs/apk/debug/app-debug.apk
             aaii-learning/app/build/outputs/apk/debug/SHA256SUMS.txt

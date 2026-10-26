@@ -83,7 +83,7 @@ public class MainActivity extends Activity {
       detailType=launch.getIntExtra("aaii_detail_type",0);
       detailIndex=launch.getIntExtra("aaii_detail_index",0);
     }
-    if(page==0){startActivity(new Intent(this,ExactHomeActivity.class));finish();return;}
+    if(page==0){startActivity(new Intent(this,MobileHomeActivity.class));finish();return;}
     render();
   }
   private LinearLayout vertical(){LinearLayout x=new LinearLayout(this);x.setOrientation(1);return x;}
@@ -123,7 +123,7 @@ public class MainActivity extends Activity {
     Window win=dialog.getWindow();if(win!=null){win.setBackgroundDrawableResource(android.R.color.transparent);win.setLayout(-1,-2);win.setGravity(Gravity.BOTTOM);win.getDecorView().setTranslationY(dp(120));win.getDecorView().animate().translationY(0).setDuration(220).start();}
   }
   private void openTab(int p){
-    if(p==0){startActivity(new Intent(this,ExactHomeActivity.class));finish();return;}
+    if(p==0){startActivity(new Intent(this,MobileHomeActivity.class));finish();return;}
     page=p;search="";category="အားလုံး";limit=35;render();
   }
   private void inspect(int type,int index){detailType=type;detailIndex=index;page=6;render();}
@@ -343,7 +343,7 @@ public class MainActivity extends Activity {
     logo.setScaleType(ImageView.ScaleType.CENTER_CROP);
     LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(dp(44),dp(44));lp.setMargins(0,0,dp(8),0);
     brand.addView(logo,lp);brand.addView(txt("AAII Learning",23,GOLD,true));
-    line(head,"YOUR PATH TO GLOBAL LEARNING  •  V5.6",11,0xffcfe8fe,false);
+    line(head,"YOUR PATH TO GLOBAL LEARNING  •  V5.7",11,0xffcfe8fe,false);
     LinearLayout links=new LinearLayout(this);links.setOrientation(0);head.addView(links);
     TextView learningLink=txt("◉ My Learning",12,GOLD,true);links.addView(learningLink,new LinearLayout.LayoutParams(0,dp(36),1));
     tap(learningLink,()->openTab(12));
