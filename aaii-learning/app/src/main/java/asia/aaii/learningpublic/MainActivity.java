@@ -254,7 +254,7 @@ public class MainActivity extends Activity {
     logo.setScaleType(ImageView.ScaleType.CENTER_CROP);
     LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(dp(44),dp(44));lp.setMargins(0,0,dp(8),0);
     brand.addView(logo,lp);brand.addView(txt("AAII Learning",23,GOLD,true));
-    line(head,"YOUR PATH TO GLOBAL LEARNING  •  V5.2",11,0xffcfe8fe,false);
+    line(head,"YOUR PATH TO GLOBAL LEARNING  •  V5.3",11,0xffcfe8fe,false);
     LinearLayout links=new LinearLayout(this);links.setOrientation(0);head.addView(links);
     TextView learningLink=txt("◉ My Learning",12,GOLD,true);links.addView(learningLink,new LinearLayout.LayoutParams(0,dp(36),1));
     tap(learningLink,()->openTab(12));
@@ -550,6 +550,7 @@ public class MainActivity extends Activity {
       line(x,overview(type+" "+p.optString("title"),p.optString("title")),13,INK,false);
       button(x,"သင်ရိုးနှင့် မြန်မာရှင်းလင်းချက်",()->inspect(spec?2:3,id),false);
       if(spec)button(x,"Certificate & Bridge Pathway →",()->inspect(2,id),true);
+      button(x,findLinkedCertificate(p)==null?"Import Certificate":"View Linked Certificate",()->openLinkedCertificate(p),false);
     }
   }
   private void detail(){
@@ -593,6 +594,8 @@ public class MainActivity extends Activity {
     if(related==0)line(x,"သင်တန်းများ၏ အတိအကျအစီအစဉ်ကို Official Coursera Program Page တွင်ကြည့်ပါ။",13,MUTED,false);
     String completeKey="program_"+detailIndex;CheckBox done=new CheckBox(this);done.setText("AAII Self-study Review ပြီးပြီ (Official Certificate မဟုတ်ပါ)");done.setChecked(prefs.getBoolean(completeKey,false));x.addView(done);
     done.setOnCheckedChangeListener((v,value)->prefs.edit().putBoolean(completeKey,value).apply());
+    LinearLayout certCard=royalCard(body,"CERTIFICATE • "+p.optString("type"),p.optString("title"));
+    button(certCard,findLinkedCertificate(p)==null?"Import Private Certificate":"View Certificate on Coursera",()->openLinkedCertificate(p),true);
     if(spec)specializationBridge(p.optString("title"),p.optString("provider"));
     else{
       stepFlow(body,new String[]{"Foundations","Core Modules","Capstone Project","Certificate Verification","Career Portfolio"},
@@ -1161,6 +1164,7 @@ public class MainActivity extends Activity {
     line(x,"ကိုယ်ပိုင် programs.json ကို ဖုန်းအတွင်း၌သာ ထည့်သွင်းနိုင်ပြီး GitHub Public Source ထဲ မတင်ပါ။ Coursera ကသာ Official Certificate ထုတ်ပေးပါသည်။",14,INK,false);
     button(x,"Private JSON Import",()->{Intent intent=new Intent(Intent.ACTION_OPEN_DOCUMENT);intent.setType("*/*");intent.addCategory(Intent.CATEGORY_OPENABLE);startActivityForResult(intent,404);},true);
     line(x,"Imported Certificates: "+certs.length(),13,TEAL,true);
+    line(x,"Specialization Linked: "+linkedCertCount("Specialization")+" / 37",13,NAVY,true);
     line(x,"Organization Page (requires account login) • Direct Coursera URL",12,MUTED,false);
     button(x,"Coursera Organization • My Learning Certificates ↗",()->openCertificatesPortal(),true);
     line(x,"Organization Login လိုနိုင်သည်။ Individual verification အတွက် Private Wallet Link ကို သုံးပါ။",12,MUTED,false);
