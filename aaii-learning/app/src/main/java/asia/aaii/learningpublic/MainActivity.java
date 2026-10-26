@@ -29,6 +29,8 @@ public class MainActivity extends Activity {
   private String selectedProvider="";
   private int certPage=0;
   private String certQuery="";
+  private int galleryFolder=0,galleryPage=0;
+  private String gallerySearch="";
   private int dp(int v){return (int)(v*getResources().getDisplayMetrics().density+0.5f);}
   private GradientDrawable shape(int color,int radius){GradientDrawable d=new GradientDrawable();d.setColor(color);d.setCornerRadius(dp(radius));return d;}
   private GradientDrawable gradient(int a,int b,int r){GradientDrawable d=new GradientDrawable(GradientDrawable.Orientation.TL_BR,new int[]{a,b});d.setCornerRadius(dp(r));return d;}
@@ -100,6 +102,7 @@ public class MainActivity extends Activity {
     line(panel,"MY PROFILE • V4.9",21,NAVY,true);
     line(panel,"Choose a service below • အောက်က Menu ကို ရွေးပါ",12,MUTED,false);
     button(panel,"Teacher Profile",()->{dialog.dismiss();openTab(9);},true);
+    button(panel,"My Certificate Gallery",()->{dialog.dismiss();openTab(17);},false);
     button(panel,"My Certificates",()->{dialog.dismiss();openTab(5);},false);
     button(panel,"Coursera Organization Certificates ↗",()->{dialog.dismiss();openCertificatesPortal();},false);
     button(panel,"My Learning Progress",()->{dialog.dismiss();openTab(12);},false);
@@ -254,7 +257,7 @@ public class MainActivity extends Activity {
     logo.setScaleType(ImageView.ScaleType.CENTER_CROP);
     LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(dp(44),dp(44));lp.setMargins(0,0,dp(8),0);
     brand.addView(logo,lp);brand.addView(txt("AAII Learning",23,GOLD,true));
-    line(head,"YOUR PATH TO GLOBAL LEARNING  •  V5.3",11,0xffcfe8fe,false);
+    line(head,"YOUR PATH TO GLOBAL LEARNING  •  V5.4",11,0xffcfe8fe,false);
     LinearLayout links=new LinearLayout(this);links.setOrientation(0);head.addView(links);
     TextView learningLink=txt("◉ My Learning",12,GOLD,true);links.addView(learningLink,new LinearLayout.LayoutParams(0,dp(36),1));
     tap(learningLink,()->openTab(12));
@@ -264,10 +267,10 @@ public class MainActivity extends Activity {
     tap(profileLink,()->profilePopup());
     ScrollView scroll=new ScrollView(this);scroll.setFillViewport(false);root.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
     body=vertical();body.setPadding(dp(13),dp(12),dp(13),dp(14));scroll.addView(body);
-    if(page==0)home();else if(page==1)courseList();else if(page==2)programList("Specialization");else if(page==3)programList("Professional Certificate");else if(page==4)teacher();else if(page==5)wallet();else if(page==7)enrollmentService();else if(page==8)hireTeacherService();else if(page==9)teacherProfile();else if(page==10)bookingForm();else if(page==11)settingsPage();else if(page==12)myLearning();else if(page==13)myRequests();else if(page==14)servicesHub();else if(page==15)aiTools();else if(page==16)providerDirectory();else detail();
+    if(page==0)home();else if(page==1)courseList();else if(page==2)programList("Specialization");else if(page==3)programList("Professional Certificate");else if(page==4)teacher();else if(page==5)wallet();else if(page==7)enrollmentService();else if(page==8)hireTeacherService();else if(page==9)teacherProfile();else if(page==10)bookingForm();else if(page==11)settingsPage();else if(page==12)myLearning();else if(page==13)myRequests();else if(page==14)servicesHub();else if(page==15)aiTools();else if(page==16)providerDirectory();else if(page==17)certificateGallery();else detail();
     footer=new LinearLayout(this);footer.setOrientation(LinearLayout.HORIZONTAL);footer.setBackgroundColor(0xff061b37);
     footer.setPadding(dp(4),dp(3),dp(4),dp(8));footer.setElevation(dp(10));
-    int highlight=(page==15?2:page==1||page==2||page==3||page==4||page==6||page==16?1:
+    int highlight=(page==15?2:page==1||page==2||page==3||page==4||page==6||page==16||page==17?1:
       (page==7||page==8||page==9||page==10||page==13||page==14?3:
         (page==11||page==5||page==12?4:0)));
     for(int i=0;i<LABELS.length;i++){
@@ -305,6 +308,7 @@ public class MainActivity extends Activity {
     button(partners,"Explore University Courses",()->{providerGroup=2;selectedProvider="";openTab(16);},false);
     button(partners,"All Providers • Search by Logo / Name",()->{providerGroup=0;selectedProvider="";openTab(16);},false);
     button(partners,"Specializations • Certificate & Bridge →",()->{providerGroup=0;selectedProvider="";openTab(2);},true);
+    button(partners,"Certificate Folder Gallery →",()->openTab(17),false);
     button(partners,"Teacher Request • Viber / LINE / Telegram →",()->openTab(8),false);
     LinearLayout whatsNew=coloredCard(body,0xff082b53,0xff115999);
     line(whatsNew,"✦  AAII LEARNING V4.9 • NEW FUNCTIONS",19,GOLD,true);
@@ -550,6 +554,7 @@ public class MainActivity extends Activity {
       line(x,overview(type+" "+p.optString("title"),p.optString("title")),13,INK,false);
       button(x,"သင်ရိုးနှင့် မြန်မာရှင်းလင်းချက်",()->inspect(spec?2:3,id),false);
       if(spec)button(x,"Certificate & Bridge Pathway →",()->inspect(2,id),true);
+      button(x,"Certificate Gallery →",()->{galleryFolder=spec?1:2;galleryPage=0;openTab(17);},false);
       button(x,findLinkedCertificate(p)==null?"Import Certificate":"View Linked Certificate",()->openLinkedCertificate(p),false);
     }
   }
@@ -889,6 +894,7 @@ public class MainActivity extends Activity {
     LinearLayout c=card(body);line(c,"03  MY LEARNING & CERTIFICATES",17,NAVY,true);
     button(c,"View Learning Dashboard",()->openTab(12),false);
     button(c,"My Private Certificates",()->openTab(5),false);
+    button(c,"Certificate Folder Gallery",()->openTab(17),true);
     button(c,"Coursera Organization → Certificates ↗",()->openCertificatesPortal(),false);
     LinearLayout d=card(body);line(d,"04  REQUEST HISTORY",17,NAVY,true);
     line(d,"Saved local drafts: "+drafts().length()+". Booking အတည်ပြုမှု သို့မဟုတ် Coursera Enrollment အတည်ပြုမှု မဟုတ်သေးပါ။",13,MUTED,false);
@@ -1157,12 +1163,111 @@ public class MainActivity extends Activity {
     button(account,"View Request Drafts",()->openTab(13),false);
   }
 
+
+  private boolean galleryMatches(JSONObject c,int folder,String query){
+    String type=c.optString("type");
+    if(!c.optString("certificateUrl").startsWith("https://www.coursera.org/account/accomplishments/"))return false;
+    if(folder==1&&!"Specialization".equalsIgnoreCase(type))return false;
+    if(folder==2&&!"Professional Certificate".equalsIgnoreCase(type))return false;
+    if(folder==3&&!"Course".equalsIgnoreCase(type))return false;
+    return query.trim().isEmpty()||
+      (c.optString("title")+" "+c.optString("publisher")+" "+type)
+       .toLowerCase(Locale.ROOT).contains(query.trim().toLowerCase(Locale.ROOT));
+  }
+  private int galleryCount(int folder){
+    int n=0;for(int i=0;i<certs.length();i++){
+      JSONObject c=certs.optJSONObject(i);if(c!=null&&galleryMatches(c,folder,""))n++;
+    }return n;
+  }
+  private void galleryThumbnail(LinearLayout host,JSONObject c,int height){
+    LinearLayout sheet=new LinearLayout(this);sheet.setOrientation(0);
+    GradientDrawable outline=shape(0xfff8fbff,9);outline.setStroke(dp(1),0xffbacbe5);
+    sheet.setBackground(outline);host.addView(sheet,new LinearLayout.LayoutParams(-1,dp(height)));
+    TextView ribbon=txt("C\nO\nU\nR\nS\nE\nR\nA",8,WHITE,true);
+    ribbon.setGravity(Gravity.CENTER);ribbon.setBackgroundColor(0xff345669);
+    sheet.addView(ribbon,new LinearLayout.LayoutParams(dp(30),-1));
+    LinearLayout content=vertical();content.setPadding(dp(3),dp(4),dp(3),dp(3));
+    sheet.addView(content,new LinearLayout.LayoutParams(0,-1,1));
+    TextView logo=txt("coursera",13,0xff2466d5,true);logo.setGravity(Gravity.CENTER);content.addView(logo);
+    View line=new View(this);line.setBackgroundColor(0xffd2dfed);
+    content.addView(line,new LinearLayout.LayoutParams(-1,dp(1)));
+    TextView title=txt(c.optString("title"),10,NAVY,true);title.setGravity(Gravity.CENTER);
+    title.setMaxLines(4);title.setEllipsize(android.text.TextUtils.TruncateAt.END);
+    content.addView(title,new LinearLayout.LayoutParams(-1,0,1));
+    TextView watermark=txt("PREVIEW TEMPLATE",8,MUTED,true);
+    watermark.setGravity(Gravity.CENTER);content.addView(watermark);
+  }
+  private void galleryCard(LinearLayout parent,JSONObject cert){
+    LinearLayout tile=vertical();tile.setPadding(dp(7),dp(7),dp(7),dp(9));
+    GradientDrawable panel=shape(WHITE,12);panel.setStroke(dp(1),0xffcad9ec);
+    tile.setBackground(panel);tile.setElevation(dp(2));
+    parent.addView(tile,new LinearLayout.LayoutParams(0,-2,1));
+    galleryThumbnail(tile,cert,126);
+    TextView title=txt(cert.optString("title"),13,NAVY,true);title.setMinLines(2);
+    title.setMaxLines(3);title.setEllipsize(android.text.TextUtils.TruncateAt.END);tile.addView(title);
+    TextView provider=txt(cert.optString("publisher")+" • "+cert.optString("type"),10,MUTED,false);
+    provider.setMaxLines(2);tile.addView(provider);
+    TextView view=txt("View Certificate ↗",12,WHITE,true);view.setGravity(Gravity.CENTER);
+    view.setPadding(dp(5),dp(10),dp(5),dp(10));view.setBackground(shape(0xff1268db,9));
+    LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,-2);p.setMargins(0,dp(7),0,0);
+    tile.addView(view,p);tap(view,()->browse(cert.optString("certificateUrl")));
+    tap(tile,()->browse(cert.optString("certificateUrl")));
+  }
+  private void certificateGallery(){
+    screenLabel("CERTIFICATE GALLERY • V5.4","Folders • Original Coursera Links");
+    LinearLayout info=royalCard(body,"MY CERTIFICATES • GALLERY",
+      "Gallery တွင် Import လုပ်ထားသော ကိုယ်ပိုင်လက်မှတ်များကိုသာ ပြသသည်");
+    line(info,"Imported "+certs.length()+" • Specializations "+galleryCount(1)+
+         " • Professional "+galleryCount(2)+" • Courses "+galleryCount(3),13,GOLD,true);
+    button(info,"Import Private Certificate JSON",()->{
+      Intent pick=new Intent(Intent.ACTION_OPEN_DOCUMENT);pick.setType("*/*");
+      pick.addCategory(Intent.CATEGORY_OPENABLE);startActivityForResult(pick,404);
+    },true);
+    button(info,"Coursera Organization • My Certificates ↗",()->openCertificatesPortal(),false);
+    String[] folders={"All","Specialization","Professional","Courses"};
+    LinearLayout nav=card(body);line(nav,"CERTIFICATE FOLDERS",17,NAVY,true);
+    for(int i=0;i<4;i++){
+      int tab=i;
+      TextView entry=txt((galleryFolder==i?"▣ ":"▢ ")+folders[i]+"   "+galleryCount(i),14,
+        galleryFolder==i?WHITE:NAVY,true);
+      entry.setPadding(dp(10),dp(11),dp(10),dp(11));
+      entry.setBackground(shape(galleryFolder==i?TEAL:0xffe7f2ff,10));
+      LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,-2);lp.setMargins(0,0,0,dp(6));
+      nav.addView(entry,lp);tap(entry,()->{galleryFolder=tab;galleryPage=0;gallerySearch="";render();});
+    }
+    LinearLayout search=card(body);
+    EditText field=new EditText(this);field.setSingleLine(true);field.setTextSize(14);
+    field.setText(gallerySearch);field.setHint("Search certificate or provider");search.addView(field);
+    button(search,"Search Gallery",()->{gallerySearch=field.getText().toString();galleryPage=0;render();},false);
+    LinearLayout grid=vertical();body.addView(grid);
+    LinearLayout row=null;
+    int count=0,shown=0;
+    for(int i=0;i<certs.length();i++){
+      JSONObject c=certs.optJSONObject(i);if(c==null||!galleryMatches(c,galleryFolder,gallerySearch))continue;
+      if(count++<galleryPage*12)continue;
+      if(shown>=12)continue;
+      if(shown%2==0){
+        row=new LinearLayout(this);row.setOrientation(0);
+        LinearLayout.LayoutParams r=new LinearLayout.LayoutParams(-1,-2);r.setMargins(0,0,0,dp(10));grid.addView(row,r);
+      }else row.addView(new android.widget.Space(this),new LinearLayout.LayoutParams(dp(8),1));
+      galleryCard(row,c);shown++;
+    }
+    if(shown%2==1&&row!=null)row.addView(new android.widget.Space(this),new LinearLayout.LayoutParams(0,1,1));
+    LinearLayout pages=card(body);line(pages,"Results: "+count+"   •   Page "+(galleryPage+1),14,NAVY,true);
+    if(galleryPage>0)button(pages,"Previous 12",()->{galleryPage--;render();},false);
+    if(count>(galleryPage+1)*12)button(pages,"Next 12 →",()->{galleryPage++;render();},true);
+    if(certs.length()==0)line(pages,"Gallery ဗလာဖြစ်နေပါတယ်။ Private Certificate JSON ကို Import ပြုလုပ်ပါ။",13,MUTED,false);
+    else if(count==0)line(pages,"ဤ Folder တွင် Certificate မတွေ့ပါ။",13,MUTED,false);
+    line(pages,"PREVIEW TEMPLATE က မူရင်း Certificate Screenshot မဟုတ်ပါ။ View Certificate နှိပ်ပါက Import လုပ်ထားသော Coursera Link ကို ဖွင့်ပါမည်။",11,MUTED,false);
+  }
+
   private void wallet(){
     screenLabel("MY CERTIFICATE WALLET","Private credentials stored on your device");
     heading("My Private Certificates","Public APK ထဲမှာ အခြားသူ၏ Certificate ID မပါဝင်ပါ။");
     LinearLayout x=card(body);line(x,"Personal Credential Wallet",17,NAVY,true);
     line(x,"ကိုယ်ပိုင် programs.json ကို ဖုန်းအတွင်း၌သာ ထည့်သွင်းနိုင်ပြီး GitHub Public Source ထဲ မတင်ပါ။ Coursera ကသာ Official Certificate ထုတ်ပေးပါသည်။",14,INK,false);
-    button(x,"Private JSON Import",()->{Intent intent=new Intent(Intent.ACTION_OPEN_DOCUMENT);intent.setType("*/*");intent.addCategory(Intent.CATEGORY_OPENABLE);startActivityForResult(intent,404);},true);
+    button(x,"Open Certificate Gallery",()->openTab(17),true);
+    button(x,"Private JSON Import",()->{Intent intent=new Intent(Intent.ACTION_OPEN_DOCUMENT);intent.setType("*/*");intent.addCategory(Intent.CATEGORY_OPENABLE);startActivityForResult(intent,404);},false);
     line(x,"Imported Certificates: "+certs.length(),13,TEAL,true);
     line(x,"Specialization Linked: "+linkedCertCount("Specialization")+" / 37",13,NAVY,true);
     line(x,"Organization Page (requires account login) • Direct Coursera URL",12,MUTED,false);
