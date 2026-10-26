@@ -118,6 +118,17 @@ jobs:
           grep -q 'hotspot(' "$HOME"
           grep -q 'R.drawable.aaii_home_exact_v55' "$HOME"
           grep -q 'ExactHomeActivity.class' aaii-learning/app/src/main/java/asia/aaii/learningpublic/SplashActivity.java
+      - name: Validate V5.6 responsive mobile & certificate match
+        shell: bash
+        run: |
+          set -euo pipefail
+          HOME=aaii-learning/app/src/main/java/asia/aaii/learningpublic/ExactHomeActivity.java
+          MAIN=aaii-learning/app/src/main/java/asia/aaii/learningpublic/MainActivity.java
+          grep -q 'FOOTER_SOURCE_Y = 1520' "$HOME"
+          grep -q 'footerHotspot' "$HOME"
+          grep -q 'soeMoeCourseCertificate' "$MAIN"
+          grep -q 'soeMoeRelatedProgramCertificate' "$MAIN"
+          grep -q 'Soe Moe Certificate & Teacher Support' "$MAIN"
       - name: Compile real native APK
         run: gradle -p aaii-learning --no-daemon --stacktrace :app:assembleDebug
       - name: Verify APK Signature
@@ -130,7 +141,7 @@ jobs:
           sha256sum "$APK" > aaii-learning/app/build/outputs/apk/debug/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: AAII-Learning-V5.5-Exact-Home-Native-APK
+          name: AAII-Learning-V5.6-Mobile-SoeMoe-Certificates-APK
           path: |
             aaii-learning/app/build/outputs/apk/debug/app-debug.apk
             aaii-learning/app/build/outputs/apk/debug/SHA256SUMS.txt

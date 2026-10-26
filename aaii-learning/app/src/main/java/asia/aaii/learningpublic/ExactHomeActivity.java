@@ -5,6 +5,12 @@ import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.content.pm.ActivityInfo;
+import android.widget.LinearLayout;
+import android.widget.ScrollView;
+import android.widget.TextView;
 import android.graphics.drawable.GradientDrawable;
 import android.media.SoundPool;
 import android.os.Bundle;
@@ -27,6 +33,8 @@ import android.widget.ImageView;
 public final class ExactHomeActivity extends Activity {
     private static final float SOURCE_WIDTH = 941f;
     private static final float SOURCE_HEIGHT = 1672f;
+    private static final int FOOTER_SOURCE_Y = 1520;
+    private FrameLayout footerCanvas;
     private FrameLayout canvas;
     private SoundPool soundPool;
     private int clickId;
@@ -48,19 +56,59 @@ public final class ExactHomeActivity extends Activity {
 
     @Override public void onCreate(Bundle saved) {
         super.onCreate(saved);
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         immersive();
         prefs = getSharedPreferences("AAII_Learning_Study_V31", MODE_PRIVATE);
         soundPool = new SoundPool.Builder().setMaxStreams(3).build();
         clickId = soundPool.load(this, R.raw.aaii_click, 1);
 
-        canvas = new FrameLayout(this);
+        int deviceWidth=getResources().getDisplayMetrics().widthPixels;
+        int bodyHeight=Math.round(deviceWidth*FOOTER_SOURCE_Y/SOURCE_WIDTH);
+        int footerHeight=Math.round(deviceWidth*(SOURCE_HEIGHT-FOOTER_SOURCE_Y)/SOURCE_WIDTH);
+        Bitmap original=BitmapFactory.decodeResource(getResources(),R.drawable.aaii_home_exact_v55);
+        if(original==null)throw new IllegalStateException("Missing Home visual resource");
+        Bitmap contentBitmap=Bitmap.createBitmap(original,0,0,original.getWidth(),
+            Math.round(original.getHeight()*FOOTER_SOURCE_Y/SOURCE_HEIGHT));
+        int cropY=Math.round(original.getHeight()*FOOTER_SOURCE_Y/SOURCE_HEIGHT);
+        Bitmap footerBitmap=Bitmap.createBitmap(original,0,cropY,original.getWidth(),original.getHeight()-cropY);
+
+        LinearLayout display=new LinearLayout(this);
+        display.setOrientation(LinearLayout.VERTICAL);
+        display.setBackgroundColor(0xff061a33);
+        setContentView(display);
+        ScrollView scroll=new ScrollView(this);
+        scroll.setFillViewport(false);
+        scroll.setVerticalScrollBarEnabled(false);
+        display.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
+        LinearLayout content=new LinearLayout(this);
+        content.setOrientation(LinearLayout.VERTICAL);
+        content.setBackgroundColor(0xff061a33);
+        scroll.addView(content);
+        canvas=new FrameLayout(this);
         canvas.setBackgroundColor(0xff061a33);
-        ImageView art = new ImageView(this);
-        art.setImageResource(R.drawable.aaii_home_exact_v55);
+        content.addView(canvas,new LinearLayout.LayoutParams(-1,bodyHeight));
+        ImageView art=new ImageView(this);
+        art.setImageBitmap(contentBitmap);
         art.setScaleType(ImageView.ScaleType.FIT_XY);
-        art.setAdjustViewBounds(false);
-        canvas.addView(art, new FrameLayout.LayoutParams(-1, -1));
-        setContentView(canvas);
+        canvas.addView(art,new FrameLayout.LayoutParams(-1,-1));
+
+        TextView more=new TextView(this);
+        more.setText("🎓  COURSES  •  SOE MOE CERTIFICATE REFERENCES   ›");
+        more.setTextColor(0xffffd573);
+        more.setTextSize(13);
+        more.setGravity(Gravity.CENTER);
+        more.setPadding(8,12,8,12);
+        more.setBackgroundColor(0xff0a2b50);
+        content.addView(more,new LinearLayout.LayoutParams(-1,-2));
+        more.setOnClickListener(v->toPage(1));
+
+        footerCanvas=new FrameLayout(this);
+        footerCanvas.setBackgroundColor(0xff061a33);
+        display.addView(footerCanvas,new LinearLayout.LayoutParams(-1,footerHeight));
+        ImageView footerImage=new ImageView(this);
+        footerImage.setImageBitmap(footerBitmap);
+        footerImage.setScaleType(ImageView.ScaleType.FIT_XY);
+        footerCanvas.addView(footerImage,new FrameLayout.LayoutParams(-1,-1));
         canvas.post(this::installControls);
     }
 
@@ -159,9 +207,9 @@ public final class ExactHomeActivity extends Activity {
     private void hotspot(int left, int top, int right, int bottom, Runnable action) {
         if(canvas==null || canvas.getWidth()<=0 || canvas.getHeight()<=0)return;
         int l=Math.round(left*canvas.getWidth()/SOURCE_WIDTH);
-        int t=Math.round(top*canvas.getHeight()/SOURCE_HEIGHT);
+        int t=Math.round(top*canvas.getHeight()/FOOTER_SOURCE_Y);
         int r=Math.round(right*canvas.getWidth()/SOURCE_WIDTH);
-        int b=Math.round(bottom*canvas.getHeight()/SOURCE_HEIGHT);
+        int b=Math.round(bottom*canvas.getHeight()/FOOTER_SOURCE_Y);
         if(r<=l||b<=t)return;
         View nativeButton=new View(this);
         nativeButton.setContentDescription("AAII Learning interactive control");
@@ -171,6 +219,20 @@ public final class ExactHomeActivity extends Activity {
         p.leftMargin=l; p.topMargin=t;
         canvas.addView(nativeButton,p);
         nativeButton.setOnClickListener(v->press(v,action));
+    }
+
+    // Fixed physical footer is cropped from the same user-approved image,
+    // ensuring its artwork stays pinned at the bottom of any portrait phone.
+    private void footerHotspot(int left,int right,Runnable action) {
+        if(footerCanvas==null||footerCanvas.getWidth()<=0)return;
+        int l=Math.round(left*footerCanvas.getWidth()/SOURCE_WIDTH);
+        int r=Math.round(right*footerCanvas.getWidth()/SOURCE_WIDTH);
+        View button=new View(this);
+        button.setContentDescription("AAII Learning footer navigation");
+        button.setClickable(true);
+        FrameLayout.LayoutParams lp=new FrameLayout.LayoutParams(r-l,-1,Gravity.TOP|Gravity.LEFT);
+        lp.leftMargin=l; footerCanvas.addView(button,lp);
+        button.setOnClickListener(v->press(v,action));
     }
 
     private void installControls() {
@@ -219,11 +281,11 @@ public final class ExactHomeActivity extends Activity {
         hotspot(694,1370,912,1510,()->toPage(2,0,"",3)); // Google Cloud
 
         // True fixed home footer: Home, Categories, AI Tools, Services, Profile.
-        hotspot(5,1521,185,1669,()->{}); // Already on home
-        hotspot(190,1521,374,1669,()->toPage(16));
-        hotspot(380,1521,560,1669,()->toPage(15));
-        hotspot(566,1521,748,1669,()->toPage(14));
-        hotspot(753,1521,930,1669,this::profilePopup);
+        footerHotspot(5,185,()->{}); // Already on home
+        footerHotspot(190,374,()->toPage(16));
+        footerHotspot(380,560,()->toPage(15));
+        footerHotspot(566,748,()->toPage(14));
+        footerHotspot(753,930,this::profilePopup);
     }
 
     @Override protected void onDestroy(){

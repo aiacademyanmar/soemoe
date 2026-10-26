@@ -246,6 +246,78 @@ public class MainActivity extends Activity {
       lp.setMargins(dp(2),dp(4),dp(2),dp(2));r.addView(v,lp);}
     line(c,"Learn → Practice → Build → Show Skills",12,MUTED,false);
   }
+
+  // Private certificate links are matched only against credentials explicitly
+  // imported by the owner on-device. Neither this APK nor the public repository
+  // publishes the learner's individual credentials.
+  private JSONObject soeMoeCourseCertificate(JSONObject course){
+    if(course==null)return null;
+    String courseTitle=course.optString("title").trim();
+    String publisher=course.optString("provider").trim();
+    if(courseTitle.isEmpty())return null;
+    for(int i=0;i<certs.length();i++){
+      JSONObject c=certs.optJSONObject(i);if(c==null)continue;
+      if(!"Course".equalsIgnoreCase(c.optString("type").trim()))continue;
+      if(!courseTitle.equalsIgnoreCase(c.optString("title").trim()))continue;
+      if(!publisher.equalsIgnoreCase(c.optString("publisher").trim()))continue;
+      String url=c.optString("certificateUrl");
+      if(url.startsWith("https://www.coursera.org/account/accomplishments/"))return c;
+    }
+    return null;
+  }
+  private JSONObject soeMoeRelatedProgramCertificate(JSONObject course){
+    if(course==null)return null;
+    String name=course.optString("program").trim();
+    String provider=course.optString("provider").trim();
+    if(name.isEmpty())return null;
+    for(int i=0;i<certs.length();i++){
+      JSONObject c=certs.optJSONObject(i);if(c==null)continue;
+      String type=c.optString("type");
+      if(!"Specialization".equalsIgnoreCase(type)&&!"Professional Certificate".equalsIgnoreCase(type))continue;
+      if(!name.equalsIgnoreCase(c.optString("title").trim()))continue;
+      if(!provider.equalsIgnoreCase(c.optString("publisher").trim()))continue;
+      String url=c.optString("certificateUrl");
+      if(url.startsWith("https://www.coursera.org/account/accomplishments/"))return c;
+    }
+    return null;
+  }
+  private int soeMoeCourseMatchCount(){
+    int found=0;
+    for(int i=0;i<courses.length();i++){
+      JSONObject c=courses.optJSONObject(i);
+      if(c!=null&&soeMoeCourseCertificate(c)!=null)found++;
+    }
+    return found;
+  }
+  private void soeMoeCourseCertificatePanel(JSONObject course){
+    if(course==null)return;
+    String name=course.optString("title");
+    JSONObject individual=soeMoeCourseCertificate(course);
+    JSONObject related=soeMoeRelatedProgramCertificate(course);
+    LinearLayout panel=royalCard(body,"TEACHER SOE MOE • CERTIFICATE REFERENCES",
+      name+" • "+course.optString("provider"));
+    if(certs.length()==0){
+      line(panel,"Private Certificate Wallet မထည့်ရသေးပါ။ ဆရာ စိုးမိုး၏ Certificate Link များကို ဖုန်းထဲ Import လုပ်ပါ။",13,WHITE,false);
+      button(panel,"Import Soe Moe Certificate Wallet",()->openTab(5),true);
+    }else if(individual!=null){
+      line(panel,"✓ Matching individual Course Certificate URL found in imported Soe Moe portfolio",13,GOLD,true);
+      line(panel,"Course & Provider Name ကို တိုက်စစ်ထားသည်။ လက်မှတ်အတည်ပြုမှုကို Coursera Website ပေါ်တွင် စစ်ပါ။",12,WHITE,false);
+      button(panel,"View Soe Moe's Course Certificate ↗",()->browse(individual.optString("certificateUrl")),true);
+    }else{
+      line(panel,"ဤ Course အမည်နှင့် Provider အတိအကျကိုက်ညီသော တစ်ဦးချင်း Certificate မတွေ့ပါ။",13,WHITE,false);
+      if(related!=null){
+        line(panel,"Related Program: "+related.optString("title"),14,GOLD,true);
+        line(panel,"Program Certificate သည် Course တစ်ခုချင်းအတွက် သီးခြားလက်မှတ်ရှိကြောင်း သက်သေမဟုတ်ပါ။",12,WHITE,false);
+        button(panel,"View Related Program Certificate ↗",()->browse(related.optString("certificateUrl")),false);
+      }else{
+        line(panel,"Teacher Support ရနိုင်သော်လည်း ဒီ Course အတွက် Certificate ရရှိထားကြောင်း မအတည်ပြုနိုင်သေးပါ။",12,0xfff4d8ab,false);
+      }
+      button(panel,"Search All Imported Certificates",()->openTab(17),false);
+    }
+    button(panel,"Teacher Soe Moe • Profile",()->openTab(9),false);
+    button(panel,"Hire Teacher • Request Form",()->openTab(8),false);
+  }
+
   private void certificateTeasers(LinearLayout target,String term,int limit){
     if(certs.length()==0){LinearLayout c=card(target);line(c,"Coursera Certificate Portfolio",16,NAVY,true);
       line(c,"Certificate Links များကို Private JSON မှ Import လုပ်ပြီးမှ ကြည့်နိုင်ပါမည်။",12,MUTED,false);
@@ -271,7 +343,7 @@ public class MainActivity extends Activity {
     logo.setScaleType(ImageView.ScaleType.CENTER_CROP);
     LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(dp(44),dp(44));lp.setMargins(0,0,dp(8),0);
     brand.addView(logo,lp);brand.addView(txt("AAII Learning",23,GOLD,true));
-    line(head,"YOUR PATH TO GLOBAL LEARNING  •  V5.5",11,0xffcfe8fe,false);
+    line(head,"YOUR PATH TO GLOBAL LEARNING  •  V5.6",11,0xffcfe8fe,false);
     LinearLayout links=new LinearLayout(this);links.setOrientation(0);head.addView(links);
     TextView learningLink=txt("◉ My Learning",12,GOLD,true);links.addView(learningLink,new LinearLayout.LayoutParams(0,dp(36),1));
     tap(learningLink,()->openTab(12));
@@ -324,6 +396,7 @@ public class MainActivity extends Activity {
     button(partners,"Specializations • Certificate & Bridge →",()->{providerGroup=0;selectedProvider="";openTab(2);},true);
     button(partners,"Certificate Folder Gallery →",()->openTab(17),false);
     button(partners,"Teacher Request • Viber / LINE / Telegram →",()->openTab(8),false);
+    button(partners,"Course → Soe Moe Certificate Matching",()->openTab(1),false);
     LinearLayout whatsNew=coloredCard(body,0xff082b53,0xff115999);
     line(whatsNew,"✦  AAII LEARNING V4.9 • NEW FUNCTIONS",19,GOLD,true);
     line(whatsNew,"Certificate Links  •  Profile Popup  •  Pop Animation  •  Click Sound",13,WHITE,false);
@@ -539,8 +612,15 @@ public class MainActivity extends Activity {
         matched++;if(shown>=limit)continue;shown++;
         final int id=i;LinearLayout x=card(list);tap(x,()->inspect(1,id));
         providerBadge(x,provider,-1);line(x,name,16,NAVY,true);line(x,provider+"  •  "+cat,12,TEAL,false);
+        JSONObject owned=soeMoeCourseCertificate(c);
+        JSONObject programCert=soeMoeRelatedProgramCertificate(c);
+        line(x,certs.length()==0?"Soe Moe Certificates: Private Import Required":
+          (owned!=null?"✓ Soe Moe Course Certificate Link":
+          (programCert!=null?"Related Soe Moe Program Certificate":"No matching Soe Moe Course Certificate")),12,
+          owned!=null?0xff0b8d5d:MUTED,true);
         String preview=overview(cat,name);line(x,preview.length()>95?preview.substring(0,95)+"…":preview,13,INK,false);
         button(x,"မြန်မာလို အသေးစိတ်ရှင်းပြချက်",()->inspect(1,id),false);
+        button(x,"Soe Moe Certificate & Teacher Support →",()->inspect(1,id),false);
       }
       if(matched>limit)button(list,"နောက်ထပ် Courses ပြရန် ("+(matched-limit)+")",()->{limit+=35;render();},true);
       list.addView(txt("တွေ့ရှိမှု "+matched+" ခု",12,MUTED,false),0);
@@ -583,8 +663,8 @@ public class MainActivity extends Activity {
       String key="course_"+detailIndex;CheckBox done=new CheckBox(this);done.setText("ကိုယ်ပိုင်လေ့ကျင့်ခန်း ပြီးဆုံးပြီ");done.setChecked(prefs.getBoolean(key,false));
       x.addView(done);done.setOnCheckedChangeListener((b,checked)->prefs.edit().putBoolean(key,checked).apply());
       button(x,"Coursera.org မှ မူရင်း Course ဖွင့်မည်",()->browse(c.optString("url")),true);
+      soeMoeCourseCertificatePanel(c);
       button(x,"Teacher Soe Moe • Profile & Support",()->openTab(9),false);
-      certificateTeasers(body,c.optString("title"),2);
       line(x,"မှတ်ချက် — ဤမြန်မာလိုအကြောင်းအရာများသည် AAII ၏ သင်ကြားရေးရှင်းလင်းချက်ဖြစ်ပြီး Official Coursera သင်ရိုးကို စာလုံးချင်း ပြန်ထုတ်ထားခြင်း မဟုတ်ပါ။",12,MUTED,false);
       button(x,"Offline AI Study Support",()->new AlertDialog.Builder(this).setTitle("AAII Study Guidance")
         .setMessage("သင်ခန်းစာ: "+c.optString("title")+"\n\n"+overview(c.optString("category"),c.optString("title"))+"\n\nလေ့ကျင့်ရန်: "+exercise(c.optString("category"),c.optString("title"))+"\n\nLive AI API မချိတ်ထားသေးပါ။")
@@ -1283,6 +1363,8 @@ public class MainActivity extends Activity {
     button(x,"Open Certificate Gallery",()->openTab(17),true);
     button(x,"Private JSON Import",()->{Intent intent=new Intent(Intent.ACTION_OPEN_DOCUMENT);intent.setType("*/*");intent.addCategory(Intent.CATEGORY_OPENABLE);startActivityForResult(intent,404);},false);
     line(x,"Imported Certificates: "+certs.length(),13,TEAL,true);
+    line(x,"Soe Moe • Matched Individual Courses: "+soeMoeCourseMatchCount()+" / "+courses.length(),13,NAVY,true);
+    line(x,"Courses 337 ခုလုံးမှာ Certificate ရှိတယ်လို့ မဆိုလိုပါ။ Matched အရေအတွက်သည် ဖုန်းထဲ Import လုပ်ထားသည့် Certificate URL များအပေါ်သာ မူတည်သည်။",12,MUTED,false);
     line(x,"Specialization Linked: "+linkedCertCount("Specialization")+" / 37",13,NAVY,true);
     line(x,"Organization Page (requires account login) • Direct Coursera URL",12,MUTED,false);
     button(x,"Coursera Organization • My Learning Certificates ↗",()->openCertificatesPortal(),true);
