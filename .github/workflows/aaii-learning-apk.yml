@@ -101,6 +101,23 @@ jobs:
           grep -q 'certificateGallery()' "$APP"
           grep -q 'galleryCard' "$APP"
           grep -q 'View Certificate' "$APP"
+      - name: Verify V5.5 exact screenshot + native touch areas
+        shell: bash
+        run: |
+          set -euo pipefail
+          IMG=aaii-learning/app/src/main/res/drawable-nodpi/aaii_home_exact_v55.webp
+          HOME=aaii-learning/app/src/main/java/asia/aaii/learningpublic/ExactHomeActivity.java
+          python3 - <<'PY'
+          from pathlib import Path
+          data=Path('aaii-learning/app/src/main/res/drawable-nodpi/aaii_home_exact_v55.webp').read_bytes()
+          assert data[:4]==b'RIFF' and data[8:12]==b'WEBP', 'Bad WebP signature'
+          assert len(data)>100000, 'Home artwork unexpectedly small'
+          print('Native exact screenshot artwork:',len(data),'bytes')
+          PY
+          test -s "$HOME"
+          grep -q 'hotspot(' "$HOME"
+          grep -q 'R.drawable.aaii_home_exact_v55' "$HOME"
+          grep -q 'ExactHomeActivity.class' aaii-learning/app/src/main/java/asia/aaii/learningpublic/SplashActivity.java
       - name: Compile real native APK
         run: gradle -p aaii-learning --no-daemon --stacktrace :app:assembleDebug
       - name: Verify APK Signature
@@ -113,7 +130,7 @@ jobs:
           sha256sum "$APK" > aaii-learning/app/build/outputs/apk/debug/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: AAII-Learning-V5.4-Certificate-Gallery-APK
+          name: AAII-Learning-V5.5-Exact-Home-Native-APK
           path: |
             aaii-learning/app/build/outputs/apk/debug/app-debug.apk
             aaii-learning/app/build/outputs/apk/debug/SHA256SUMS.txt

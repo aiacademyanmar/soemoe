@@ -73,7 +73,18 @@ public class MainActivity extends Activity {
     prefs=getSharedPreferences("AAII_Learning_Study_V31",MODE_PRIVATE);
     clickPool=new android.media.SoundPool.Builder().setMaxStreams(2).build();clickId=clickPool.load(this,R.raw.aaii_click,1);
     courses=load("courses.json");programs=load("programs_public.json");roadmaps=load("roadmaps.json");teachers=load("teacher_paths.json");
-    try{certs=new JSONArray(prefs.getString("personal_credentials","[]"));}catch(Exception ignored){}render();
+    try{certs=new JSONArray(prefs.getString("personal_credentials","[]"));}catch(Exception ignored){}
+    Intent launch=getIntent();
+    if(launch!=null){
+      page=launch.getIntExtra("aaii_page",0);
+      providerGroup=launch.getIntExtra("aaii_provider_group",0);
+      selectedProvider=launch.getStringExtra("aaii_provider")==null?"":launch.getStringExtra("aaii_provider");
+      search=launch.getStringExtra("aaii_search")==null?"":launch.getStringExtra("aaii_search");
+      detailType=launch.getIntExtra("aaii_detail_type",0);
+      detailIndex=launch.getIntExtra("aaii_detail_index",0);
+    }
+    if(page==0){startActivity(new Intent(this,ExactHomeActivity.class));finish();return;}
+    render();
   }
   private LinearLayout vertical(){LinearLayout x=new LinearLayout(this);x.setOrientation(1);return x;}
   private void tap(View v,Runnable task){v.setSoundEffectsEnabled(false);v.setClickable(true);v.setOnClickListener(view->{
@@ -111,7 +122,10 @@ public class MainActivity extends Activity {
     dialog.setContentView(panel);dialog.show();
     Window win=dialog.getWindow();if(win!=null){win.setBackgroundDrawableResource(android.R.color.transparent);win.setLayout(-1,-2);win.setGravity(Gravity.BOTTOM);win.getDecorView().setTranslationY(dp(120));win.getDecorView().animate().translationY(0).setDuration(220).start();}
   }
-  private void openTab(int p){page=p;search="";category="အားလုံး";limit=35;render();}
+  private void openTab(int p){
+    if(p==0){startActivity(new Intent(this,ExactHomeActivity.class));finish();return;}
+    page=p;search="";category="အားလုံး";limit=35;render();
+  }
   private void inspect(int type,int index){detailType=type;detailIndex=index;page=6;render();}
   private void pillRow(LinearLayout target,String[] names,int[] pages){
     HorizontalScrollView h=new HorizontalScrollView(this);h.setHorizontalScrollBarEnabled(false);
@@ -257,7 +271,7 @@ public class MainActivity extends Activity {
     logo.setScaleType(ImageView.ScaleType.CENTER_CROP);
     LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(dp(44),dp(44));lp.setMargins(0,0,dp(8),0);
     brand.addView(logo,lp);brand.addView(txt("AAII Learning",23,GOLD,true));
-    line(head,"YOUR PATH TO GLOBAL LEARNING  •  V5.4",11,0xffcfe8fe,false);
+    line(head,"YOUR PATH TO GLOBAL LEARNING  •  V5.5",11,0xffcfe8fe,false);
     LinearLayout links=new LinearLayout(this);links.setOrientation(0);head.addView(links);
     TextView learningLink=txt("◉ My Learning",12,GOLD,true);links.addView(learningLink,new LinearLayout.LayoutParams(0,dp(36),1));
     tap(learningLink,()->openTab(12));

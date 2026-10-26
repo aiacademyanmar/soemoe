@@ -23,7 +23,7 @@ public class SplashActivity extends Activity {
     label.bottomMargin=(int)(14*getResources().getDisplayMetrics().density);
     root.addView(bottom,label);setContentView(root);
     root.postDelayed(()->{
-      if(!isFinishing()){startActivity(new Intent(this,MainActivity.class));finish();}
+      if(!isFinishing()){startActivity(new Intent(this,ExactHomeActivity.class));finish();}
     },2300);
   }
 }
