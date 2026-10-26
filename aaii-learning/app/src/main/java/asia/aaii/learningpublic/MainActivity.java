@@ -633,6 +633,47 @@ public class MainActivity extends Activity {
       if(i<headers.length-1)goldDivider(block);
     }
   }
+
+  private JSONObject findLinkedCertificate(JSONObject program) {
+    if(program==null)return null;
+    String name=program.optString("title").trim();
+    String type=program.optString("type").trim();
+    for(int i=0;i<certs.length();i++) {
+      JSONObject c=certs.optJSONObject(i);
+      if(c==null)continue;
+      if(!name.equalsIgnoreCase(c.optString("title").trim()))continue;
+      if(!type.equalsIgnoreCase(c.optString("type").trim()))continue;
+      String url=c.optString("certificateUrl");
+      if(url.startsWith("https://www.coursera.org/account/accomplishments/"))return c;
+    }
+    return null;
+  }
+  private void openLinkedCertificate(JSONObject program) {
+    JSONObject c=findLinkedCertificate(program);
+    if(c==null) {
+      new AlertDialog.Builder(this).setTitle("Certificate ကို Import လုပ်ပါ")
+        .setMessage(program.optString("title")+" အတွက် Private Certificate JSON ကို Import လုပ်ရန်လိုသည်။")
+        .setPositiveButton("Open Wallet",(d,w)->openTab(5)).setNegativeButton("Close",null).show();
+      return;
+    }
+    String url=c.optString("certificateUrl");
+    new AlertDialog.Builder(this).setTitle("🎓 "+c.optString("title"))
+      .setMessage("Provider: "+c.optString("publisher")+"\nType: "+c.optString("type")+
+        "\n\nCoursera Certificate URL:\n"+url+
+        "\n\nCoursera Official Page မှ အတည်ပြုပါ။")
+      .setPositiveButton("View Certificate",(d,w)->browse(url))
+      .setNeutralButton("Copy URL",(d,w)->clip("Coursera Certificate",url))
+      .setNegativeButton("Close",null).show();
+  }
+  private int linkedCertCount(String type) {
+    int matched=0;
+    for(int i=0;i<programs.length();i++) {
+      JSONObject p=programs.optJSONObject(i);
+      if(p!=null&&type.equals(p.optString("type"))&&findLinkedCertificate(p)!=null)matched++;
+    }
+    return matched;
+  }
+
   private void specializationBridge(String programName,String provider){
     String[] steps={"Course Foundations","Complete Specialization","Verify Certificate","Professional Skill Bridge","Career / Portfolio"};
     String[] hints={"Core concepts ကို မူရင်း Coursera သင်တန်းများမှ လေ့လာပါ",
