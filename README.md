@@ -1,17 +1,13 @@
-# AAII Kid Creator Academy — Android Build Validation
+# AAII Music Creator Android — crash-safe build
 
-> **Build-validation source only. Not the full V2.1.1 teaching APK.**
+Branch: music-creator-apk. The main branch of soemoe is left intact.
 
-Owner: aiacademyanmar  
-Application: AAII AI for Kid Creator Academy  
-Repository role: Verify a real Kotlin/Jetpack Compose Android build via GitHub Actions.
+Native Android WebView host, Song Library, Lyrics Editor, manual Suno links, optional **authorized HTTPS JSON catalog sync**, Online Radio custom URLs and playback, Music Video links, Favorites, Playlists and Settings.
 
-This repository currently contains a **public-safe, standalone diagnostic prototype**. It will exercise an offline Android Home → Levels → Modules → Lesson navigator. The full 72 lesson text, teacher illustrations, 288 quizzes, and recorded-media/Drive/AI/Zoom integrations from the user's original 8.6 MB V2.1.1 archive are **NOT** included and must be migrated to a **private repo** before any production release.
+**Not** a Suno scraping client. No fake song library; import song data or provide your own HTTPS JSON feed in Settings. Music playback needs a real public or licensed audio stream URL.
 
-The debug app will be clearly labeled **BUILD TEST**. No student accounts, private assets, API keys, or child information are committed.
+Build: GitHub Actions > Build AAII Music Creator APK > push or run workflow. Debug artifact: AAII-Music-Creator-Samsung-CrashFix-APK.
 
-## Build
+App target: 28; minimum 26; supports modern Samsung devices. This is a fresh Android Gradle build, not a re-signing of previously crashing hand-packed APK. It does not yet include the original portrait and artwork binaries and is not visually pixel-identical to the prior 12 UI concept images.
 
-Go to [Actions](../../actions) → **AAII Kid Creator APK - Public-Safe Build Test** and click **Run workflow**, or push to `main` to trigger the workflow. If successful, download the `AAII-Kid-Creator-Build-Test-Debug-APK` artifact.
-
-See `app/src/main/java/asia/aaii/kidcreator/MainActivity.kt` for the Compose UI.
+Older APK must generally be uninstalled before the newly signed debug APK can install; song data in older app might be lost. Keep backups.
