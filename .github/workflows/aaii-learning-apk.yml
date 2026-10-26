@@ -95,6 +95,12 @@ jobs:
           grep -q 'findLinkedCertificate' "$APP"
           grep -q 'openLinkedCertificate' "$APP"
           grep -q 'Specialization Linked' "$APP"
+      - name: Validate V5.4 Native Gallery
+        run: |
+          APP=aaii-learning/app/src/main/java/asia/aaii/learningpublic/MainActivity.java
+          grep -q 'certificateGallery()' "$APP"
+          grep -q 'galleryCard' "$APP"
+          grep -q 'View Certificate' "$APP"
       - name: Compile real native APK
         run: gradle -p aaii-learning --no-daemon --stacktrace :app:assembleDebug
       - name: Verify APK Signature
@@ -107,7 +113,7 @@ jobs:
           sha256sum "$APK" > aaii-learning/app/build/outputs/apk/debug/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: AAII-Learning-V5.3-Specialization-Certificate-APK
+          name: AAII-Learning-V5.4-Certificate-Gallery-APK
           path: |
             aaii-learning/app/build/outputs/apk/debug/app-debug.apk
             aaii-learning/app/build/outputs/apk/debug/SHA256SUMS.txt
