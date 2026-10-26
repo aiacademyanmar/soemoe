@@ -117,7 +117,7 @@ jobs:
           test -s "$HOME"
           grep -q 'hotspot(' "$HOME"
           grep -q 'R.drawable.aaii_home_exact_v55' "$HOME"
-          grep -q 'ExactHomeActivity.class' aaii-learning/app/src/main/java/asia/aaii/learningpublic/SplashActivity.java
+          grep -q 'MobileHomeActivity.class' aaii-learning/app/src/main/java/asia/aaii/learningpublic/SplashActivity.java
       - name: Validate V5.6 responsive mobile & certificate match
         shell: bash
         run: |
