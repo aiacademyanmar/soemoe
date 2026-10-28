@@ -1,0 +1,56 @@
+name: Pannya Viman V1.5 Pinch Zoom Native APK
+on:
+  push:
+    branches: [pannya-viman-v15-pinch-zoom]
+    paths: [.github/workflows/pannya-viman-v15.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Android SDK environment
+        run: |
+          echo "ANDROID_HOME=/usr/local/lib/android/sdk" >> "$GITHUB_ENV"
+          echo "/usr/local/lib/android/sdk/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
+      - name: Gradle 8.9
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Android SDK 35
+        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+      - name: Get original V1.5 Native Android source
+        run: |
+          curl -fLSs --retry 4 --retry-delay 3 'https://drive.google.com/uc?export=download&id=1jUZbiEXbRQ5BeX2nunwVr8e36tRONcKb' -o source.zip
+          echo 'bf3064560c994c1b81d0337c15a158b83ad5be1a0eb8aca85d812eddc18f7773  source.zip' | sha256sum -c -
+          mkdir android && cd android && unzip -q ../source.zip
+          python3 scripts/preflight.py
+          grep -q 'class ZoomablePdfView' app/src/main/java/asia/aaii/pannyaviman/ZoomablePdfView.java
+          grep -q 'class PinchTextScrollView' app/src/main/java/asia/aaii/pannyaviman/PinchTextScrollView.java
+          grep -q 'စိုးမိုး' app/src/main/java/asia/aaii/pannyaviman/AuthorDefaults.java
+          grep -q "versionName '1.5.0'" app/build.gradle
+      - name: Build native debug APK
+        working-directory: android
+        run: gradle --no-daemon --stacktrace :app:assembleDebug
+      - name: APK integrity and checksum
+        run: |
+          test -s android/app/build/outputs/apk/debug/app-debug.apk
+          unzip -t android/app/build/outputs/apk/debug/app-debug.apk | tail -3
+          sha256sum android/app/build/outputs/apk/debug/app-debug.apk > android/app/build/outputs/apk/debug/SHA256SUMS.txt
+      - name: Upload installable APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: PannyaViman-V1.5-ReaderPinchZoom-Native-APK
+          path: |
+            android/app/build/outputs/apk/debug/app-debug.apk
+            android/app/build/outputs/apk/debug/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 30
