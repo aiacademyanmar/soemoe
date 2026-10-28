@@ -1,0 +1,11 @@
+name: AAII School Offline Native APK
+on:
+  push:
+    branches: [school-offline-v1-3]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo Building offline Android app
