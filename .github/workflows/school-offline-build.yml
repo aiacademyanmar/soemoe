@@ -1,11 +1,38 @@
-name: AAII School Offline Native APK
+name: AAII School Offline Native APK V1.3
 on:
   push:
     branches: [school-offline-v1-3]
+    paths:
+      - '.github/workflows/school-offline-build.yml'
   workflow_dispatch:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
-      - run: echo Building offline Android app
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+      - name: Download Android source archive
+        run: |
+          python3 -m pip install --quiet gdown
+          gdown 'https://drive.google.com/uc?id=16lN-HNaCbLHe6wGECvkcpn24j-ZP_PBm' -O source.zip
+          echo '53024dc159e25737fa079f49c5e5bc3c1422fc8cb7d7abff9e01f9ddc4e413cf  source.zip' | sha256sum --check
+          unzip -q source.zip
+      - name: Build Android APK
+        run: gradle --no-daemon -p AAII_School_Offline_Native_V1.3 assembleDebug
+      - name: Verify output
+        run: |
+          test -s AAII_School_Offline_Native_V1.3/app/build/outputs/apk/debug/app-debug.apk
+          sha256sum AAII_School_Offline_Native_V1.3/app/build/outputs/apk/debug/app-debug.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AAII-School-Offline-V1.3-APK
+          path: AAII_School_Offline_Native_V1.3/app/build/outputs/apk/debug/app-debug.apk
