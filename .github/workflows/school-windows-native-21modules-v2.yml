@@ -1,0 +1,49 @@
+name: AAII School Windows Native 21 Modules V2.0
+on:
+  push:
+    branches: [school-windows-native-21modules-v2]
+  workflow_dispatch:
+jobs:
+  native-windows-build-and-smoke:
+    runs-on: windows-2022
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.2'
+      - name: Get checksum-verified Windows source
+        shell: pwsh
+        run: |
+          python -m pip install --quiet gdown
+          python -m gdown 'https://drive.google.com/uc?id=1xC6HisZ2cK08-6NRloV3aX_aeo8-8mc-' -O source.zip
+          if ($LASTEXITCODE -ne 0) { throw 'Source download failed' }
+          $expected = 'dac4aae5603bf6b5762ab1cf65677d1e21eb9a191c6df202ae75afff190f57bb'
+          $actual = (Get-FileHash source.zip -Algorithm SHA256).Hash.ToLower()
+          if ($actual -ne $expected) { throw "Source checksum mismatch: $actual" }
+          Expand-Archive -Path source.zip -DestinationPath project
+      - name: Test and compile Win32 GUI
+        shell: pwsh
+        run: |
+          Set-Location project/AAII_School_Windows_21Modules_V2.0/src
+          go test -v ./...
+          if ($LASTEXITCODE -ne 0) { throw 'Unit tests failed' }
+          go build -trimpath -ldflags='-H=windowsgui -s -w' -o AAII_School_Management_21Modules_Native_V2.0_Windows_x64.exe .
+          if ($LASTEXITCODE -ne 0) { throw 'Win32 compilation failed' }
+      - name: Windows UI-process startup smoke test
+        shell: pwsh
+        run: |
+          $exe = (Resolve-Path 'project/AAII_School_Windows_21Modules_V2.0/src/AAII_School_Management_21Modules_Native_V2.0_Windows_x64.exe').Path
+          $env:AAII_SMS_DATA_DIR = Join-Path $env:RUNNER_TEMP 'school-smoke-test'
+          New-Item -ItemType Directory -Path $env:AAII_SMS_DATA_DIR -Force | Out-Null
+          $p = Start-Process -FilePath $exe -PassThru
+          Start-Sleep -Seconds 5
+          $p.Refresh()
+          if ($p.HasExited) { throw "Win32 app exited early, exit code $($p.ExitCode)" }
+          Stop-Process -Id $p.Id -Force
+          Write-Output 'Native Windows process stayed open with Login dialog (smoke test passed)'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AAII-School-Windows-Native-21Modules-V2.0-EXE
+          path: project/AAII_School_Windows_21Modules_V2.0/src/AAII_School_Management_21Modules_Native_V2.0_Windows_x64.exe
