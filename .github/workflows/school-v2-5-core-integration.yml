@@ -1,0 +1,79 @@
+name: AAII School V2.5 Native Windows and Android
+on:
+  push:
+    branches: [school-v2-5-core-integration]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Prepare Android SDK
+        run: |
+          echo "ANDROID_HOME=${ANDROID_HOME:-/usr/local/lib/android/sdk}" >> "$GITHUB_ENV"
+          ${ANDROID_HOME:-/usr/local/lib/android/sdk}/cmdline-tools/latest/bin/sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+      - name: Download Android source
+        run: |
+          python3 -m pip install --quiet gdown
+          gdown 'https://drive.google.com/uc?id=15ksiksWsP1fhFn9b5lYn81tlQvuP8G4n' -O android-v25.zip
+          echo 'f8964f701c2e82438b74bb9cea896fbfb4d0aebf4370476f677274bff2f5155f  android-v25.zip' | sha256sum -c -
+          unzip -q android-v25.zip
+      - name: Compile native Android APK
+        run: gradle --no-daemon -p AAII_School_Android_Native_V2.5 assembleDebug
+      - name: Verify Android output
+        run: |
+          test -s AAII_School_Android_Native_V2.5/app/build/outputs/apk/debug/app-debug.apk
+          sha256sum AAII_School_Android_Native_V2.5/app/build/outputs/apk/debug/app-debug.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AAII-School-V2.5-Native-Android-APK
+          path: AAII_School_Android_Native_V2.5/app/build/outputs/apk/debug/app-debug.apk
+  windows:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.2'
+      - name: Download Windows source
+        shell: pwsh
+        run: |
+          python -m pip install --quiet gdown
+          python -m gdown 'https://drive.google.com/uc?id=1-NxugyUvf-kbmfJLmf6-0Wa_Pu4Y_SN-' -O windows-v25.zip
+          if ($LASTEXITCODE -ne 0) { throw 'Source download failed' }
+          $expected='a9039e05a0cb75fd935df0bf431db3c64391c255cf93fa6ff839677f2f6d6f55'
+          $actual=(Get-FileHash windows-v25.zip -Algorithm SHA256).Hash.ToLower()
+          if ($actual -ne $expected) { throw "Source checksum mismatch: $actual" }
+          Expand-Archive -Path windows-v25.zip -DestinationPath .
+      - name: Native Windows tests and build
+        shell: pwsh
+        run: |
+          Set-Location AAII_School_Windows_Native_V2.5/src
+          go test -v ./...
+          if ($LASTEXITCODE -ne 0) { throw 'Go test failed' }
+          go build -trimpath -ldflags='-H=windowsgui -s -w' -o AAII_School_Windows_Native_V2.5_x64.exe .
+          if ($LASTEXITCODE -ne 0) { throw 'Build failed' }
+      - name: Native Win32 startup smoke test
+        shell: pwsh
+        run: |
+          $exe=(Resolve-Path 'AAII_School_Windows_Native_V2.5/src/AAII_School_Windows_Native_V2.5_x64.exe').Path
+          $env:AAII_SMS_DATA_DIR=Join-Path $env:RUNNER_TEMP 'aaii-school-v25-test'
+          New-Item -ItemType Directory -Path $env:AAII_SMS_DATA_DIR -Force | Out-Null
+          $p=Start-Process -FilePath $exe -PassThru
+          Start-Sleep -Seconds 5
+          $p.Refresh()
+          if ($p.HasExited) { throw "Premature process exit $($p.ExitCode)" }
+          Stop-Process -Id $p.Id -Force
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AAII-School-V2.5-Native-Windows-EXE
+          path: AAII_School_Windows_Native_V2.5/src/AAII_School_Windows_Native_V2.5_x64.exe
