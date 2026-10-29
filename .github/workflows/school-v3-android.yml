@@ -16,7 +16,9 @@ jobs:
         with:
           gradle-version: '8.10.2'
       - name: Android SDK
-        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+        run: |
+          echo "ANDROID_HOME=${ANDROID_HOME:-/usr/local/lib/android/sdk}" >> "$GITHUB_ENV"
+          ${ANDROID_HOME:-/usr/local/lib/android/sdk}/cmdline-tools/latest/bin/sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
       - name: Source
         run: |
           python3 -m pip install --quiet gdown
