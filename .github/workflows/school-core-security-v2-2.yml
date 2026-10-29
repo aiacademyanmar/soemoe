@@ -1,0 +1,80 @@
+name: AAII School V2.2 Native Android + Windows
+on:
+  push:
+    branches: [school-core-security-v2-2]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Prepare Android SDK
+        run: |
+          echo "ANDROID_HOME=${ANDROID_HOME:-/usr/local/lib/android/sdk}" >> "$GITHUB_ENV"
+          ${ANDROID_HOME:-/usr/local/lib/android/sdk}/cmdline-tools/latest/bin/sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+      - name: Fetch verified Android V2.2 source
+        run: |
+          python3 -m pip install --quiet gdown
+          gdown 'https://drive.google.com/uc?id=1YSeK4QqAyCmbAuWr_LbA3HpWVAjybOLh' -O android-source.zip
+          echo 'fd9bacd2037caa99ca9dcc1192b475dba687e5cb59661b1b02cb59d09a14ef84  android-source.zip' | sha256sum --check
+          unzip -q android-source.zip
+      - name: Build Android APK
+        run: gradle --no-daemon -p AAII_School_Offline_21Modules_V2.2_Secure assembleDebug
+      - name: Verify Android APK
+        run: |
+          test -s AAII_School_Offline_21Modules_V2.2_Secure/app/build/outputs/apk/debug/app-debug.apk
+          sha256sum AAII_School_Offline_21Modules_V2.2_Secure/app/build/outputs/apk/debug/app-debug.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AAII-School-Offline-Secure-V2.2-APK
+          path: AAII_School_Offline_21Modules_V2.2_Secure/app/build/outputs/apk/debug/app-debug.apk
+  windows:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.2'
+      - name: Download verified Windows V2.2 source
+        shell: pwsh
+        run: |
+          python -m pip install --quiet gdown
+          python -m gdown 'https://drive.google.com/uc?id=1P9HmgArYm1D3Gkkoeq2lsh0FDh4MyB1J' -O windows-source.zip
+          if ($LASTEXITCODE -ne 0) { throw 'Download failed' }
+          $expected = '98836a2340c0329d1028f09c59bcf90d4573a44c84cc15552d2346cb1a352de2'
+          $actual = (Get-FileHash windows-source.zip -Algorithm SHA256).Hash.ToLower()
+          if ($actual -ne $expected) { throw 'Windows source integrity mismatch' }
+          Expand-Archive -Path windows-source.zip -DestinationPath .
+      - name: Windows Go tests and native EXE build
+        shell: pwsh
+        run: |
+          Set-Location AAII_School_Windows_21Modules_V2.2_Core/src
+          go test -v ./...
+          if ($LASTEXITCODE -ne 0) { throw 'Go tests failed' }
+          go build -trimpath -ldflags='-H=windowsgui -s -w' -o AAII_School_Windows_Native_V2.2_x64.exe .
+          if ($LASTEXITCODE -ne 0) { throw 'Windows compile failed' }
+      - name: Windows GUI process smoke test
+        shell: pwsh
+        run: |
+          $exe = (Resolve-Path 'AAII_School_Windows_21Modules_V2.2_Core/src/AAII_School_Windows_Native_V2.2_x64.exe').Path
+          $env:AAII_SMS_DATA_DIR = Join-Path $env:RUNNER_TEMP 'school-v22-test'
+          New-Item -ItemType Directory -Path $env:AAII_SMS_DATA_DIR -Force | Out-Null
+          $p = Start-Process -FilePath $exe -PassThru
+          Start-Sleep -Seconds 5
+          $p.Refresh()
+          if ($p.HasExited) { throw "Unexpected early exit $($p.ExitCode)" }
+          Stop-Process -Id $p.Id -Force
+          Write-Output 'PASS: Windows desktop GUI process launched'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AAII-School-Windows-Core-V2.2-EXE
+          path: AAII_School_Windows_21Modules_V2.2_Core/src/AAII_School_Windows_Native_V2.2_x64.exe
