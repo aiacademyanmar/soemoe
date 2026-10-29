@@ -1,0 +1,80 @@
+name: AAII School V2.4 Native Android and Windows
+on:
+  push:
+    branches: [school-v2-4-two-way-sync]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Prepare Android SDK
+        run: |
+          echo "ANDROID_HOME=${ANDROID_HOME:-/usr/local/lib/android/sdk}" >> "$GITHUB_ENV"
+          ${ANDROID_HOME:-/usr/local/lib/android/sdk}/cmdline-tools/latest/bin/sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+      - name: Fetch checksum-verified Android source
+        run: |
+          python3 -m pip install --quiet gdown
+          gdown 'https://drive.google.com/uc?id=1ZcSoP-Yo_707fqN-NKKGg6vFCAmSBUvc' -O android-v24.zip
+          echo '4fea48a4e631105d61e6bc3d1c6595e825d8ec5c4d546283ee4e9fa15a1de2fd  android-v24.zip' | sha256sum --check
+          unzip -q android-v24.zip
+      - name: Compile Android Native
+        run: gradle --no-daemon -p AAII_School_Offline_Android_V2.4 assembleDebug
+      - name: Verify Android Artifact
+        run: |
+          test -s AAII_School_Offline_Android_V2.4/app/build/outputs/apk/debug/app-debug.apk
+          sha256sum AAII_School_Offline_Android_V2.4/app/build/outputs/apk/debug/app-debug.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AAII-School-Offline-TwoWay-V2.4-APK
+          path: AAII_School_Offline_Android_V2.4/app/build/outputs/apk/debug/app-debug.apk
+  windows:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.2'
+      - name: Retrieve checksum-verified Windows Source
+        shell: pwsh
+        run: |
+          python -m pip install --quiet gdown
+          python -m gdown 'https://drive.google.com/uc?id=1j901HdpycYsxThOlE619nI0zt1IgeD4C' -O windows-v24.zip
+          if ($LASTEXITCODE -ne 0) { throw 'Download failed' }
+          $expected='d9297e10e4364502ded7010c0ece429b1c2003c259b4457493c2720fc93867a9'
+          $actual=(Get-FileHash windows-v24.zip -Algorithm SHA256).Hash.ToLower()
+          if ($actual -ne $expected) { throw "Checksum mismatch: $actual" }
+          Expand-Archive -Path windows-v24.zip -DestinationPath .
+      - name: Native Windows Test and Build
+        shell: pwsh
+        run: |
+          Set-Location AAII_School_Windows_Native_V2.4/src
+          go test -v ./...
+          if ($LASTEXITCODE -ne 0) { throw 'Unit test failed' }
+          go build -trimpath -ldflags='-H=windowsgui -s -w' -o AAII_School_Windows_Native_V2.4_x64.exe .
+          if ($LASTEXITCODE -ne 0) { throw 'Compile failed' }
+      - name: Native Windows Startup Test
+        shell: pwsh
+        run: |
+          $exe=(Resolve-Path 'AAII_School_Windows_Native_V2.4/src/AAII_School_Windows_Native_V2.4_x64.exe').Path
+          $env:AAII_SMS_DATA_DIR=Join-Path $env:RUNNER_TEMP 'school-v24-smoke'
+          New-Item -ItemType Directory -Path $env:AAII_SMS_DATA_DIR -Force | Out-Null
+          $p=Start-Process -FilePath $exe -PassThru
+          Start-Sleep -Seconds 5
+          $p.Refresh()
+          if ($p.HasExited) { throw "Windows process exited prematurely with code $($p.ExitCode)" }
+          Stop-Process -Id $p.Id -Force
+          Write-Output 'PASS native Windows GUI startup'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AAII-School-Windows-Native-V2.4-EXE
+          path: AAII_School_Windows_Native_V2.4/src/AAII_School_Windows_Native_V2.4_x64.exe
