@@ -1,0 +1,62 @@
+name: Pannya Viman V2.5 Native Audiobooks and Cinema APK
+on:
+  push:
+    branches: [pannya-viman-v25-native-audiobooks-cinema]
+    paths: [.github/workflows/pannya-viman-v25.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Android SDK environment
+        run: |
+          echo "ANDROID_HOME=/usr/local/lib/android/sdk" >> "$GITHUB_ENV"
+          echo "/usr/local/lib/android/sdk/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Install Android SDK 35
+        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+      - name: Download and validate V2.5 native source
+        run: |
+          curl -fLsS --retry 4 --retry-delay 3 --max-time 180 'https://drive.google.com/uc?export=download&id=1PrLcoVUtLUKQurxH6CS0yTe6GlgzpHns' -o source.zip
+          echo 'b0c63ad7b9b940346bf33054673a55e145aac246e81db3ad60f195615215fca7  source.zip' | sha256sum -c -
+          unzip -q source.zip
+          python3 PannyaViman-V2.5-Native-Android/scripts/preflight.py
+          python3 - <<'PY'
+          import json
+          p='PannyaViman-V2.5-Native-Android/app/src/main/assets/drive_audiobooks_snapshot.json'
+          x=json.load(open(p))
+          assert x['source_folder_id']=='1jAu1ITb1jKHhVPgGasmnJlqjyxCgy3jk'
+          assert len(x['tracks'])==5
+          assert all(f['extension']=='m4a' for f in x['tracks'])
+          print('Verified five distinct Drive M4A items')
+          PY
+          test -f PannyaViman-V2.5-Native-Android/app/src/main/java/asia/aaii/pannyaviman/NativeAudioBooksActivity.java
+          test -f PannyaViman-V2.5-Native-Android/app/src/main/java/asia/aaii/pannyaviman/VideoCinemaActivity.java
+          grep -q "versionName '2.5.0'" PannyaViman-V2.5-Native-Android/app/build.gradle
+      - name: Compile installable Native Android APK
+        working-directory: PannyaViman-V2.5-Native-Android
+        run: gradle --no-daemon --stacktrace :app:assembleDebug
+      - name: Verify APK and checksum
+        run: |
+          test -s PannyaViman-V2.5-Native-Android/app/build/outputs/apk/debug/app-debug.apk
+          unzip -t PannyaViman-V2.5-Native-Android/app/build/outputs/apk/debug/app-debug.apk | tail -3
+          sha256sum PannyaViman-V2.5-Native-Android/app/build/outputs/apk/debug/app-debug.apk | tee PannyaViman-V2.5-Native-Android/app/build/outputs/apk/debug/SHA256SUMS.txt
+      - name: Upload native APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PannyaViman-V2.5-M4A-Audiobook-Cinema-Native-APK
+          path: |
+            PannyaViman-V2.5-Native-Android/app/build/outputs/apk/debug/app-debug.apk
+            PannyaViman-V2.5-Native-Android/app/build/outputs/apk/debug/SHA256SUMS.txt
+          retention-days: 30
+          if-no-files-found: error
