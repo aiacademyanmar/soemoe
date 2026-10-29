@@ -1,0 +1,30 @@
+name: School V3 Android
+on:
+  push:
+    branches: [school-v3-0-pilot-tests]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+      - name: Android SDK
+        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+      - name: Source
+        run: |
+          python3 -m pip install --quiet gdown
+          gdown 'https://drive.google.com/uc?id=17Vl7wBGQNk0zvQ42MvtIEWz12ojfrqm0' -O source.zip
+          unzip -q source.zip
+      - name: APK
+        run: gradle --no-daemon -p AAII_School_Android_Native_V3.0 assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AAII-School-V3-Android-APK
+          path: AAII_School_Android_Native_V3.0/app/build/outputs/apk/debug/app-debug.apk
