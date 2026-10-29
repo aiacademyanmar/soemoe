@@ -1,0 +1,56 @@
+name: Pannya Viman V1.8 Google Drive Native Music APK
+on:
+  push:
+    branches: [pannya-viman-v18-drive-music]
+    paths: [.github/workflows/pannya-viman-v18.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Android SDK environment
+        run: |
+          echo "ANDROID_HOME=/usr/local/lib/android/sdk" >> "$GITHUB_ENV"
+          echo "/usr/local/lib/android/sdk/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
+      - name: Gradle 8.9
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Install Android 35
+        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+      - name: Download source from project Drive folder
+        run: |
+          curl -fLsS --retry 4 --retry-delay 3 --max-time 180 'https://drive.google.com/uc?export=download&id=1Spc5_GNYTPBMVCo5ph4z3ASGj9QXAEp0' -o source.zip
+          echo '915c4bf9f10c347e4c00b00c38c6342b070ff34d75f9fbe0dfafd82e40ec3593  source.zip' | sha256sum -c -
+          unzip -q source.zip
+          python3 android/scripts/preflight.py
+          grep -q "versionName '1.8.0'" android/app/build.gradle
+          grep -q 'class DriveMusicActivity' android/app/src/main/java/asia/aaii/pannyaviman/DriveMusicActivity.java
+          grep -q 'class NativeDrivePlayerActivity' android/app/src/main/java/asia/aaii/pannyaviman/NativeDrivePlayerActivity.java
+          ! grep -q 'SunoPlayerActivity' android/app/src/main/AndroidManifest.xml
+      - name: Build Native Android APK
+        working-directory: android
+        run: gradle --no-daemon --stacktrace :app:assembleDebug
+      - name: Verify APK
+        run: |
+          test -s android/app/build/outputs/apk/debug/app-debug.apk
+          unzip -t android/app/build/outputs/apk/debug/app-debug.apk | tail -3
+          sha256sum android/app/build/outputs/apk/debug/app-debug.apk | tee android/app/build/outputs/apk/debug/SHA256SUMS.txt
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PannyaViman-V1.8-DriveMusic-Native-APK
+          path: |
+            android/app/build/outputs/apk/debug/app-debug.apk
+            android/app/build/outputs/apk/debug/SHA256SUMS.txt
+          retention-days: 30
+          if-no-files-found: error
