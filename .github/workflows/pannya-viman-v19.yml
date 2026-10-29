@@ -1,0 +1,55 @@
+name: Pannya Viman V1.9 Native YouTube Playlist Player APK
+on:
+  push:
+    branches: [pannya-viman-v19-youtube-player]
+    paths: [.github/workflows/pannya-viman-v19.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Configure Android SDK
+        run: |
+          echo "ANDROID_HOME=/usr/local/lib/android/sdk" >> "$GITHUB_ENV"
+          echo "/usr/local/lib/android/sdk/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
+      - name: Setup Gradle 8.9
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Install Android SDK 35
+        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+      - name: Retrieve verified source ZIP
+        run: |
+          curl -fLsS --retry 4 --retry-delay 3 --max-time 180 'https://drive.google.com/uc?export=download&id=1LOfxIgmNDh9iBAGLCuBOY0od3-gByUhS' -o source.zip
+          echo '806416556c5436ca84efab4f09444cdeed455f3f7dfa09cfee9cddefd0a6ff8f  source.zip' | sha256sum -c -
+          unzip -q source.zip
+          python3 PannyaViman-V1.9-YouTube-Playlist-Android/scripts/preflight.py
+          grep -q "versionName '1.9.0'" PannyaViman-V1.9-YouTube-Playlist-Android/app/build.gradle
+          grep -q 'YouTubePlaylistActivity' PannyaViman-V1.9-YouTube-Playlist-Android/app/src/main/AndroidManifest.xml
+          grep -q 'PLWCMc7qMgk8tnrvdXn-ZFlqEQPgIQKBdi' PannyaViman-V1.9-YouTube-Playlist-Android/app/src/main/java/asia/aaii/pannyaviman/YouTubePlaylistActivity.java
+      - name: Compile Android Debug APK
+        working-directory: PannyaViman-V1.9-YouTube-Playlist-Android
+        run: gradle --no-daemon --stacktrace :app:assembleDebug
+      - name: Verify compiled APK
+        run: |
+          test -s PannyaViman-V1.9-YouTube-Playlist-Android/app/build/outputs/apk/debug/app-debug.apk
+          unzip -t PannyaViman-V1.9-YouTube-Playlist-Android/app/build/outputs/apk/debug/app-debug.apk | tail -3
+          sha256sum PannyaViman-V1.9-YouTube-Playlist-Android/app/build/outputs/apk/debug/app-debug.apk > PannyaViman-V1.9-YouTube-Playlist-Android/app/build/outputs/apk/debug/SHA256SUMS.txt
+      - name: Upload installable APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: PannyaViman-V1.9-YouTube-Playlist-APK
+          path: |
+            PannyaViman-V1.9-YouTube-Playlist-Android/app/build/outputs/apk/debug/app-debug.apk
+            PannyaViman-V1.9-YouTube-Playlist-Android/app/build/outputs/apk/debug/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 30
