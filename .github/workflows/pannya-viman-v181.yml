@@ -1,0 +1,53 @@
+name: Pannya Viman V1.8.1 Audio Books Drive Native APK
+on:
+  push:
+    branches: [pannya-viman-v181-audiobooks-drive]
+    paths: [.github/workflows/pannya-viman-v181.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Android SDK environment
+        run: |
+          echo "ANDROID_HOME=/usr/local/lib/android/sdk" >> "$GITHUB_ENV"
+          echo "/usr/local/lib/android/sdk/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
+      - name: Gradle 8.9
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Android SDK 35
+        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+      - name: Download and verify Android source from Google Drive
+        run: |
+          curl -fLsS --retry 4 --retry-delay 3 --max-time 180 'https://drive.google.com/uc?export=download&id=1wyVCNqV6ofug2pB9ObfGiWQFH4QEXIv9' -o source.zip
+          echo '0acaafc46373094030ea05818a2e87f35e60126af9f94321a635d9ba10f688fe  source.zip' | sha256sum -c -
+          unzip -q source.zip
+          python3 android/scripts/preflight.py
+          grep -q "versionName '1.8.1'" android/app/build.gradle
+          grep -q 'music.php?action=list' android/app/src/main/java/asia/aaii/pannyaviman/MainActivity.java
+      - name: Compile Native Android APK
+        working-directory: android
+        run: gradle --no-daemon --stacktrace :app:assembleDebug
+      - name: Check APK zip and digest
+        run: |
+          test -s android/app/build/outputs/apk/debug/app-debug.apk
+          unzip -t android/app/build/outputs/apk/debug/app-debug.apk | tail -3
+          sha256sum android/app/build/outputs/apk/debug/app-debug.apk | tee android/app/build/outputs/apk/debug/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PannyaViman-V1.8.1-AudioBooks-Drive-APK
+          path: |
+            android/app/build/outputs/apk/debug/app-debug.apk
+            android/app/build/outputs/apk/debug/SHA256SUMS.txt
+          retention-days: 30
+          if-no-files-found: error
