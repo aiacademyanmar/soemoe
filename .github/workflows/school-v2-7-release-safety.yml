@@ -103,8 +103,8 @@ jobs:
       - name: Download SHA256-verified Cloud source
         run: |
           python3 -m pip install --quiet gdown
-          gdown 'https://drive.google.com/uc?id=1CblsvdMMwOO86o8iGRdzGmOFQYEgbY2A' -O cloud-source.zip
-          echo '5a734bdede694febfabe0394178b251592a0ffa9d2cdcce6260ee1a15057a621  cloud-source.zip' | sha256sum -c -
+          gdown 'https://drive.google.com/uc?id=1UuIOcT-ms1i-nXqZaqGUnIXuUc5vH37U' -O cloud-source.zip
+          echo '5d045c8f63a597983d886a17f2808f555608c9b9f629665ccf77812efaf15a55  cloud-source.zip' | sha256sum -c -
           unzip -q cloud-source.zip
       - name: PHP syntax and pure-unit tests
         run: |
