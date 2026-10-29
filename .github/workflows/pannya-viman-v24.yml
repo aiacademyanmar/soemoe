@@ -1,0 +1,64 @@
+name: Pannya Viman V2.4 Native Google Drive 90-Book Categories
+on:
+  push:
+    branches: [pannya-viman-v24-drive-90-categories]
+    paths: [.github/workflows/pannya-viman-v24.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Android SDK environment
+        run: |
+          echo "ANDROID_HOME=/usr/local/lib/android/sdk" >> "$GITHUB_ENV"
+          echo "/usr/local/lib/android/sdk/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
+      - name: Setup Gradle 8.9
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Android SDK 35
+        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+      - name: Download and verify V2.4 native source
+        run: |
+          curl -fLsS --retry 4 --retry-delay 3 --max-time 180 'https://drive.google.com/uc?export=download&id=1fxQ4hmokra3862zhQWLZHzmtO0ZbA75W' -o source.zip
+          echo '2b173a12257100e5a2cc7e838e27b7763e2e3fc2cc2f4ba932edd4967747b267  source.zip' | sha256sum -c -
+          unzip -q source.zip
+          python3 PannyaViman-V2.4-Drive-Category-Native-Android/scripts/preflight.py
+          grep -q "versionName '2.4.0'" PannyaViman-V2.4-Drive-Category-Native-Android/app/build.gradle
+          grep -q 'DriveCategoryActivity' PannyaViman-V2.4-Drive-Category-Native-Android/app/src/main/AndroidManifest.xml
+          python3 - <<'PY'
+          import json
+          p='PannyaViman-V2.4-Drive-Category-Native-Android/app/src/main/assets/drive_ai_categories.json'
+          o=json.load(open(p))
+          assert len(o['books'])==90
+          assert len({x['category'] for x in o['books']})==10
+          assert o['source_folder_id']=='1sEquWVMNbzf3VK-ZiMRXB6Pgg8lQBhdA'
+          assert len({x['file_id'] for x in o['books']})==90
+          print('PASS 90 verified Drive file IDs, 10 categories, correct source folder')
+          PY
+      - name: Native Android compile
+        working-directory: PannyaViman-V2.4-Drive-Category-Native-Android
+        run: gradle --no-daemon --stacktrace :app:assembleDebug
+      - name: Verify installable APK
+        run: |
+          test -s PannyaViman-V2.4-Drive-Category-Native-Android/app/build/outputs/apk/debug/app-debug.apk
+          unzip -t PannyaViman-V2.4-Drive-Category-Native-Android/app/build/outputs/apk/debug/app-debug.apk | tail -3
+          sha256sum PannyaViman-V2.4-Drive-Category-Native-Android/app/build/outputs/apk/debug/app-debug.apk | tee PannyaViman-V2.4-Drive-Category-Native-Android/app/build/outputs/apk/debug/SHA256SUMS.txt
+      - name: Publish installable debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: PannyaViman-V2.4-90-Drive-Books-Native-APK
+          path: |
+            PannyaViman-V2.4-Drive-Category-Native-Android/app/build/outputs/apk/debug/app-debug.apk
+            PannyaViman-V2.4-Drive-Category-Native-Android/app/build/outputs/apk/debug/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 30
