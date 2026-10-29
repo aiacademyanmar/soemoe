@@ -1,0 +1,124 @@
+name: AAII School V2.7 Build and Isolated MySQL Tests
+on:
+  push:
+    branches: [school-v2-7-release-safety]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Prepare Android SDK
+        run: |
+          echo "ANDROID_HOME=${ANDROID_HOME:-/usr/local/lib/android/sdk}" >> "$GITHUB_ENV"
+          ${ANDROID_HOME:-/usr/local/lib/android/sdk}/cmdline-tools/latest/bin/sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+      - name: Download SHA256-verified source
+        run: |
+          python3 -m pip install --quiet gdown
+          gdown 'https://drive.google.com/uc?id=1hVyWFZYo9jlFelRtJYWOF-JfIdVuCuUP' -O android-source.zip
+          echo 'd0a5b7fbcfb0b2187c2866d949be02a525d25da4f7783f4fc950c02a3bde1d72  android-source.zip' | sha256sum -c -
+          unzip -q android-source.zip
+      - name: Build native Android debug APK
+        run: gradle --no-daemon -p AAII_School_Android_Native_V2.7 assembleDebug
+      - name: Verify APK
+        run: |
+          test -s AAII_School_Android_Native_V2.7/app/build/outputs/apk/debug/app-debug.apk
+          sha256sum AAII_School_Android_Native_V2.7/app/build/outputs/apk/debug/app-debug.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AAII-School-V2.7-Android-Debug-APK
+          path: AAII_School_Android_Native_V2.7/app/build/outputs/apk/debug/app-debug.apk
+  windows:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.2'
+      - name: Download SHA256-verified source
+        shell: pwsh
+        run: |
+          python -m pip install --quiet gdown
+          python -m gdown 'https://drive.google.com/uc?id=1-QpZGZKAxFSIVPCo8KRBFnI2a-Tbwbea' -O windows-source.zip
+          if ($LASTEXITCODE -ne 0) { throw 'Download failed' }
+          $expected='fcc0a935fd645c25404393c11cc5a733ef3da4dc12d510c71832cf04bb8e2c72'
+          $actual=(Get-FileHash windows-source.zip -Algorithm SHA256).Hash.ToLower()
+          if ($actual -ne $expected) { throw 'Source checksum mismatch' }
+          Expand-Archive -Path windows-source.zip -DestinationPath .
+      - name: Windows unit tests and native GUI build
+        shell: pwsh
+        run: |
+          Set-Location AAII_School_Windows_Native_V2.7/src
+          go test -v ./...
+          if ($LASTEXITCODE -ne 0) { throw 'Go tests failed' }
+          go build -trimpath -ldflags='-H=windowsgui -s -w' -o AAII_School_Windows_Native_V2.7_x64.exe .
+          if ($LASTEXITCODE -ne 0) { throw 'Windows build failed' }
+      - name: Native Windows GUI process smoke test
+        shell: pwsh
+        run: |
+          $exe=(Resolve-Path 'AAII_School_Windows_Native_V2.7/src/AAII_School_Windows_Native_V2.7_x64.exe').Path
+          $env:AAII_SMS_DATA_DIR=Join-Path $env:RUNNER_TEMP 'aaii-school-v27-test'
+          New-Item -ItemType Directory -Path $env:AAII_SMS_DATA_DIR -Force | Out-Null
+          $p=Start-Process -FilePath $exe -PassThru
+          Start-Sleep -Seconds 5
+          $p.Refresh()
+          if ($p.HasExited) { throw "GUI exited unexpectedly with code $($p.ExitCode)" }
+          Stop-Process -Id $p.Id -Force
+          Write-Output 'Win32 startup PASS'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AAII-School-V2.7-Windows-Native-EXE
+          path: AAII_School_Windows_Native_V2.7/src/AAII_School_Windows_Native_V2.7_x64.exe
+  isolated-mysql:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: rootpass
+          MYSQL_DATABASE: aaii_v27_ci
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -prootpass"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PDO MySQL driver
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y php-mysql
+          php -m | grep -i pdo_mysql
+      - name: Download SHA256-verified Cloud source
+        run: |
+          python3 -m pip install --quiet gdown
+          gdown 'https://drive.google.com/uc?id=1CblsvdMMwOO86o8iGRdzGmOFQYEgbY2A' -O cloud-source.zip
+          echo '5a734bdede694febfabe0394178b251592a0ffa9d2cdcce6260ee1a15057a621  cloud-source.zip' | sha256sum -c -
+          unzip -q cloud-source.zip
+      - name: PHP syntax and pure-unit tests
+        run: |
+          cd AAII_School_Cloud_Gateway_V2.7
+          for f in *.php; do php -l "$f" >/dev/null; done
+          php domain_test.php
+          php guardian_replay_test.php
+          php laravel_adapter_test.php
+          php staging_preflight_v27_test.php
+      - name: Disposable InnoDB replay/guardian integration
+        env:
+          AAII_TEST_DSN: mysql:host=127.0.0.1;port=3306;dbname=aaii_v27_ci;charset=utf8mb4
+          AAII_TEST_USER: root
+          AAII_TEST_PASS: rootpass
+        run: |
+          cd AAII_School_Cloud_Gateway_V2.7
+          php mysql_integration_v27_test.php
