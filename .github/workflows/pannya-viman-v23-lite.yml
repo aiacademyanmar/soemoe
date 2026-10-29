@@ -29,8 +29,8 @@ jobs:
         run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
       - name: Download verified V2.3 source
         run: |
-          curl -fLsS --retry 4 --retry-delay 3 --max-time 180 'https://drive.google.com/uc?export=download&id=1iU7gKFJi-XV3huM8LWm7kRSML72ve-3R' -o source.zip
-          echo '72726a8f684891a5d2e09d35d6142af155b184740817ef47007d8b3028d22d89  source.zip' | sha256sum -c -
+          curl -fLsS --retry 4 --retry-delay 3 --max-time 180 'https://drive.google.com/uc?export=download&id=1Fe0Ja4KMx8VIv7hEyncxHcNKHSmkBn-w' -o source.zip
+          echo 'fe074a4907f2e64e01432be49404d75b742d7f92f5e3bff6f6a887bea6e32054  source.zip' | sha256sum -c -
           unzip -q source.zip
           python3 PannyaViman-V2.3-Lite-Android/scripts/preflight.py
           grep -q "versionName '2.3.0'" PannyaViman-V2.3-Lite-Android/app/build.gradle
