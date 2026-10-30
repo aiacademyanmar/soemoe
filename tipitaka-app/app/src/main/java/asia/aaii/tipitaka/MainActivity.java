@@ -126,6 +126,7 @@ public class MainActivity extends Activity {
     line(c,"ဝိနည်း · သုတ္တန် · အဘိဓမ္မာ",14,false);
     line(c,"ထည့်သွင်းပြီးသော ကျမ်းတွဲ "+scalar("SELECT COUNT(*) FROM books WHERE pages>0")+" / 45",16,true);
     if(scalar("SELECT COUNT(*) FROM books WHERE pages>0")==0)line(c,"ကျမ်းစာသားအပြည့်အစုံ မထည့်ရသေးပါ။ အသုံးပြုခွင့်ရှိသော JSON ကျမ်းစာများကို ကိုယ်တိုင် ထည့်သွင်းနိုင်ပါသည်။",13,false);
+    button(c,"📚 မူရင်း ပါဠိကျမ်းစာ — Offline Native Reader",()->startActivity(new Intent(this,CorpusActivity.class)));
     button(c,"☸ Offline မြန်မာသုတေသန ကျမ်းတွဲ ၄၅ တွဲ",()->startActivity(new Intent(this,ResearchActivity.class)));
     button(c,"📖 ဓမ္မလေ့လာရန် — ဓမ္မပဒ / မင်္ဂလသုတ် / နိဗ္ဗာန် / သတိပဋ္ဌာန်",()->startActivity(new Intent(this,LearningActivity.class)));
     button(c,"ကျမ်းစာ JSON ထည့်သွင်းမည်",this::pickJson);
