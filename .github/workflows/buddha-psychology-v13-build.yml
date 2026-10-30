@@ -77,13 +77,13 @@ jobs:
           assert sum(len(c['states']) for c in mood['categories'])==240
           chat=(j/'AiChatActivity.java').read_text(encoding='utf8')
           assert 'HttpURLConnection' in chat and 'https://' in chat
-          assert 'activation_code' in chat and 'consent.isChecked()' in chat
+          assert 'consent.isChecked()' in chat and 'X-Device-ID' in chat
           assert 'BuddhaGuidanceActivity' in (j/'HomeActivity.java').read_text(encoding='utf8')
           assert not any('OPENAI_API_KEY' in p.name for p in j.iterdir())
-          assert os.path.exists('project/BuddhaPsychologyNative_V1_6_0/backend_php/chat.php')
+          assert os.path.exists('project/BuddhaPsychologyNative_V1_6_0/backend_php/buddha_chat.php')
           modules=(j/'AiModules.java').read_text(encoding='utf8')
           modulesui=(j/'AiModulesActivity.java').read_text(encoding='utf8')
-          gateway=open('project/BuddhaPsychologyNative_V1_6_0/backend_php/chat.php',encoding='utf8').read()
+          gateway=open('project/BuddhaPsychologyNative_V1_6_0/backend_php/buddha_chat.php',encoding='utf8').read()
           assert all(x in modules for x in ['psychology','philosophy','dhamma','abhidhamma','meditation'])
           assert 'AiChatActivity.class' in modulesui
           assert 'AiModulesActivity.class' in (j/'HomeActivity.java').read_text(encoding='utf8')
