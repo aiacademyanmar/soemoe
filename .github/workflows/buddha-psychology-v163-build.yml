@@ -63,7 +63,7 @@ jobs:
           for f in ['api/register.php','api/logout.php','api/buddha_book_progress.php','api/buddha_book_certificate.php','admin/buddha_certificates.php','database/upgrade_v162_to_v163.sql','verify_buddha_certificate.php']:
               assert (server/f).is_file(), f
           qa=json.loads((root/'QA_V1_6_3.json').read_text(encoding='utf8'))
-          assert qa['course_prompt_count']==500 and qa['book_chapter_1']=='free'
+          assert qa['course_chapters']==500 and qa['chapter_1_free'] is True and qa['chapters_2_to_500_premium'] is True
           print('V1.6.3 source and account/certificate QA passed')
           PY
       - name: Build native Android APK
