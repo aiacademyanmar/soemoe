@@ -12,3 +12,6 @@ This is an early-stage prototype; build and Samsung device testing must be compl
 
 
 V1.3 update: offline Myanmar research catalog (45 volumes), Dhamma learning guides (Dhammapada, Mangala Sutta, Nibbana, Satipatthana), five Nikaya overview and original Tipitaka.cloud source links. The full original scripture corpus is not bundled; online original texts require internet.
+
+
+V1.4 compile fix: propagate database asset IO exceptions to Activity initialization handler and capture page count as an effectively-final variable for reader pagination.
