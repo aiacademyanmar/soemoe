@@ -111,8 +111,9 @@ public class CorpusActivity extends Activity {
   }
   private void reader(){
     String title="ကျမ်းစာ";
+    String categoryName="";
     try(Cursor c=db.rawQuery("SELECT title,category,paragraph_count FROM documents WHERE id=?",new String[]{""+selected})){
-      if(c.moveToFirst()){title=c.getString(0);list.addView(txt(c.getString(1)+" · "+c.getInt(2)+" စာပိုဒ်",12,muted,false));}
+      if(c.moveToFirst()){title=c.getString(0);categoryName=c.getString(1);list.addView(txt(categoryName+" · "+c.getInt(2)+" စာပိုဒ်",12,muted,false));}
     }
     LinearLayout top=card();top.addView(txt(title,20,ink,true));
     action(top,"← ကျမ်းစာရင်းသို့ ပြန်ရန်",()->{selected=-1;offset=0;show();});
@@ -122,10 +123,17 @@ public class CorpusActivity extends Activity {
     try(Cursor c=db.rawQuery("SELECT paragraph_count FROM documents WHERE id=?",new String[]{""+selected})){if(c.moveToFirst())total=c.getInt(0);}
     try(Cursor c=db.rawQuery("SELECT seq,kind,body FROM passages WHERE doc_id=? ORDER BY seq LIMIT ? OFFSET ?",new String[]{""+selected,""+PAGE_SIZE,""+offset})){
       while(c.moveToNext()){
-        String kind=c.getString(1),body=c.getString(2);
+        String kind=c.getString(1),body=c.getString(2);int passageNo=c.getInt(0);
         TextView t=txt(body,font,ink,kind.equals("heading"));
         if(kind.equals("heading"))t.setTextColor(royal);
         list.addView(t);
+        if(kind.equals("paragraph")){
+          TextView explain=txt("မြန်မာလို ရှင်းလင်းချက် ဖတ်ရန်  ▾",13,royal,true);
+          explain.setOnClickListener(v->{
+            String note=MyanmarExplanation.explain(body,categoryName,title,passageNo);
+            new android.app.AlertDialog.Builder(this).setTitle("မြန်မာဘာသာ လေ့လာရေးရှင်းလင်းချက်").setMessage(note).setPositiveButton("နားလည်ပါပြီ",null).show();
+          });list.addView(explain);
+        }
       }
     }
     LinearLayout nav=card();
