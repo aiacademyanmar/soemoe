@@ -39,6 +39,8 @@ public class CorpusActivity extends Activity {
     }else{
       category=getIntent().getStringExtra("filter_category");
       if(category==null)category="";
+      query=getIntent().getStringExtra("initial_query");
+      if(query==null)query="";
       rangeStart=Math.max(1,getIntent().getIntExtra("start_seq",1));
       rangeEnd=getIntent().getIntExtra("end_seq",-1);
     }
