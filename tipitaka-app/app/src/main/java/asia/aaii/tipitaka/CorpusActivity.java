@@ -115,6 +115,8 @@ public class CorpusActivity extends Activity {
     try(Cursor c=db.rawQuery("SELECT title,category,paragraph_count FROM documents WHERE id=?",new String[]{""+selected})){
       if(c.moveToFirst()){title=c.getString(0);categoryName=c.getString(1);list.addView(txt(categoryName+" · "+c.getInt(2)+" စာပိုဒ်",12,muted,false));}
     }
+    final String explanationTitle=title;
+    final String explanationCategory=categoryName;
     LinearLayout top=card();top.addView(txt(title,20,ink,true));
     action(top,"← ကျမ်းစာရင်းသို့ ပြန်ရန်",()->{selected=-1;offset=0;show();});
     action(top,"A− စာလုံးသေး",()->{font=Math.max(14,font-2);getPreferences(0).edit().putInt("font",font).apply();show();});
@@ -130,7 +132,7 @@ public class CorpusActivity extends Activity {
         if(kind.equals("paragraph")){
           TextView explain=txt("မြန်မာလို ရှင်းလင်းချက် ဖတ်ရန်  ▾",13,royal,true);
           explain.setOnClickListener(v->{
-            String note=MyanmarExplanation.explain(body,categoryName,title,passageNo);
+            String note=MyanmarExplanation.explain(body,explanationCategory,explanationTitle,passageNo);
             new android.app.AlertDialog.Builder(this).setTitle("မြန်မာဘာသာ လေ့လာရေးရှင်းလင်းချက်").setMessage(note).setPositiveButton("နားလည်ပါပြီ",null).show();
           });list.addView(explain);
         }
