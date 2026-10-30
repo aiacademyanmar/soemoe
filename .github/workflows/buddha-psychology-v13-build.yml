@@ -1,12 +1,12 @@
-name: Buddha Psychology V1.6.1 Provider and Mood UI APK Build
+name: Buddha Psychology V1.6.2 Single AI 500 Courses
 on:
   push:
-    branches: [build/buddha-psychology-v1.6.1]
+    branches: [build/buddha-psychology-v1.6.2]
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
-  build:
+  apk:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -15,7 +15,7 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - name: Android SDK on runner
+      - name: Android SDK
         shell: bash
         run: |
           SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | sort -V | tail -1)"
@@ -25,42 +25,41 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.10.2'
-      - name: Restore versioned project from Drive
+      - name: Download full V1.6.2 project
         env:
-          SOURCE_ID: 1nkotBu090T0aNUvpQBEINXo62jUoEOJC
+          SOURCE_DRIVE_ID: 1dqeilXMDV6JVxzyvfKjWg65AMoNi6dii
         run: |
           python3 -m pip install --disable-pip-version-check gdown==5.2.0
-          gdown "https://drive.google.com/uc?id=${SOURCE_ID}" --output source.zip
+          gdown "https://drive.google.com/uc?id=${SOURCE_DRIVE_ID}" --output source.zip
           python3 - <<'PY'
-          import os,zipfile,json,pathlib
+          import json,pathlib,zipfile
           with zipfile.ZipFile('source.zip') as z:
               assert z.testzip() is None
               z.extractall('project')
-          root=pathlib.Path('project/BuddhaPsychologyNative_V1_6_1')
-          assert (root/'app/src/main/assets/book.pdf').is_file()
-          assert len(list((root/'app/src/main/assets/audio').glob('track_*.mp3')))==9
-          mood=json.loads((root/'app/src/main/assets/mood_catalog.json').read_text(encoding='utf8'))
-          assert mood['total']==240 and len(mood['categories'])==16
-          assert all(len(x['states'])==15 for x in mood['categories'])
-          j=root/'app/src/main/java/asia/aaii/buddhapsychology'
-          chat=(j/'AiChatActivity.java').read_text(encoding='utf8')
-          catalog=(j/'MoodCatalogActivity.java').read_text(encoding='utf8')
-          assert 'ClipData.newPlainText' in chat and 'Intent.ACTION_VIEW' in chat
-          assert 'https://chatgpt.com/' in chat and 'https://gemini.google.com/app' in chat
-          assert 'HTTPS AI Server URL (တစ်ကြိမ်သာ ထည့်ရန်)' not in chat
-          assert 'PremiumLicense.require(this,"ai",0' in chat
-          assert 'colors[mood.cat%colors.length]' in catalog
-          assert (j/'PremiumLicense.java').is_file()
-          assert not any(x.suffix=='.epub' for x in (root/'app/src/main/assets').rglob('*'))
+          root=pathlib.Path('project/BuddhaPsychologyNative_V1_6_2')
+          assets=root/'app/src/main/assets'
+          data=json.loads((assets/'psychology_courses_500.json').read_text(encoding='utf8'))
+          assert data['total']==500 and len(data['tracks'])==20 and len(data['chapters'])==500
+          assert sum(x['kind']=='Buddhist' for x in data['chapters'])==250
+          assert sum(x['kind']=='International' for x in data['chapters'])==250
+          assert len(set(x['prompt'] for x in data['chapters']))==500
+          assert len(list((assets/'audio').glob('track_*.mp3')))==9
+          assert (assets/'book.pdf').is_file()
+          src=root/'app/src/main/java/asia/aaii/buddhapsychology'
+          assert 'IDS={"psychology"}' in (src/'AiModules.java').read_text(encoding='utf8')
+          assert 'ListView' in (src/'PsychologyCoursesActivity.java').read_text(encoding='utf8')
+          assert 'lessonPrompt' in (src/'AiChatActivity.java').read_text(encoding='utf8')
+          assert 'PremiumLicense.require' in (src/'PsychologyCoursesActivity.java').read_text(encoding='utf8')
+          assert all(x in (root/'app/src/main/AndroidManifest.xml').read_text() for x in ['PsychologyCoursesActivity','PsychologyLessonActivity'])
           PY
-      - name: Build Android debug APK
-        working-directory: project/BuddhaPsychologyNative_V1_6_1
+      - name: Build APK
+        working-directory: project/BuddhaPsychologyNative_V1_6_2
         run: gradle --no-daemon --stacktrace assembleDebug
-      - name: Report APK digest
-        run: sha256sum project/BuddhaPsychologyNative_V1_6_1/app/build/outputs/apk/debug/app-debug.apk
-      - name: Upload APK artifact
+      - name: SHA256
+        run: sha256sum project/BuddhaPsychologyNative_V1_6_2/app/build/outputs/apk/debug/app-debug.apk
+      - name: Publish installable APK
         uses: actions/upload-artifact@v4
         with:
-          name: Buddha-Psychology-V1.6.1-Provider-Mood-APK
-          path: project/BuddhaPsychologyNative_V1_6_1/app/build/outputs/apk/debug/app-debug.apk
+          name: Buddha-Psychology-V1.6.2-Single-AI-500-Chapters
+          path: project/BuddhaPsychologyNative_V1_6_2/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
