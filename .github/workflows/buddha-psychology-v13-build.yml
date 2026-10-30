@@ -1,7 +1,7 @@
 name: Buddha Psychology V1.3.7 APK Build
 on:
   push:
-    branches: [build/buddha-psychology-v1.3.6]
+    branches: [build/buddha-psychology-v1.3.7]
   workflow_dispatch:
 permissions:
   contents: read
