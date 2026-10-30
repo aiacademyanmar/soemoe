@@ -2,6 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
  <uses-permission android:name="android.permission.INTERNET"/>
  <application android:label="ပိဋကတ်သုံးပုံ" android:theme="@android:style/Theme.Material.Light.NoActionBar" android:usesCleartextTraffic="false" android:allowBackup="true" android:supportsRtl="true">
+  <activity android:name=".CorpusActivity" android:exported="false"/>
   <activity android:name=".LearningActivity" android:exported="false"/>
   <activity android:name=".ResearchActivity" android:exported="false"/>
   <activity android:name=".OfflineActivity" android:exported="false"/>
