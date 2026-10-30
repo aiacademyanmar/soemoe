@@ -43,7 +43,7 @@ jobs:
           assert os.path.isfile(root+'/book.pdf')
           catalogue=open('project/BuddhaPsychologyNative_V1_3_9/app/src/main/java/asia/aaii/buddhapsychology/AudioCatalog.java',encoding='utf-8').read()
           assert 'ဗုဒ္ဓ၏ စိတ်ပညာနှင့် ခေတ်သစ်ဦးနှောက်သိပ္ပံ' in catalogue
-          assert len([f for f in os.listdir(root+'/audio') if f.endswith('.mp3')]) == 8
+          assert len([f for f in os.listdir(root+'/audio') if f.endswith('.mp3')]) == 9
           native=open('project/BuddhaPsychologyNative_V1_3_9/app/src/main/java/asia/aaii/buddhapsychology/NativeBookActivity.java',encoding='utf8').read()
           assert all(term in native for term in ['ScrollView', 'TextView', 'changeFont', 'changeLine', 'setGravity', 'showSection'])
           assert not os.path.exists(root+'/book_original.epub')
