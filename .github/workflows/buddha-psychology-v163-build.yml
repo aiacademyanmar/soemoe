@@ -1,0 +1,83 @@
+name: Buddha Psychology V1.6.3 Account Certificate APK
+on:
+  push:
+    branches: [build/buddha-psychology-v1.6.3]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install Android SDK
+        shell: bash
+        run: |
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | sort -V | tail -1)"
+          test -x "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses > /dev/null || true
+          "$SDKMANAGER" --install 'platforms;android-35' 'build-tools;35.0.0'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+      - name: Download and validate V1.6.3 source
+        env:
+          SOURCE_DRIVE_ID: 1SqhXHIMxapyyhy2O0cKZ1ThHiGzzkOZV
+        run: |
+          python3 -m pip install --disable-pip-version-check gdown==5.2.0
+          gdown "https://drive.google.com/uc?id=${SOURCE_DRIVE_ID}" --output source.zip
+          python3 - <<'PY'
+          import json,pathlib,zipfile
+          with zipfile.ZipFile('source.zip') as z:
+              assert z.testzip() is None
+              z.extractall('project')
+          root=pathlib.Path('project/BuddhaPsychologyNative_V1_6_3')
+          assert root.is_dir()
+          assets=root/'app/src/main/assets'
+          courses=json.loads((assets/'psychology_courses_500.json').read_text(encoding='utf8'))
+          assert courses['total']==500 and len(courses['chapters'])==500
+          assert all(len(c['prompt'])>100 for c in courses['chapters'])
+          src=root/'app/src/main/java/asia/aaii/buddhapsychology'
+          for f in ['AccountSession.java','AccountActivity.java','CertificateActivity.java','PremiumLicense.java','NativeBookActivity.java']:
+              assert (src/f).is_file(), f
+          acc=(src/'AccountSession.java').read_text(encoding='utf8')
+          assert 'https://aaii.asia/book/psychology' in acc
+          assert 'api/register.php' in acc and 'api/logout.php' in acc
+          assert 'api/buddha_book_progress.php' in acc and 'api/buddha_book_certificate.php' in acc
+          prem=(src/'PremiumLicense.java').read_text(encoding='utf8')
+          assert 'https://aaii.asia/book/psychology' in prem
+          assert 'your-license-server.com' not in prem
+          assert 'chapter<=1' in prem
+          book=(src/'NativeBookActivity.java').read_text(encoding='utf8')
+          assert 'if(index>=2)' in book and 'markCurrentChapterComplete' in book
+          manifest=(root/'app/src/main/AndroidManifest.xml').read_text(encoding='utf8')
+          assert '.AccountActivity' in manifest and '.CertificateActivity' in manifest
+          ui=(src/'UiKit.java').read_text(encoding='utf8')
+          assert 'User Account / Settings' in ui
+          server=root/'AAII_PANYAR_HOME_V4_1_SERVER_INTEGRATED'
+          for f in ['api/register.php','api/logout.php','api/buddha_book_progress.php','api/buddha_book_certificate.php','admin/buddha_certificates.php','database/upgrade_v162_to_v163.sql','verify_buddha_certificate.php']:
+              assert (server/f).is_file(), f
+          qa=json.loads((root/'QA_V1_6_3.json').read_text(encoding='utf8'))
+          assert qa['course_prompt_count']==500 and qa['book_chapter_1']=='free'
+          print('V1.6.3 source and account/certificate QA passed')
+          PY
+      - name: Build native Android APK
+        working-directory: project/BuddhaPsychologyNative_V1_6_3
+        run: gradle --no-daemon --stacktrace assembleDebug
+      - name: Verify APK and checksum
+        run: |
+          APK=project/BuddhaPsychologyNative_V1_6_3/app/build/outputs/apk/debug/app-debug.apk
+          test -s "$APK"
+          unzip -t "$APK" | tail -1
+          sha256sum "$APK"
+      - name: Upload installable APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Buddha-Psychology-V1.6.3-Account-Certificate-APK
+          path: project/BuddhaPsychologyNative_V1_6_3/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
