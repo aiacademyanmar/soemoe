@@ -1,4 +1,4 @@
-name: Buddha Psychology V1.3.6 APK Build
+name: Buddha Psychology V1.3.7 APK Build
 on:
   push:
     branches: [build/buddha-psychology-v1.3.6]
@@ -27,9 +27,9 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.10.2'
-      - name: Download V1.3.6 source from Drive backup
+      - name: Download V1.3.7 source from Drive backup
         env:
-          SOURCE_DRIVE_ID: 1FoTKTAuLjWhnWknObwQLIJLu1HgHxHV9
+          SOURCE_DRIVE_ID: 1X6zIL-47ksJmt_G_jUzGj9Lpy9FC3v8N
         run: |
           python3 -m pip install --disable-pip-version-check gdown==5.2.0
           gdown "https://drive.google.com/uc?id=${SOURCE_DRIVE_ID}" --output project.zip
@@ -39,15 +39,15 @@ jobs:
               bad=z.testzip()
               if bad: raise RuntimeError('Bad zip file: '+bad)
               z.extractall('project')
-          root='project/BuddhaPsychologyNative_V1_3_6/app/src/main/assets'
+          root='project/BuddhaPsychologyNative_V1_3_7/app/src/main/assets'
           assert os.path.isfile(root+'/book.pdf')
-          catalogue=open('project/BuddhaPsychologyNative_V1_3_6/app/src/main/java/asia/aaii/buddhapsychology/AudioCatalog.java',encoding='utf-8').read()
+          catalogue=open('project/BuddhaPsychologyNative_V1_3_7/app/src/main/java/asia/aaii/buddhapsychology/AudioCatalog.java',encoding='utf-8').read()
           assert 'ဗုဒ္ဓ၏ စိတ်ပညာနှင့် ခေတ်သစ်ဦးနှောက်သိပ္ပံ' in catalogue
           assert len([f for f in os.listdir(root+'/audio') if f.endswith('.mp3')]) == 8
-          native=open('project/BuddhaPsychologyNative_V1_3_6/app/src/main/java/asia/aaii/buddhapsychology/NativeBookActivity.java',encoding='utf8').read()
+          native=open('project/BuddhaPsychologyNative_V1_3_7/app/src/main/java/asia/aaii/buddhapsychology/NativeBookActivity.java',encoding='utf8').read()
           assert all(term in native for term in ['ScrollView', 'TextView', 'changeFont', 'changeLine', 'setGravity', 'showSection'])
           assert not os.path.exists(root+'/book_original.epub')
-          assert not os.path.exists('project/BuddhaPsychologyNative_V1_3_6/app/src/main/java/asia/aaii/buddhapsychology/EpubReaderActivity.java')
+          assert not os.path.exists('project/BuddhaPsychologyNative_V1_3_7/app/src/main/java/asia/aaii/buddhapsychology/EpubReaderActivity.java')
           assert len([f for f in os.listdir(root+'/book_text') if f.startswith('section_') and f.endswith('.txt')]) == 10
           import json
           idx=json.load(open(root+'/book_text/index.json',encoding='utf8'))
@@ -56,15 +56,24 @@ jobs:
           assert idx['section_count'] == 10
           assert all(os.path.isfile(root+'/book_text/headings_%02d.json'%n) for n in range(10))
           assert 'readStyledAsset' in native and 'SpannableStringBuilder' in native
+          from pathlib import Path
+          j=Path('project/BuddhaPsychologyNative_V1_3_7/app/src/main/java/asia/aaii/buddhapsychology')
+          home=(j/'HomeActivity.java').read_text(encoding='utf-8')
+          chapters=(j/'ChaptersActivity.java').read_text(encoding='utf-8')
+          guide=(j/'BuddhaGuidanceActivity.java').read_text(encoding='utf-8')
+          assert 'launch(this,ChaptersActivity.class)' in home
+          assert 'for(int i=1;i<=9;i++)' in chapters
+          assert 'reveal.setVisibility(View.GONE)' in native
+          assert 'ClipboardManager' in guide
           PY
       - name: Compile APK
-        working-directory: project/BuddhaPsychologyNative_V1_3_6
+        working-directory: project/BuddhaPsychologyNative_V1_3_7
         run: gradle --no-daemon --stacktrace assembleDebug
       - name: Print APK digest
-        run: sha256sum project/BuddhaPsychologyNative_V1_3_6/app/build/outputs/apk/debug/app-debug.apk
+        run: sha256sum project/BuddhaPsychologyNative_V1_3_7/app/build/outputs/apk/debug/app-debug.apk
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Buddha-Psychology-V1.3.6-debug-APK
-          path: project/BuddhaPsychologyNative_V1_3_6/app/build/outputs/apk/debug/app-debug.apk
+          name: Buddha-Psychology-V1.3.7-debug-APK
+          path: project/BuddhaPsychologyNative_V1_3_7/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
