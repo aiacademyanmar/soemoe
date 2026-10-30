@@ -52,6 +52,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Myanmar-Tipitaka-Native-V1.6-Full-Offline-APK
-          path: tipitaka-app/app/build/outputs/apk/debug/Myanmar-Tipitaka-Native-V1.5.apk
+          path: tipitaka-app/app/build/outputs/apk/debug/Myanmar-Tipitaka-Native-V1.6.apk
           if-no-files-found: error
           retention-days: 30
