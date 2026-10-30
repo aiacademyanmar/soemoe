@@ -56,7 +56,7 @@ jobs:
           assert courses['total']==500 and len(courses['chapters'])==500
           assert len(list((root/'app/src/main/assets/audio').glob('track_*.mp3')))==9
           server=root/'AAII_PANYAR_HOME_V4_1_SERVER_INTEGRATED'
-          for name in ['api/buddha_trial_status.php','api/buddha_payment_submit.php','admin/buddha_sales_licenses.php']:
+          for name in ['api/register.php','api/logout.php','api/buddha_status.php']:
               assert (server/name).is_file(), name
           print('V1.6.4 source validation passed')
           PY
