@@ -57,7 +57,7 @@ public class LearningActivity extends Activity {
     LinearLayout mangala=card();mangala.addView(txt("၂။ မင်္ဂလသုတ် (Maṅgala Sutta)",17,ink,true));
     mangala.addView(txt("မင်္ဂလာ ၃၈ ပါး · ခုဒ္ဒကပါဌ",13,muted,false));
     mangala.addView(txt("ခုဒ္ဒကပါဌပါဠိထဲရှိ မင်္ဂလသုတ္တံ အပိုင်းကို ရွေးဖတ်နိုင်သည်။",14,ink,false));
-    action(mangala,"မင်္ဂလသုတ် ဖတ်ရန်",()->open("s0501m",44,82));
+    action(mangala,"မင်္ဂလသုတ် ဖတ်ရန်",()->open("s0501m",45,81));
 
     LinearLayout nibbana=card();nibbana.addView(txt("၃။ နိဗ္ဗာန် (Nibbāna)",17,ink,true));
     nibbana.addView(txt("ဥဒါနပါဠိ · နိဗ္ဗာန်နှင့် ဆက်စပ်သော သုတ် ၄ ပုဒ်",13,muted,false));
