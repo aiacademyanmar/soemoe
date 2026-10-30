@@ -1,0 +1,77 @@
+name: Buddha Psychology V1.6.4 Android APK Build
+on:
+  push:
+    branches: [build/buddha-psychology-v1.6.4]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install Android SDK 35
+        shell: bash
+        run: |
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | sort -V | tail -1)"
+          test -x "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses > /dev/null || true
+          "$SDKMANAGER" --install 'platforms;android-35' 'build-tools;35.0.0'
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+      - name: Download V1.6.4 Native Source from Drive
+        env:
+          SOURCE_DRIVE_ID: 1EFOv1DVtazhvrklDPj1wLn5QF-pQga-U
+        run: |
+          python3 -m pip install --disable-pip-version-check gdown==5.2.0
+          gdown "https://drive.google.com/uc?id=${SOURCE_DRIVE_ID}" --output source.zip
+          python3 - <<'PY'
+          import json, pathlib, zipfile
+          with zipfile.ZipFile('source.zip') as z:
+              assert z.testzip() is None, 'Source ZIP integrity failed'
+              z.extractall('project')
+          root=pathlib.Path('project/BuddhaPsychologyNative_V1_6_4')
+          assert (root/'app/build.gradle').is_file()
+          assert (root/'app/src/main/AndroidManifest.xml').is_file()
+          qa=json.loads((root/'QA_V1_6_4.json').read_text(encoding='utf-8'))
+          assert qa['version']=='1.6.4'
+          assert qa['trial_hours']==24 and qa['trial_once_per_account'] is True
+          assert qa['chapter_1_free'] is True
+          assert qa['packages'][0]['price_ks']==10000 and qa['packages'][0]['billing']=='lifetime'
+          assert qa['packages'][1]['price_ks']==15000 and qa['packages'][1]['billing']=='lifetime'
+          assert qa['course_prompt_count']==500
+          src=root/'app/src/main/java/asia/aaii/buddhapsychology'
+          for name in ['AccountActivity.java','AccountSession.java','PurchaseActivity.java','PremiumLicense.java','CertificateActivity.java']:
+              assert (src/name).is_file(), name
+          courses=json.loads((root/'app/src/main/assets/psychology_courses_500.json').read_text(encoding='utf-8'))
+          assert courses['total']==500 and len(courses['chapters'])==500
+          assert len(list((root/'app/src/main/assets/audio').glob('track_*.mp3')))==9
+          server=root/'AAII_PANYAR_HOME_V4_1_SERVER_INTEGRATED'
+          for name in ['api/buddha_trial_status.php','api/buddha_payment_submit.php','admin/buddha_sales_licenses.php']:
+              assert (server/name).is_file(), name
+          print('V1.6.4 source validation passed')
+          PY
+      - name: Build Debug APK
+        working-directory: project/BuddhaPsychologyNative_V1_6_4
+        run: gradle --no-daemon --stacktrace assembleDebug
+      - name: Verify APK and SHA-256
+        run: |
+          APK=project/BuddhaPsychologyNative_V1_6_4/app/build/outputs/apk/debug/app-debug.apk
+          test -s "$APK"
+          unzip -t "$APK" | tail -1
+          sha256sum "$APK"
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Buddha-Psychology-V1.6.4-Lifetime-Trial-APK
+          path: project/BuddhaPsychologyNative_V1_6_4/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
