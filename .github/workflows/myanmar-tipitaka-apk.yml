@@ -6,6 +6,12 @@ on:
     paths:
       - 'tipitaka-app/**'
       - '.github/workflows/myanmar-tipitaka-apk.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'tipitaka-app/**'
+      - '.github/workflows/myanmar-tipitaka-apk.yml'
   workflow_dispatch:
 jobs:
   android:
