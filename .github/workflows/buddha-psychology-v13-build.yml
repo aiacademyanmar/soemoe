@@ -1,7 +1,7 @@
-name: Buddha Psychology V1.4.0 APK Build
+name: Buddha Psychology V1.5.0 APK Build
 on:
   push:
-    branches: [build/buddha-psychology-v1.4.0]
+    branches: [build/buddha-psychology-v1.5.0]
   workflow_dispatch:
 permissions:
   contents: read
@@ -27,9 +27,9 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.10.2'
-      - name: Download V1.4.0 source from Drive backup
+      - name: Download V1.5.0 source from Drive backup
         env:
-          SOURCE_DRIVE_ID: 1QoYavRUlqUZqzOznYQF4vY3AoZo1GHJx
+          SOURCE_DRIVE_ID: 1po14XnA7SJQcXnhX_6LyPt5J3Wb22GKV
         run: |
           python3 -m pip install --disable-pip-version-check gdown==5.2.0
           gdown "https://drive.google.com/uc?id=${SOURCE_DRIVE_ID}" --output project.zip
@@ -39,15 +39,15 @@ jobs:
               bad=z.testzip()
               if bad: raise RuntimeError('Bad zip file: '+bad)
               z.extractall('project')
-          root='project/BuddhaPsychologyNative_V1_4_0/app/src/main/assets'
+          root='project/BuddhaPsychologyNative_V1_5_0/app/src/main/assets'
           assert os.path.isfile(root+'/book.pdf')
-          catalogue=open('project/BuddhaPsychologyNative_V1_4_0/app/src/main/java/asia/aaii/buddhapsychology/AudioCatalog.java',encoding='utf-8').read()
+          catalogue=open('project/BuddhaPsychologyNative_V1_5_0/app/src/main/java/asia/aaii/buddhapsychology/AudioCatalog.java',encoding='utf-8').read()
           assert 'ဗုဒ္ဓ၏ စိတ်ပညာနှင့် ခေတ်သစ်ဦးနှောက်သိပ္ပံ' in catalogue
           assert len([f for f in os.listdir(root+'/audio') if f.endswith('.mp3')]) == 9
-          native=open('project/BuddhaPsychologyNative_V1_4_0/app/src/main/java/asia/aaii/buddhapsychology/NativeBookActivity.java',encoding='utf8').read()
+          native=open('project/BuddhaPsychologyNative_V1_5_0/app/src/main/java/asia/aaii/buddhapsychology/NativeBookActivity.java',encoding='utf8').read()
           assert all(term in native for term in ['ScrollView', 'TextView', 'changeFont', 'changeLine', 'setGravity', 'showSection'])
           assert not os.path.exists(root+'/book_original.epub')
-          assert not os.path.exists('project/BuddhaPsychologyNative_V1_4_0/app/src/main/java/asia/aaii/buddhapsychology/EpubReaderActivity.java')
+          assert not os.path.exists('project/BuddhaPsychologyNative_V1_5_0/app/src/main/java/asia/aaii/buddhapsychology/EpubReaderActivity.java')
           assert len([f for f in os.listdir(root+'/book_text') if f.startswith('section_') and f.endswith('.txt')]) == 10
           import json
           idx=json.load(open(root+'/book_text/index.json',encoding='utf8'))
@@ -57,7 +57,7 @@ jobs:
           assert all(os.path.isfile(root+'/book_text/headings_%02d.json'%n) for n in range(10))
           assert 'readStyledAsset' in native and 'SpannableStringBuilder' in native
           from pathlib import Path
-          j=Path('project/BuddhaPsychologyNative_V1_4_0/app/src/main/java/asia/aaii/buddhapsychology')
+          j=Path('project/BuddhaPsychologyNative_V1_5_0/app/src/main/java/asia/aaii/buddhapsychology')
           home=(j/'HomeActivity.java').read_text(encoding='utf-8')
           chapters=(j/'ChaptersActivity.java').read_text(encoding='utf-8')
           guide=(j/'BuddhaGuidanceActivity.java').read_text(encoding='utf-8')
@@ -80,16 +80,26 @@ jobs:
           assert 'activation_code' in chat and 'consent.isChecked()' in chat
           assert 'BuddhaGuidanceActivity' in (j/'HomeActivity.java').read_text(encoding='utf8')
           assert not any('OPENAI_API_KEY' in p.name for p in j.iterdir())
-          assert os.path.exists('project/BuddhaPsychologyNative_V1_4_0/backend_php/chat.php')
+          assert os.path.exists('project/BuddhaPsychologyNative_V1_5_0/backend_php/chat.php')
+          modules=(j/'AiModules.java').read_text(encoding='utf8')
+          modulesui=(j/'AiModulesActivity.java').read_text(encoding='utf8')
+          gateway=open('project/BuddhaPsychologyNative_V1_5_0/backend_php/chat.php',encoding='utf8').read()
+          assert all(x in modules for x in ['psychology','philosophy','dhamma','abhidhamma','meditation'])
+          assert 'AiChatActivity.class' in modulesui
+          assert 'AiModulesActivity.class' in (j/'HomeActivity.java').read_text(encoding='utf8')
+          assert 'AiModulesActivity' in open('project/BuddhaPsychologyNative_V1_5_0/app/src/main/AndroidManifest.xml').read()
+          assert all("'"+x+"'=>" in gateway for x in ['psychology','philosophy','dhamma','abhidhamma','meditation'])
+          assert "['auto','openai','gemini']" in gateway
+          assert 'body.put("module",selectedModule)' in chat
           PY
       - name: Compile APK
-        working-directory: project/BuddhaPsychologyNative_V1_4_0
+        working-directory: project/BuddhaPsychologyNative_V1_5_0
         run: gradle --no-daemon --stacktrace assembleDebug
       - name: Print APK digest
-        run: sha256sum project/BuddhaPsychologyNative_V1_4_0/app/build/outputs/apk/debug/app-debug.apk
+        run: sha256sum project/BuddhaPsychologyNative_V1_5_0/app/build/outputs/apk/debug/app-debug.apk
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Buddha-Psychology-V1.4.0-debug-APK
-          path: project/BuddhaPsychologyNative_V1_4_0/app/build/outputs/apk/debug/app-debug.apk
+          name: Buddha-Psychology-V1.5.0-debug-APK
+          path: project/BuddhaPsychologyNative_V1_5_0/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
