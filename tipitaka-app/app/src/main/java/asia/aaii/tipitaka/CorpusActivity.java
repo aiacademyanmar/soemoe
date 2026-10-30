@@ -26,20 +26,37 @@ public class CorpusActivity extends Activity {
   private SQLiteDatabase db;
   private LinearLayout list;
   private String query="", category="";
-  private int selected=-1, offset=0, font=18;
+  private int selected=-1, offset=0, font=18, rangeStart=1, rangeEnd=-1;
   private static final int PAGE_SIZE=45;
   private TextWatcher watcher;
 
   @Override public void onCreate(Bundle state){
     super.onCreate(state);
     font=getPreferences(0).getInt("font",18);
-    if(state!=null){selected=state.getInt("selected",-1);offset=state.getInt("offset",0);category=state.getString("category","");}
-    try{openCorpus();}catch(Exception e){Toast.makeText(this,"Offline ကျမ်းစာ Database ဖွင့်မရပါ: "+e.getMessage(),Toast.LENGTH_LONG).show();}
+    if(state!=null){
+      selected=state.getInt("selected",-1);offset=state.getInt("offset",0);
+      category=state.getString("category","");rangeStart=state.getInt("rangeStart",1);rangeEnd=state.getInt("rangeEnd",-1);
+    }else{
+      category=getIntent().getStringExtra("filter_category");
+      if(category==null)category="";
+      rangeStart=Math.max(1,getIntent().getIntExtra("start_seq",1));
+      rangeEnd=getIntent().getIntExtra("end_seq",-1);
+    }
+    try{
+      openCorpus();
+      String openCode=getIntent().getStringExtra("open_code");
+      if(state==null && openCode!=null){
+        try(Cursor c=db.rawQuery("SELECT id FROM documents WHERE code=?",new String[]{openCode})){
+          if(c.moveToFirst()){selected=c.getInt(0);offset=rangeStart-1;}
+          else Toast.makeText(this,"သက်ဆိုင်ရာ ကျမ်းစာဒေတာ မတွေ့ပါ: "+openCode,Toast.LENGTH_LONG).show();
+        }
+      }
+    }catch(Exception e){Toast.makeText(this,"Offline ကျမ်းစာ Database ဖွင့်မရပါ: "+e.getMessage(),Toast.LENGTH_LONG).show();}
     show();
   }
-  @Override protected void onSaveInstanceState(Bundle b){super.onSaveInstanceState(b);b.putInt("selected",selected);b.putInt("offset",offset);b.putString("category",category);}
+  @Override protected void onSaveInstanceState(Bundle b){super.onSaveInstanceState(b);b.putInt("selected",selected);b.putInt("offset",offset);b.putString("category",category);b.putInt("rangeStart",rangeStart);b.putInt("rangeEnd",rangeEnd);}
   @Override public void onDestroy(){if(db!=null&&db.isOpen())db.close();super.onDestroy();}
-  @Override public void onBackPressed(){if(selected>=0){selected=-1;offset=0;show();}else super.onBackPressed();}
+  @Override public void onBackPressed(){if(selected>=0){selected=-1;offset=0;rangeStart=1;rangeEnd=-1;show();}else super.onBackPressed();}
   private int d(int x){return (int)(x*getResources().getDisplayMetrics().density+0.5f);}
   private GradientDrawable rounded(int color){GradientDrawable g=new GradientDrawable();g.setColor(color);g.setCornerRadius(d(13));return g;}
   private LinearLayout column(){LinearLayout l=new LinearLayout(this);l.setOrientation(1);return l;}
@@ -75,6 +92,10 @@ public class CorpusActivity extends Activity {
     if(db==null){LinearLayout c=card();c.addView(txt("ကျမ်းစာ Database မရရှိပါ။ APK Build ထဲတွင် Corpus asset ထည့်သွင်းထားမှုကို စစ်ဆေးပါ။",15,ink,false));return;}
     if(selected<0)catalog();else reader();
   }
+  private int countDocuments(String categoryName){
+    try(Cursor c=db.rawQuery("SELECT COUNT(*) FROM documents WHERE category=?",new String[]{categoryName})){if(c.moveToFirst())return c.getInt(0);}
+    return 0;
+  }
   private void catalog(){
     LinearLayout intro=card();
     intro.addView(txt("မြန်မာအက္ခရာဖြင့် ပါဠိမူရင်းကျမ်းစာ",18,ink,true));
@@ -86,14 +107,16 @@ public class CorpusActivity extends Activity {
     action(intro,"ရှာဖွေမည်",()->show());
     LinearLayout tabs=card();
     action(tabs,"ကျမ်းအားလုံး",()->{category="";show();});
-    action(tabs,"ဝိနည်းပိဋကတ်",()->{category="ဝိနည်းပိဋကတ်";show();});
-    action(tabs,"သုတ္တပိဋကတ်",()->{category="သုတ္တပိဋကတ်";show();});
-    action(tabs,"အဘိဓမ္မာပိဋကတ်",()->{category="အဘိဓမ္မာပိဋကတ်";show();});
+    action(tabs,"ဝိနည်းပိဋကတ် ("+countDocuments("ဝိနည်းပိဋကတ်")+")",()->{category="ဝိနည်းပိဋကတ်";show();});
+    action(tabs,"သုတ္တပိဋကတ် ("+countDocuments("သုတ္တပိဋကတ်")+")",()->{category="သုတ္တပိဋကတ်";show();});
+    action(tabs,"အဘိဓမ္မပိဋကတ် ("+countDocuments("အဘိဓမ္မပိဋကတ်")+")",()->{category="အဘိဓမ္မပိဋကတ်";show();});
     String sql;
     String[] args;
     if(query.trim().length()>=2){
-      sql="SELECT DISTINCT d.id,d.title,d.category,d.paragraph_count FROM documents d JOIN passages p ON p.doc_id=d.id WHERE (d.title LIKE ? OR p.body LIKE ?)"+(category.isEmpty()?"":" AND d.category=?")+" ORDER BY d.category,d.id LIMIT 100";
-      args=category.isEmpty()?new String[]{"%"+query+"%","%"+query+"%"}:new String[]{"%"+query+"%","%"+query+"%",category};
+      String normalizedQuery=query.replace("အဘိဓမ္မာ","အဘိဓမ္မ");
+      String like="%"+normalizedQuery+"%";
+      sql="SELECT DISTINCT d.id,d.title,d.category,d.paragraph_count FROM documents d JOIN passages p ON p.doc_id=d.id WHERE (d.title LIKE ? OR d.category LIKE ? OR d.code LIKE ? OR p.body LIKE ?)"+(category.isEmpty()?"":" AND d.category=?")+" ORDER BY d.category,d.id LIMIT 100";
+      args=category.isEmpty()?new String[]{like,like,like,like}:new String[]{like,like,like,like,category};
     }else{
       sql="SELECT id,title,category,paragraph_count FROM documents"+(category.isEmpty()?"":" WHERE category=?")+" ORDER BY CASE category WHEN 'ဝိနည်းပိဋကတ်' THEN 1 WHEN 'သုတ္တပိဋကတ်' THEN 2 ELSE 3 END,id";
       args=category.isEmpty()?null:new String[]{category};
@@ -123,7 +146,10 @@ public class CorpusActivity extends Activity {
     action(top,"A+ စာလုံးကြီး",()->{font=Math.min(32,font+2);getPreferences(0).edit().putInt("font",font).apply();show();});
     int total=0;
     try(Cursor c=db.rawQuery("SELECT paragraph_count FROM documents WHERE id=?",new String[]{""+selected})){if(c.moveToFirst())total=c.getInt(0);}
-    try(Cursor c=db.rawQuery("SELECT seq,kind,body FROM passages WHERE doc_id=? ORDER BY seq LIMIT ? OFFSET ?",new String[]{""+selected,""+PAGE_SIZE,""+offset})){
+    if(rangeEnd>0)total=Math.min(total,rangeEnd);
+    offset=Math.max(rangeStart-1,Math.min(offset,Math.max(rangeStart-1,total)));
+    int pageLimit=Math.max(0,Math.min(PAGE_SIZE,total-offset));
+    try(Cursor c=db.rawQuery("SELECT seq,kind,body FROM passages WHERE doc_id=? ORDER BY seq LIMIT ? OFFSET ?",new String[]{""+selected,""+pageLimit,""+offset})){
       while(c.moveToNext()){
         String kind=c.getString(1),body=c.getString(2);int passageNo=c.getInt(0);
         TextView t=txt(body,font,ink,kind.equals("heading"));
@@ -139,8 +165,9 @@ public class CorpusActivity extends Activity {
       }
     }
     LinearLayout nav=card();
-    nav.addView(txt("စာပိုဒ် "+(offset+1)+" – "+Math.min(offset+PAGE_SIZE,total)+" / "+total,12,muted,false));
-    action(nav,"◀ ယခင်စာပိုဒ်များ",()->{offset=Math.max(0,offset-PAGE_SIZE);show();});
+    int visibleEnd=Math.min(offset+pageLimit,total);
+    nav.addView(txt("စာပိုဒ် "+(offset+1)+" – "+visibleEnd+" / "+total,12,muted,false));
+    action(nav,"◀ ယခင်စာပိုဒ်များ",()->{offset=Math.max(rangeStart-1,offset-PAGE_SIZE);show();});
     final int pageTotal=total;
     action(nav,"နောက်စာပိုဒ်များ ▶",()->{if(offset+PAGE_SIZE<pageTotal){offset+=PAGE_SIZE;show();}});
   }
