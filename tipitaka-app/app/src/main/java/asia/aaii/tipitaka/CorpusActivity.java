@@ -55,7 +55,7 @@ public class CorpusActivity extends Activity {
     TextView b=txt(label,14,Color.WHITE,true);b.setGravity(Gravity.CENTER);b.setBackground(rounded(royal));b.setMinHeight(d(43));b.setOnClickListener(v->run.run());
     LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,-2);lp.setMargins(0,d(5),0,d(5));p.addView(b,lp);
   }
-  private void openCorpus(){
+  private void openCorpus() throws Exception{
     File file=getDatabasePath("tipitaka_myanmar.db");
     if(!file.exists()){
       File parent=file.getParentFile();if(parent!=null&&!parent.exists())parent.mkdirs();
@@ -131,6 +131,7 @@ public class CorpusActivity extends Activity {
     LinearLayout nav=card();
     nav.addView(txt("စာပိုဒ် "+(offset+1)+" – "+Math.min(offset+PAGE_SIZE,total)+" / "+total,12,muted,false));
     action(nav,"◀ ယခင်စာပိုဒ်များ",()->{offset=Math.max(0,offset-PAGE_SIZE);show();});
-    action(nav,"နောက်စာပိုဒ်များ ▶",()->{if(offset+PAGE_SIZE<total){offset+=PAGE_SIZE;show();}});
+    final int pageTotal=total;
+    action(nav,"နောက်စာပိုဒ်များ ▶",()->{if(offset+PAGE_SIZE<pageTotal){offset+=PAGE_SIZE;show();}});
   }
 }
