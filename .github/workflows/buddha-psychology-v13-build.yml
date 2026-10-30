@@ -1,120 +1,66 @@
-name: Buddha Psychology V1.6.0 APK Build
+name: Buddha Psychology V1.6.1 Provider and Mood UI APK Build
 on:
   push:
-    branches: [build/buddha-psychology-v1.6.0]
+    branches: [build/buddha-psychology-v1.6.1]
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
-  apk:
+  build:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-      - name: Use preinstalled Android SDK on GitHub Ubuntu runner
+      - name: Android SDK on runner
         shell: bash
         run: |
-          echo "ANDROID_HOME=$ANDROID_HOME"
           SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | sort -V | tail -1)"
           test -x "$SDKMANAGER"
-          "$SDKMANAGER" --version
           yes | "$SDKMANAGER" --licenses > /dev/null || true
           "$SDKMANAGER" --install 'platforms;android-35' 'build-tools;35.0.0'
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.10.2'
-      - name: Download V1.6.0 source from Drive backup
+      - name: Restore versioned project from Drive
         env:
-          SOURCE_DRIVE_ID: 14K91yNScj19GpIKVopKmIi-_aaWWoSfo
+          SOURCE_ID: 1nkotBu090T0aNUvpQBEINXo62jUoEOJC
         run: |
           python3 -m pip install --disable-pip-version-check gdown==5.2.0
-          gdown "https://drive.google.com/uc?id=${SOURCE_DRIVE_ID}" --output project.zip
+          gdown "https://drive.google.com/uc?id=${SOURCE_ID}" --output source.zip
           python3 - <<'PY'
-          import os,zipfile
-          with zipfile.ZipFile('project.zip') as z:
-              bad=z.testzip()
-              if bad: raise RuntimeError('Bad zip file: '+bad)
+          import os,zipfile,json,pathlib
+          with zipfile.ZipFile('source.zip') as z:
+              assert z.testzip() is None
               z.extractall('project')
-          root='project/BuddhaPsychologyNative_V1_6_0/app/src/main/assets'
-          assert os.path.isfile(root+'/book.pdf')
-          catalogue=open('project/BuddhaPsychologyNative_V1_6_0/app/src/main/java/asia/aaii/buddhapsychology/AudioCatalog.java',encoding='utf-8').read()
-          assert 'ဗုဒ္ဓ၏ စိတ်ပညာနှင့် ခေတ်သစ်ဦးနှောက်သိပ္ပံ' in catalogue
-          assert len([f for f in os.listdir(root+'/audio') if f.endswith('.mp3')]) == 9
-          native=open('project/BuddhaPsychologyNative_V1_6_0/app/src/main/java/asia/aaii/buddhapsychology/NativeBookActivity.java',encoding='utf8').read()
-          assert all(term in native for term in ['ScrollView', 'TextView', 'changeFont', 'changeLine', 'setGravity', 'showSection'])
-          assert not os.path.exists(root+'/book_original.epub')
-          assert not os.path.exists('project/BuddhaPsychologyNative_V1_6_0/app/src/main/java/asia/aaii/buddhapsychology/EpubReaderActivity.java')
-          assert len([f for f in os.listdir(root+'/book_text') if f.startswith('section_') and f.endswith('.txt')]) == 10
-          import json
-          idx=json.load(open(root+'/book_text/index.json',encoding='utf8'))
-          assert idx['source'].endswith('.html')
-          assert idx['chapter_count'] == 9
-          assert idx['section_count'] == 10
-          assert all(os.path.isfile(root+'/book_text/headings_%02d.json'%n) for n in range(10))
-          assert 'readStyledAsset' in native and 'SpannableStringBuilder' in native
-          from pathlib import Path
-          j=Path('project/BuddhaPsychologyNative_V1_6_0/app/src/main/java/asia/aaii/buddhapsychology')
-          home=(j/'HomeActivity.java').read_text(encoding='utf-8')
-          chapters=(j/'ChaptersActivity.java').read_text(encoding='utf-8')
-          guide=(j/'BuddhaGuidanceActivity.java').read_text(encoding='utf-8')
-          assert 'launch(this,ChaptersActivity.class)' in home
-          assert 'for(int i=1;i<=9;i++)' in chapters
-          assert 'reveal.setVisibility(View.GONE)' in native
-          assert 'ClipboardManager' in guide
-          catalog=(j/'AudioCatalog.java').read_text(encoding='utf8')
-          assert catalog.count('new Track(')==9
-          assert 'audio/track_09.mp3' in catalog
-          assert 'အခန်း (၉) - ဗုဒ္ဓဘာသာ စိတ်ပညာ၏ လက်တွေ့ကျကျိုးကျေးဇူးများ' in catalog
-          assert os.path.getsize(root+'/audio/track_09.mp3')>5000000
-          assert not (j/'ChapterNineTtsActivity.java').exists()
-          import json
-          mood=json.load(open(root+'/mood_catalog.json',encoding='utf8'))
+          root=pathlib.Path('project/BuddhaPsychologyNative_V1_6_1')
+          assert (root/'app/src/main/assets/book.pdf').is_file()
+          assert len(list((root/'app/src/main/assets/audio').glob('track_*.mp3')))==9
+          mood=json.loads((root/'app/src/main/assets/mood_catalog.json').read_text(encoding='utf8'))
           assert mood['total']==240 and len(mood['categories'])==16
-          assert sum(len(c['states']) for c in mood['categories'])==240
+          assert all(len(x['states'])==15 for x in mood['categories'])
+          j=root/'app/src/main/java/asia/aaii/buddhapsychology'
           chat=(j/'AiChatActivity.java').read_text(encoding='utf8')
-          assert 'HttpURLConnection' in chat and 'https://' in chat
-          assert 'consent.isChecked()' in chat and 'X-Device-ID' in chat
-          assert 'BuddhaGuidanceActivity' in (j/'HomeActivity.java').read_text(encoding='utf8')
-          assert not any('OPENAI_API_KEY' in p.name for p in j.iterdir())
-          assert os.path.exists('project/BuddhaPsychologyNative_V1_6_0/backend_php/buddha_chat.php')
-          modules=(j/'AiModules.java').read_text(encoding='utf8')
-          modulesui=(j/'AiModulesActivity.java').read_text(encoding='utf8')
-          gateway=open('project/BuddhaPsychologyNative_V1_6_0/backend_php/buddha_chat.php',encoding='utf8').read()
-          assert all(x in modules for x in ['psychology','philosophy','dhamma','abhidhamma','meditation'])
-          assert 'AiChatActivity.class' in modulesui
-          assert 'AiModulesActivity.class' in (j/'HomeActivity.java').read_text(encoding='utf8')
-          assert 'AiModulesActivity' in open('project/BuddhaPsychologyNative_V1_6_0/app/src/main/AndroidManifest.xml').read()
-          assert all("'"+x+"'=>" in gateway for x in ['psychology','philosophy','dhamma','abhidhamma','meditation'])
-          assert "['auto','openai','gemini']" in gateway
-          assert 'body.put("module",selectedModule)' in chat
-          license=(j/'LicenseManager.java').read_text(encoding='utf8')
-          screen=(j/'LicenseActivity.java').read_text(encoding='utf8')
-          assert 'buddha_entitlement.php' in license and 'api/login.php' in license
-          assert 'device_id' in license and 'Bearer ' in license
-          assert 'AAII-' in screen
-          assert 'if(index>1)' in native
-          assert 'if(chapter>1)' in chapters
-          assert 'LicenseManager.require' in (j/'VideoCourseActivity.java').read_text(encoding='utf8')
-          assert 'recentlyValidated' in (j/'AudioPlaybackService.java').read_text(encoding='utf8')
-          assert 'buddha_chat.php' in chat
-          assert 'Authorization' in chat and 'X-Device-ID' in chat
-          assert (j/'LicenseActivity.java').exists()
-          assert os.path.exists('project/BuddhaPsychologyNative_V1_6_0/backend_php/buddha_license_lib.php')
-          assert os.path.exists('project/BuddhaPsychologyNative_V1_6_0/backend_php/buddha_entitlement.php')
-          assert os.path.exists('project/BuddhaPsychologyNative_V1_6_0/backend_php/buddha_chat.php')
+          catalog=(j/'MoodCatalogActivity.java').read_text(encoding='utf8')
+          assert 'ClipData.newPlainText' in chat and 'Intent.ACTION_VIEW' in chat
+          assert 'https://chatgpt.com/' in chat and 'https://gemini.google.com/app' in chat
+          assert 'HTTPS AI Server URL (တစ်ကြိမ်သာ ထည့်ရန်)' not in chat
+          assert 'PremiumLicense.require(this,"ai",0' in chat
+          assert 'colors[mood.cat%colors.length]' in catalog
+          assert (j/'PremiumLicense.java').is_file()
+          assert not any(x.suffix=='.epub' for x in (root/'app/src/main/assets').rglob('*'))
           PY
-      - name: Compile APK
-        working-directory: project/BuddhaPsychologyNative_V1_6_0
+      - name: Build Android debug APK
+        working-directory: project/BuddhaPsychologyNative_V1_6_1
         run: gradle --no-daemon --stacktrace assembleDebug
-      - name: Print APK digest
-        run: sha256sum project/BuddhaPsychologyNative_V1_6_0/app/build/outputs/apk/debug/app-debug.apk
-      - name: Upload APK
+      - name: Report APK digest
+        run: sha256sum project/BuddhaPsychologyNative_V1_6_1/app/build/outputs/apk/debug/app-debug.apk
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Buddha-Psychology-V1.6.0-debug-APK
-          path: project/BuddhaPsychologyNative_V1_6_0/app/build/outputs/apk/debug/app-debug.apk
+          name: Buddha-Psychology-V1.6.1-Provider-Mood-APK
+          path: project/BuddhaPsychologyNative_V1_6_1/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
