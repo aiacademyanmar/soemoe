@@ -15,3 +15,6 @@ V1.3 update: offline Myanmar research catalog (45 volumes), Dhamma learning guid
 
 
 V1.4 compile fix: propagate database asset IO exceptions to Activity initialization handler and capture page count as an effectively-final variable for reader pagination.
+
+
+V1.5: Added on-device Myanmar explanations for Pali passages. Explanation panel identifies selected Pali concepts (Dukkha, Anicca, Anatta, Sati, Samadhi, Panna, Sila, Metta, Karuna, Lobha, Dosa, Moha, five aggregates, dependent origination, Noble Eightfold Path, Nibbana, Satipatthana, Ayatana, Kamma, Vinaya and Abhidhamma), gives Myanmar meanings, context, practical study guidance and reflection questions. All explanation content is bundled in app code and works offline. Clearly labeled as educational notes, not a verbatim translation or traditional commentary.
