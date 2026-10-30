@@ -40,13 +40,16 @@ jobs:
           echo "Using $SDK_MANAGER"
           (yes | "$SDK_MANAGER" --sdk_root="$SDK_ROOT" --licenses >/dev/null) || true
           "$SDK_MANAGER" --sdk_root="$SDK_ROOT" 'platforms;android-35' 'build-tools;35.0.0'
+      - name: Bundle full Myanmar-script Mula Tipitaka corpus
+        working-directory: tipitaka-app
+        run: python3 scripts/build_offline_corpus.py
       - name: Compile APK
         working-directory: tipitaka-app
         run: gradle --no-daemon --stacktrace assembleDebug
       - name: APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Myanmar-Tipitaka-Native-V1-Debug-APK
+          name: Myanmar-Tipitaka-Native-V1.4-Full-Offline-APK
           path: tipitaka-app/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 30
