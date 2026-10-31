@@ -1,7 +1,7 @@
-name: Buddha Psychology V1.6.5 Certificate Null Fix APK
+name: Buddha Psychology V1.6.5 Bookshelf R1 APK
 on:
   push:
-    branches: [build/buddha-psychology-v1.6.5]
+    branches: [build/buddha-psychology-v165-bookshelf-r1]
   workflow_dispatch:
 permissions:
   contents: read
@@ -27,7 +27,7 @@ jobs:
           gradle-version: '8.10.2'
       - name: Download and validate V1.6.5 source
         env:
-          SOURCE_DRIVE_ID: 1P0QD_9YsdN_vtvvOWGVStVIMnMwxnu84
+          SOURCE_DRIVE_ID: 1qb2DmnwMpyM5ytwVjh6gzpcQMX29xXHW
         run: |
           python3 -m pip install --disable-pip-version-check gdown==5.2.0
           gdown "https://drive.google.com/uc?id=${SOURCE_DRIVE_ID}" --output source.zip
@@ -36,40 +36,42 @@ jobs:
           with zipfile.ZipFile('source.zip') as z:
               assert z.testzip() is None
               z.extractall('project')
-          root=pathlib.Path('project/BuddhaPsychologyNative_V1_6_5')
+          root=pathlib.Path('project/BuddhaPsychologyNative_V1_6_5_Bookshelf_R1')
           assert (root/'app/build.gradle').is_file()
-          assert 'versionName \'1.6.5\'' in (root/'app/build.gradle').read_text()
-          qa=json.loads((root/'QA_V1_6_5.json').read_text(encoding='utf-8'))
-          assert qa['null_guard'] is True and qa['server_certificate_repair'] is True
-          assert qa['certificate_issue_rule']=='all_9_book_chapters_completed'
+          assert 'versionName \'1.6.5.1\'' in (root/'app/build.gradle').read_text()
+          qa=json.loads((root/'QA_BOOKSHELF_R1.json').read_text(encoding='utf-8'))
+          assert qa['bookshelf_cards'] and qa['shelf_json_backup_restore']
+          assert qa['admin_menu_removed']
           src=root/'app/src/main/java/asia/aaii/buddhapsychology'
           cert=(src/'CertificateActivity.java').read_text(encoding='utf-8')
           assert 'private static String clean' in cert and 'showUnavailable' in cert
           assert 'null'.lower() in cert.lower()
           assert 'certificate_code' in (src/'AccountActivity.java').read_text(encoding='utf-8')
           assert (src/'CertificateActivity.java').is_file()
+          assert 'addWebsiteShelf(body)' in (src/'HomeActivity.java').read_text()
+          assert (root/'AAII_PANYAR_HOME_V4_1_SERVER_INTEGRATED/admin/buddha_shelf.php').is_file()
           courses=json.loads((root/'app/src/main/assets/psychology_courses_500.json').read_text(encoding='utf-8'))
           assert courses['total']==500 and len(courses['chapters'])==500
-          print('V1.6.5 source validation passed')
+          print('V1.6.5 Bookshelf R1 source validation passed')
           PY
       - name: Validate integrated PHP server source
         run: |
-          SERVER=project/BuddhaPsychologyNative_V1_6_5/AAII_PANYAR_HOME_V4_1_SERVER_INTEGRATED
+          SERVER=project/BuddhaPsychologyNative_V1_6_5_Bookshelf_R1/AAII_PANYAR_HOME_V4_1_SERVER_INTEGRATED
           test -f "$SERVER/api/buddha_book_certificate.php"
           test -f "$SERVER/verify_buddha_certificate.php"
           test -f "$SERVER/upgrade_v164_to_v165.php"
           find "$SERVER" -type f -name '*.php' -print0 | xargs -0 -n1 php -l
       - name: Build installable debug APK
-        working-directory: project/BuddhaPsychologyNative_V1_6_5
+        working-directory: project/BuddhaPsychologyNative_V1_6_5_Bookshelf_R1
         run: gradle --no-daemon --stacktrace assembleDebug
       - name: Verify APK and checksum
         run: |
-          APK=project/BuddhaPsychologyNative_V1_6_5/app/build/outputs/apk/debug/app-debug.apk
+          APK=project/BuddhaPsychologyNative_V1_6_5_Bookshelf_R1/app/build/outputs/apk/debug/app-debug.apk
           test -s "$APK"
           unzip -t "$APK" | tail -1
           sha256sum "$APK"
       - uses: actions/upload-artifact@v4
         with:
-          name: Buddha-Psychology-V1.6.5-Certificate-Fix-APK
-          path: project/BuddhaPsychologyNative_V1_6_5/app/build/outputs/apk/debug/app-debug.apk
+          name: Buddha-Psychology-V1.6.5-Bookshelf-R1-APK
+          path: project/BuddhaPsychologyNative_V1_6_5_Bookshelf_R1/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
