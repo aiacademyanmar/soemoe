@@ -28,7 +28,6 @@ jobs:
         run: |
           python3 -m pip install --disable-pip-version-check gdown==5.2.0 pillow
           gdown "https://drive.google.com/uc?id=1P0QD_9YsdN_vtvvOWGVStVIMnMwxnu84" -O source.zip
-          gdown "https://drive.google.com/uc?id=17RwpT25IIcyyuC0HFsiRWIqd4naoQhy5" -O approved_logo.png
           python3 - <<'PY'
           import zipfile,hashlib
           with zipfile.ZipFile("source.zip") as z:
