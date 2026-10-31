@@ -1,0 +1,17 @@
+plugins { id 'com.android.application' }
+android {
+    namespace 'asia.aaii.buddhapsychology.preview'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'asia.aaii.buddhapsychology.preview'
+        minSdk 26
+        targetSdk 35
+        versionCode 500
+        versionName '5.0.0-compiled-preview'
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    androidResources { noCompress += ['mp3'] }
+}
