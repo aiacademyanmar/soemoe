@@ -43,3 +43,22 @@ assert "versionCode 16" in gr and "1.6.5.2-single-ad" in gr
 gradle.write_text(gr.replace("versionCode 16","versionCode 17").replace("1.6.5.2-single-ad","1.6.5.3-more-admin"),encoding="utf-8")
 assert "MoreOptionsDialog.show(a, idx->{" in ui.read_text(encoding="utf-8")
 print("V1.6.5.3: original More actions preserved, dialog restyled, Home Ad single slot retained.")
+
+
+# R4 license redemption under the existing Account License button; no new screen.
+native_license=src/"PremiumLicense.java"
+ps=native_license.read_text(encoding="utf-8")
+needle='public static void prompt(Activity a){EditText code=codeField(a);'
+assert needle in ps
+ps=ps.replace(needle,'public static void prompt(Activity a){EditText code=codeField(a);',1)
+old='(ok,msg)->new AlertDialog.Builder(a).setTitle(ok?"Activated":"Activation failed").setMessage(msg).setPositiveButton("OK",null).show()'
+assert old in ps
+new='(ok,msg)->{if(ok){new AlertDialog.Builder(a).setTitle("Activated").setMessage(msg).setPositiveButton("OK",null).show();}else if(AccountSession.isLoggedIn(a)){ManagedAppActivation.activate(a,code.getText().toString(),(yes,reason)->new AlertDialog.Builder(a).setTitle(yes?"App License Activated":"Activation failed").setMessage(yes?reason:reason+"\\nLegacy: "+msg).setPositiveButton("OK",null).show());}else{new AlertDialog.Builder(a).setTitle("Activation failed").setMessage(msg).setPositiveButton("OK",null).show();}}'
+ps=ps.replace(old,new,1)
+native_license.write_text(ps,encoding="utf-8")
+copyfile("r4_native/ManagedAppActivation.java",src/"ManagedAppActivation.java")
+gradle=root/"app/build.gradle"
+gr=gradle.read_text(encoding="utf-8")
+assert "versionCode 17" in gr
+gradle.write_text(gr.replace("versionCode 17","versionCode 18").replace("1.6.5.3-more-admin","1.6.5.4-app-management"),encoding="utf-8")
+print("R4 native client integrated, no navigation or screen modification.")
