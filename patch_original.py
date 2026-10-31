@@ -62,3 +62,18 @@ gr=gradle.read_text(encoding="utf-8")
 assert "versionCode 17" in gr
 gradle.write_text(gr.replace("versionCode 17","versionCode 18").replace("1.6.5.3-more-admin","1.6.5.4-app-management"),encoding="utf-8")
 print("R4 native client integrated, no navigation or screen modification.")
+
+
+# R4.1: In-app server announcements, once on Home screen entry; preserve exact layout.
+notices=src/"ServerAppNotices.java"
+copyfile("r41_native/ServerAppNotices.java", notices)
+home=src/"HomeActivity.java"
+home_text=home.read_text(encoding="utf-8")
+target='@Override public void onCreate(Bundle b){super.onCreate(b);render();}'
+assert target in home_text
+home.write_text(home_text.replace(target,'@Override public void onCreate(Bundle b){super.onCreate(b);render();ServerAppNotices.check(this);}',1),encoding="utf-8")
+gradle=root/"app/build.gradle"
+gr=gradle.read_text(encoding="utf-8")
+assert "versionCode 18" in gr
+gradle.write_text(gr.replace("versionCode 18","versionCode 19").replace("1.6.5.4-app-management","1.6.5.5-server-notices"),encoding="utf-8")
+print("R4.1 notifications fetch on Home open with no new UI navigation or layout.")
