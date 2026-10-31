@@ -1,0 +1,112 @@
+{
+  "schema_version": 1,
+  "title": "Myanmar Tipitaka Dhamma Audio Research Catalogue",
+  "compiled_on": "2026-10-31",
+  "license_note": "Sources are references only. Individual sound files need separate download and redistribution permissions. YouTube videos are not downloadable MP3 assets.",
+  "items": [
+    {
+      "id": "yt-pitaka",
+      "kind": "youtube",
+      "category": "ပိဋကတ်သုံးပုံ",
+      "title": "ပိဋကတ်သုံးပုံနှင့် ဗုဒ္ဓစာပေသမိုင်း",
+      "source": "YouTube",
+      "url": "https://www.youtube.com/watch?v=zKEkwqDVFlI"
+    },
+    {
+      "id": "yt-abhidhamma",
+      "kind": "youtube",
+      "category": "အဘိဓမ္မာ",
+      "title": "အဘိဓမ္မာ ၇ ကျမ်း ရှင်းတမ်း",
+      "source": "YouTube",
+      "url": "https://www.youtube.com/watch?v=wM0KCygKA0g"
+    },
+    {
+      "id": "yt-patthana1",
+      "kind": "youtube",
+      "category": "ပဋ္ဌာန်း",
+      "title": "ပဋ္ဌာန်း ၂၄ ပစ္စည်း ရှင်းလင်းချက်",
+      "source": "YouTube",
+      "url": "https://www.youtube.com/watch?v=UgeOGn7xUV8"
+    },
+    {
+      "id": "yt-patthana2",
+      "kind": "youtube",
+      "category": "ပဋ္ဌာန်း",
+      "title": "ပဋ္ဌာန်း ၂၄ ပစ္စည်း တရားတော်",
+      "source": "YouTube",
+      "url": "https://www.youtube.com/watch?v=Yjj4wtlc178"
+    },
+    {
+      "id": "yt-paticca",
+      "kind": "youtube",
+      "category": "ပဋိစ္စသမုပ္ပါဒ်",
+      "title": "ပဋိစ္စသမုပ္ပါဒ် အခြေခံ",
+      "source": "YouTube",
+      "url": "https://www.youtube.com/watch?v=CG-5S3snxyo"
+    },
+    {
+      "id": "yt-nibbana1",
+      "kind": "youtube",
+      "category": "နိဗ္ဗာန်",
+      "title": "သံသရာနှင့် နိဗ္ဗာန်",
+      "source": "YouTube",
+      "url": "https://www.youtube.com/watch?v=opai4CjzDlM"
+    },
+    {
+      "id": "yt-nibbana2",
+      "kind": "youtube",
+      "category": "နိဗ္ဗာန်",
+      "title": "နိဗ္ဗာန်ရောက်ကြောင်း တရားတော်",
+      "source": "YouTube",
+      "url": "https://www.youtube.com/watch?v=p4sknkQYXMM"
+    },
+    {
+      "id": "web-dhamma",
+      "kind": "website",
+      "category": "အသံဖိုင်ရင်းမြစ်",
+      "title": "Dhamma Download — မြန်မာ MP3 တရားတော်များ",
+      "source": "Dhammadownload",
+      "url": "https://www.dhammadownload.com/AudioInMyanmar.htm"
+    },
+    {
+      "id": "web-nanda",
+      "kind": "website",
+      "category": "သတိပဋ္ဌာန်",
+      "title": "ပါချုပ်ဆရာတော် — မဟာသတိပဋ္ဌာန် သင်ခန်းစာများ",
+      "source": "Dhammadownload",
+      "url": "https://www.dhammadownload.com/Dr-Nandamalabhivamsa-mp3-myanmar.htm"
+    },
+    {
+      "id": "web-khin",
+      "kind": "website",
+      "category": "အဘိဓမ္မာ",
+      "title": "ဓမ္မဗျူဟာ ဒေါ်ခင်လှတင် — အဘိဓမ္မာ/ပဋ္ဌာန်း",
+      "source": "Dhammadownload",
+      "url": "https://www.dhammadownload.com/DhammaByuharDawKhinHlaTin-mp3.htm"
+    },
+    {
+      "id": "web-sitagu",
+      "kind": "website",
+      "category": "ပိဋကတ်အသံ",
+      "title": "Sitagu Buddhist Academy — Piṭaka Audio Project",
+      "source": "Sitagu Buddhist Academy",
+      "url": "https://sbamdy.edu.mm/pitaka-audio/"
+    },
+    {
+      "id": "web-tosana",
+      "kind": "website",
+      "category": "အဘိဓမ္မာ",
+      "title": "ဆရာတော် ဦးတောသန — အဘိဓမ္မာ",
+      "source": "Dhammadownload",
+      "url": "https://www.dhammadownload.com/SayadawTosana-abhidhammaInmyanmar.htm"
+    },
+    {
+      "id": "web-mon",
+      "kind": "website",
+      "category": "အဘိဓမ္မာ",
+      "title": "ဒေါက်တာ မင်းတင်မွန် — အဘိဓမ္မာ",
+      "source": "Dhammadownload",
+      "url": "https://www.dhammadownload.com/Dr-MehmTinMon-mp3-myanmar.htm"
+    }
+  ]
+}
