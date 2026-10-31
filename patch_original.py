@@ -110,3 +110,30 @@ gr=gradle.read_text(encoding="utf-8")
 assert "versionCode 20" in gr and "versionName '1.6.6'" in gr
 gradle.write_text(gr.replace("versionCode 20","versionCode 21",1),encoding="utf-8")
 print("Buddha Psychology V1.6.6 API rebuild, versionCode 21, original UI retained.")
+
+
+# V1.6.6 API compatibility rebuild (same UI): fix JSON-only errors and auto-link App Users.
+acct=src/"AccountSession.java"
+ac=acct.read_text(encoding="utf-8")
+fixes=[
+ ('cn.setConnectTimeout(15000); cn.setReadTimeout(20000); cn.setRequestMethod("POST");',
+  'cn.setConnectTimeout(15000); cn.setReadTimeout(20000); cn.setInstanceFollowRedirects(false); cn.setRequestMethod("POST");'),
+ ('        int status = cn.getResponseCode();\n        InputStream stream = status < 400 ? cn.getInputStream() : cn.getErrorStream();',
+  '        int status = cn.getResponseCode();\n        String type=cn.getContentType();\n        if(type==null || !type.toLowerCase(java.util.Locale.ROOT).contains("application/json"))\n            throw new IllegalStateException("Server API JSON မပြန်ပါ (HTTP " + status + "). API ဖိုင်/URL စစ်ဆေးပါ။");\n        InputStream stream = status < 400 ? cn.getInputStream() : cn.getErrorStream();'),
+ ('if(bytes.size()>65536) throw new IllegalStateException("Response too large");',
+  'if(bytes.size()>65536) throw new IllegalStateException("API JSON is too large (>64 KB). Check server response.");'),
+ ('JSONObject b = new JSONObject(); b.put("device_id", deviceId(c)); b.put("device_label", "Buddha Psychology Android"); return b;',
+  'JSONObject b = new JSONObject(); b.put("app_key", "buddha_psychology"); b.put("device_id", deviceId(c)); b.put("device_label", "Buddha Psychology Android"); return b;'),
+ ('result=request("api/buddha_entitlement.php",new JSONObject(),token(a));',
+  'result=request("api/buddha_entitlement.php",baseBody(a),token(a));'),
+ ('JSONObject b=new JSONObject();b.put("package_code",packageCode);',
+  'JSONObject b=baseBody(a);b.put("package_code",packageCode);')
+]
+for old,new in fixes:
+    assert ac.count(old)==1,"Unexpected AccountSession source; refusing unsafe replacement: "+old[:50]
+    ac=ac.replace(old,new,1)
+acct.write_text(ac,encoding="utf-8")
+gr=gradle.read_text(encoding="utf-8")
+assert "versionCode 21" in gr and "versionName '1.6.6'" in gr
+gradle.write_text(gr.replace("versionCode 21","versionCode 22",1),encoding="utf-8")
+print("Buddha Psychology V1.6.6 API Fix (versionCode22): More UI unchanged, JSON requests and App Users linked.")
