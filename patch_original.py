@@ -89,3 +89,24 @@ gr=gradle.read_text(encoding="utf-8")
 assert "versionCode 19" in gr and "1.6.5.5-server-notices" in gr
 gradle.write_text(gr.replace("versionCode 19","versionCode 20").replace("1.6.5.5-server-notices","1.6.6"),encoding="utf-8")
 print("Buddha Psychology V1.6.6 original UI + better More panel, 11 actions intact.")
+
+
+# V1.6.6 rebuild: use actual R4.2 server API for the optional Home advertisement.
+# Native account/login/license API continues using the existing AccountSession.API_BASE.
+cfg=src/"AdminConnectionConfig.java"
+adsrc=src/"SingleHomeAd.java"
+adjava=adsrc.read_text(encoding="utf-8")
+old_ad_call='URL u=new URL(api+sep+"page=api_home_ad&app_key=buddha_psychology");'
+assert old_ad_call in adjava, "Unexpected Home Ad source; stop instead of modifying original UI."
+adjava=adjava.replace(old_ad_call,'URL u=new URL(api);',1)
+adsrc.write_text(adjava,encoding="utf-8")
+base=os.environ.get("AAII_CENTRAL_ADMIN_URL","").strip() or "https://aaii.asia/book/psychology"
+if not base.startswith("https://") or "?" in base or base.endswith(".php"):
+    raise ValueError("AAII_CENTRAL_ADMIN_URL must be the HTTPS server root, not an API endpoint")
+home_ad_api=base.rstrip("/")+"/api/managed_app_public.php?resource=home_ad&app_key=buddha_psychology"
+cfg.write_text('package asia.aaii.buddhapsychology; public final class AdminConnectionConfig { public static final String URL="'+home_ad_api+'"; }',encoding="utf-8")
+assert "managed_app_public.php?resource=home_ad&app_key=buddha_psychology" in cfg.read_text(encoding="utf-8")
+gr=gradle.read_text(encoding="utf-8")
+assert "versionCode 20" in gr and "versionName '1.6.6'" in gr
+gradle.write_text(gr.replace("versionCode 20","versionCode 21",1),encoding="utf-8")
+print("Buddha Psychology V1.6.6 API rebuild, versionCode 21, original UI retained.")
