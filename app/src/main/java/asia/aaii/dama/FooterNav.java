@@ -11,6 +11,8 @@ import android.widget.TextView;
 /** Shared bottom navigation across DAMA's three media modules and offline Reader. */
 public final class FooterNav {
     private FooterNav(){}
+    private static long lastNavigationAt=0L;
+    private static synchronized boolean allowNavigation(){long now=android.os.SystemClock.elapsedRealtime();if(now-lastNavigationAt<350L)return false;lastNavigationAt=now;return true;}
     private static final int BG=0xff092b27, GOLD=0xffedc375, MUTED=0xffb8c5bb;
     private static int dp(Activity a,int n){return (int)(n*a.getResources().getDisplayMetrics().density+.5f);}
     public static void attach(Activity activity,LinearLayout root,String active){
@@ -44,7 +46,7 @@ public final class FooterNav {
             footer.addView(item,param);
             item.setContentDescription(names[i]+" tab");
             item.setOnClickListener(view->{
-                if(names[index].equals(active))return;
+                if(names[index].equals(active)||!allowNavigation())return;
                 Intent route=new Intent(activity,targets[index]);
                 route.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
                 activity.startActivity(route);
