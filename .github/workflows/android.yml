@@ -1,7 +1,7 @@
 name: DAMA APP V22 - Fast Touch Popup Animations and Soft Sound
 on:
   push:
-    branches: ["dama-touch-feedback-v22"]
+    branches: ["dama-touch-feedback-v22", "dama-v22-performance-only"]
   workflow_dispatch:
 permissions:
   contents: read
@@ -11,6 +11,11 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
+      - name: Select DAMA V22 Gradle project (avoid unrelated Kid Creator Kotlin DSL)
+        run: |
+          rm -f settings.gradle.kts build.gradle.kts app/build.gradle.kts
+          test -f app/build.gradle
+          test -f settings.gradle
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
