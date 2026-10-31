@@ -61,15 +61,16 @@ public class TvActivity extends DamaActivity {
     private String section="All",query="";
     private Video selected;
     private WebView web;
+    private android.widget.VideoView nativeVideo;
     private FrameLayout fullscreen;
     private View customVideoView;
     private WebChromeClient.CustomViewCallback customViewCallback;
 
     static final class Video {
-        String id,title,sayadaw,category,source,sourceUrl;
+        String id,title,sayadaw,category,source,sourceUrl,mediaUrl;
         int duration;
         Video(JSONObject o){id=o.optString("id"); title=o.optString("title"); sayadaw=o.optString("sayadaw");
-            category=o.optString("category");source=o.optString("source");sourceUrl=o.optString("source_url");
+            category=o.optString("category");source=o.optString("source");sourceUrl=o.optString("source_url");mediaUrl=o.optString("media_url");
             duration=o.optInt("duration",0);}
     }
     int dp(int n){return (int)(n*getResources().getDisplayMetrics().density+.5f);}
@@ -90,14 +91,36 @@ public class TvActivity extends DamaActivity {
             query=profileKey.trim();section="All";monkIndex=0;categoryIndex=0;sourceIndex=0;
         }
         showBrowse();}
+    private static boolean safeMp4(String url){
+        try{Uri u=Uri.parse(url);String host=u.getHost();String path=u.getPath();
+            return "https".equalsIgnoreCase(u.getScheme()) && host!=null &&
+                (host.equalsIgnoreCase("dhammadownload.com")||host.equalsIgnoreCase("www.dhammadownload.com")||host.toLowerCase(java.util.Locale.ROOT).endsWith(".dhammadownload.com")) &&
+                path!=null && path.toLowerCase(java.util.Locale.ROOT).endsWith(".mp4");
+        }catch(Exception e){return false;}
+    }
     private void loadCatalog(){
         try(InputStream gzip=getAssets().open("tv_catalog.json");ByteArrayOutputStream output=new ByteArrayOutputStream()){
             byte[] buffer=new byte[8192];int n;while((n=gzip.read(buffer))!=-1)output.write(buffer,0,n);
             JSONArray list=new JSONArray(output.toString("UTF-8"));
             LinkedHashSet<String> people=new LinkedHashSet<>(),types=new LinkedHashSet<>(),channels=new LinkedHashSet<>(),ids=new LinkedHashSet<>();
             for(int i=0;i<list.length();i++){JSONObject o=list.optJSONObject(i);if(o==null)continue;Video v=new Video(o);
-                if(!v.id.matches("[A-Za-z0-9_-]{11}")||!ids.add(v.id))continue;
+                if((!v.id.matches("[A-Za-z0-9_-]{11}") && !safeMp4(v.mediaUrl))||!ids.add(v.id))continue;
                 videos.add(v);people.add(v.sayadaw);types.add(v.category);channels.add(v.source);}
+            try(InputStream extra=getAssets().open("dhammadownload_mp4_pending.json")){
+                byte[] bytes=new byte[extra.available()];int count=0,n;
+                while(count<bytes.length && (n=extra.read(bytes,count,bytes.length-count))>0)count+=n;
+                JSONArray extraRows=new JSONArray(new String(bytes,0,count,java.nio.charset.StandardCharsets.UTF_8));
+                for(int i=0;i<extraRows.length();i++){
+                    JSONObject o=extraRows.optJSONObject(i);if(o==null)continue;
+                    String media=o.optString("url");if(!safeMp4(media))continue;
+                    String id="DD-"+Integer.toHexString(media.hashCode());if(!ids.add(id))continue;
+                    JSONObject item=new JSONObject();item.put("id",id);item.put("title",o.optString("title","Dhamma MP4"));
+                    item.put("sayadaw","Dhammadownload");item.put("category","တရားတော်");item.put("source","Dhammadownload");
+                    item.put("source_url",o.optString("source_url",media));item.put("media_url",media);
+                    Video v=new Video(item);videos.add(v);people.add(v.sayadaw);types.add(v.category);channels.add(v.source);
+                }
+            }catch(java.io.FileNotFoundException missing){/* Optional catalog; baseline remains unchanged. */}
+             catch(Exception e){android.util.Log.w("DAMA_TV","Optional MP4 metadata unavailable",e);}
             monks.add("ဆရာတော်အားလုံး");monks.addAll(people);
             categories.add("အမျိုးအစားအားလုံး");categories.addAll(types);
             sources.add("Channel / Playlist အားလုံး");sources.addAll(channels);
@@ -248,6 +271,15 @@ public class TvActivity extends DamaActivity {
         content.addView(text(v.sayadaw+"  ·  "+v.category,12,GOLD,false));gap(content,12);
         // Keep the YouTube player fully visible; minimum 200px square under official embedding policy.
         FrameLayout playerFrame=new FrameLayout(this);playerFrame.setBackgroundColor(Color.BLACK);content.addView(playerFrame,wh(-1,250));
+        if(safeMp4(v.mediaUrl)){
+            nativeVideo=new android.widget.VideoView(this);
+            playerFrame.addView(nativeVideo,new FrameLayout.LayoutParams(-1,-1));
+            android.widget.MediaController controls=new android.widget.MediaController(this);
+            controls.setAnchorView(nativeVideo);nativeVideo.setMediaController(controls);
+            nativeVideo.setOnErrorListener((mp,what,extra)->{Toast.makeText(this,"MP4 လင့်ခ် ဖွင့်မရပါ",Toast.LENGTH_LONG).show();return true;});
+            nativeVideo.setVideoURI(Uri.parse(v.mediaUrl));
+            nativeVideo.setOnPreparedListener(mp->{mp.setOnVideoSizeChangedListener((m,w,h)->{});});
+        }else{
         web=new WebView(this);web.setBackgroundColor(Color.BLACK);web.getSettings().setJavaScriptEnabled(true);
         web.getSettings().setDomStorageEnabled(true);web.getSettings().setMediaPlaybackRequiresUserGesture(true);
         web.getSettings().setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
@@ -274,16 +306,18 @@ public class TvActivity extends DamaActivity {
             "iframe{border:0;width:100%;height:100%;}</style></head><body><iframe title='YouTube Player' src='"+src+
             "' allow='accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture;web-share' allowfullscreen referrerpolicy='strict-origin-when-cross-origin'></iframe></body></html>";
         web.loadDataWithBaseURL(EMBED_ORIGIN,html,"text/html","UTF-8",null);
+        }
         gap(content,10);
         TextView note=text("YouTube Player ဖြင့် APK အတွင်း တိုက်ရိုက်ကြည့်ပါ။ Embed ပိတ်ထားသော / ဖျက်ထားသော Video များတွင် မဖွင့်နိုင်ပါ။",11,MUTED,false);
+        if(safeMp4(v.mediaUrl))note.setText("MP4 တရားတော်ကို Native Player ဖြင့်ကြည့်ရန် Play ကိုနှိပ်ပါ။");
         content.addView(note);gap(content,12);
         LinearLayout actions=row();actions.addView(button(favorites.contains(v.id)?"♥ Favorite":"♡ Favorite",()->{toggleFavorite(v);openVideo(v);}));
-        actions.addView(button("YouTube တွင်ဖွင့်ရန် ↗",()->launchExternal("https://www.youtube.com/watch?v="+v.id)));
+        actions.addView(button(safeMp4(v.mediaUrl)?"မူရင်း MP4 ဖွင့်ရန် ↗":"YouTube တွင်ဖွင့်ရန် ↗",()->launchExternal(safeMp4(v.mediaUrl)?v.mediaUrl:"https://www.youtube.com/watch?v="+v.id)));
         content.addView(actions);gap(content,9);
         content.addView(button("စာရင်းသို့ပြန်ရန်",()->exitPlayer()));gap(content,15);
         content.addView(text("Channel / Playlist: "+v.source,12,IVORY,true));gap(content,8);
         content.addView(button("မူရင်း Channel / Playlist",()->launchExternal(v.sourceUrl)));
-        gap(content,12);content.addView(text("ဗီဒီယိုဒေတာ Offline သိမ်းထားပြီး Video ကို YouTube မှ Online ဖွင့်ပါသည်။",11,MUTED,false));
+        gap(content,12);content.addView(text(safeMp4(v.mediaUrl)?"MP4 လင့်ခ်စာရင်းကို Offline သိမ်းထားပြီး Video ကြည့်ရန် Internet လိုအပ်သည်။":"ဗီဒီယိုဒေတာ Offline သိမ်းထားပြီး Video ကို YouTube မှ Online ဖွင့်ပါသည်။",11,MUTED,false));
         // V16: shared six-item footer is ALWAYS anchored under the video player content,
         // except while YouTube's native fullscreen video overlay is active.
         FooterNav.attach(this,root,"TV");
@@ -294,8 +328,8 @@ public class TvActivity extends DamaActivity {
     private void closeFullscreen(){if(customVideoView!=null){if(fullscreen!=null){fullscreen.removeView(customVideoView);((ViewGroup)fullscreen.getParent()).removeView(fullscreen);}
             customVideoView=null;fullscreen=null;getWindow().getDecorView().setSystemUiVisibility(0);
             if(customViewCallback!=null){customViewCallback.onCustomViewHidden();customViewCallback=null;}}}
-    private void releasePlayer(){closeFullscreen();if(web!=null){web.stopLoading();web.loadUrl("about:blank");web.onPause();web.destroy();web=null;}}
-    private void exitPlayer(){selected=null;showBrowse();}
+    private void releasePlayer(){closeFullscreen();if(nativeVideo!=null){nativeVideo.stopPlayback();nativeVideo=null;}if(web!=null){web.stopLoading();web.loadUrl("about:blank");web.onPause();web.destroy();web=null;}}
+    private void exitPlayer(){releasePlayer();selected=null;showBrowse();}
     @Override public void onBackPressed(){if(customVideoView!=null){closeFullscreen();return;}if(selected!=null){exitPlayer();return;}super.onBackPressed();}
     @Override protected void onPause(){if(web!=null)web.onPause();super.onPause();}
     @Override protected void onResume(){super.onResume();if(web!=null)web.onResume();}
