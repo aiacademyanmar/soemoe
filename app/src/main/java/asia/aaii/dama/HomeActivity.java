@@ -23,6 +23,15 @@ public final class HomeActivity extends DamaActivity {
   private static final int NIGHT=0xff061e1d, DEEP=0xff082b28,
       GOLD=0xffedc375, WHITE=0xfffff5dd, SOFT=0xffbfcec0, PANEL=0xff143d36;
   private LinearLayout root;
+  private long lastOpenAt=0L;
+  private void openModule(Class<?> target){
+    long now=android.os.SystemClock.elapsedRealtime();
+    if(now-lastOpenAt<350L)return;
+    lastOpenAt=now;
+    Intent intent=new Intent(this,target);
+    intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+    startActivity(intent);
+  }
   private int d(float n){return Math.round(n*getResources().getDisplayMetrics().density);}
   private LinearLayout vertical(){LinearLayout v=new LinearLayout(this);v.setOrientation(1);return v;}
   private LinearLayout horizontal(){LinearLayout r=new LinearLayout(this);r.setOrientation(0);r.setGravity(Gravity.CENTER_VERTICAL);return r;}
@@ -89,7 +98,7 @@ public final class HomeActivity extends DamaActivity {
     TextView donate=label("♡  ဓမ္မအလှူ ပံ့ပိုးကူညီရန် • DONATE BY AAII.ASIA",13,GOLD,true);
     donate.setGravity(Gravity.CENTER);donate.setPadding(d(10),d(14),d(10),d(14));donate.setBackground(fill(PANEL,13,0xffa7844b));
     LinearLayout.LayoutParams dp=size(-1,-2);dp.bottomMargin=d(12);content.addView(donate,dp);
-    donate.setOnClickListener(v->DonationPopup.show(this));
+    donate.setOnClickListener(v->{long now=android.os.SystemClock.elapsedRealtime();if(now-lastOpenAt<350L)return;lastOpenAt=now;DonationPopup.show(this);});
     LinearLayout note=vertical();note.setBackground(fill(PANEL,13,0xff526b54));padding(note,15,14);
     note.addView(label("✦   DAMA Learning Collection",13,GOLD,true));
     TextView explanation=label("စာအုပ်နှင့် ဗီဒီယိုလင့်ခ်စာရင်းများကို Offline ကြည့်ရှုနိုင်သည်။ အသံ/ဗီဒီယို Stream လုပ်ရန် Internet လိုအပ်ပါသည်။",11,SOFT,false);
@@ -150,7 +159,7 @@ public final class HomeActivity extends DamaActivity {
     TextView sub=label(footer,10,SOFT,false);sub.setPadding(0,d(5),0,0);info.addView(sub);
     frame.addView(info,new FrameLayout.LayoutParams(-1,-1));
     LinearLayout.LayoutParams fp=size(-1,144);fp.bottomMargin=d(12);into.addView(frame,fp);
-    frame.setOnClickListener(v->startActivity(new Intent(this,target)));
+    frame.setOnClickListener(v->openModule(target));
     frame.setContentDescription(title+" ဖွင့်ရန်");
   }
   private void go(int index){
