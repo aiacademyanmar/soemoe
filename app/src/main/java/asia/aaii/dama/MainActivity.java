@@ -919,6 +919,66 @@ public class MainActivity extends DamaActivity {
     int found=0;for(Track t:new ArrayList<>(catalog.values())){boolean yes=libraryMode.equals("Favorites")?favorites.contains(t.url):libraryMode.equals("Downloads")?downloadFile(t).exists():recent.contains(t.url);if(!yes)continue;LinearLayout r=trackRow(t);body.addView(r,lp(-1,72));body.addView(space(8));r.setOnClickListener(v->play(t));r.setOnLongClickListener(v->{trackActions(t);return true;});found++;}if(found==0)body.addView(text("ဤကဏ္ဍတွင် မရှိသေးပါ။ တရားတော်ကို နားထောင်ပြီး Favorites/Download ပြုလုပ်နိုင်ပါတယ်။",13,MUTED,false));footnote();
   }
   File downloadFile(Track t){String key=Integer.toHexString(t.url.hashCode());File dir=new File(getExternalFilesDir(null),"DhammaMP3");if(!dir.exists())dir.mkdirs();return new File(dir,key+".mp3");}
+  /** Download only explicitly chosen Favorites; never silently cache a 50k-link catalog. */
+  void downloadFavoriteBatch(){
+    ArrayList<Track> queue=new ArrayList<>();
+    for(Track t:new ArrayList<>(catalog.values())){
+      if(favorites.contains(t.url) && !downloadFile(t).isFile())queue.add(t);
+    }
+    if(queue.isEmpty()){toast("Favorites ထဲတွင် Download လုပ်ရန် MP3 မရှိပါ");return;}
+    int limit=Math.min(queue.size(),20);
+    new AlertDialog.Builder(this).setTitle("Offline Favorites")
+      .setMessage("Favorites မှ MP3 "+limit+" ပုဒ်ကို ဖုန်းထဲ သိမ်းမည်။ Wi-Fi အသုံးပြုရန် အကြံပြုပါသည်။ Link အားလုံးကို အလိုအလျောက် မဒေါင်းပါ။")
+      .setPositiveButton("Download",(d,w)->background.execute(()->{
+        int ok=0,fail=0;
+        for(int i=0;i<limit;i++){
+          Track track=queue.get(i);
+          try{saveOfflineTrack(track);ok++;}
+          catch(Exception ex){fail++;android.util.Log.w("DAMA_OFFLINE","Download failed",ex);}
+        }
+        final int good=ok,bad=fail;
+        handler.post(()->{
+          if(isFinishing()||isDestroyed())return;
+          new AlertDialog.Builder(this).setTitle("Offline MP3 Download")
+            .setMessage("သိမ်းပြီး: "+good+" ပုဒ်\\nမအောင်မြင်: "+bad+" ပုဒ်\\nDownloads tab တွင် Offline နားထောင်နိုင်ပါသည်။")
+            .setPositiveButton("OK",null).show();
+          if(screen.equals("Collection"))show("Collection");
+        });
+      }))
+      .setNegativeButton("Cancel",null).show();
+  }
+  /** Atomic .part writes protect offline playback from interrupted/invalid downloads. */
+  void saveOfflineTrack(Track track)throws IOException{
+    File target=downloadFile(track);
+    if(target.isFile() && target.length()>10000)return;
+    URL address=new URL(track.url);
+    if(!"https".equalsIgnoreCase(address.getProtocol()))throw new IOException("HTTPS required");
+    File partial=new File(target.getPath()+".part");
+    HttpURLConnection connection=null;
+    try{
+      connection=(HttpURLConnection)address.openConnection();
+      connection.setConnectTimeout(15000);connection.setReadTimeout(30000);
+      connection.setInstanceFollowRedirects(true);
+      if(connection.getResponseCode()!=200)throw new IOException("HTTP "+connection.getResponseCode());
+      URL landed=connection.getURL();
+      if(!"https".equalsIgnoreCase(landed.getProtocol()))throw new IOException("Insecure redirect");
+      String type=connection.getContentType();
+      if(type!=null && (type.toLowerCase(Locale.ROOT).contains("text/html")||type.toLowerCase(Locale.ROOT).contains("text/plain")))
+        throw new IOException("Not an audio file");
+      long declared=connection.getContentLengthLong();
+      if(declared>180L*1024*1024)throw new IOException("MP3 exceeds 180 MB");
+      try(InputStream input=connection.getInputStream();FileOutputStream output=new FileOutputStream(partial)){
+        byte[] bytes=new byte[32768];int n;long total=0;
+        while((n=input.read(bytes))!=-1){total+=n;if(total>180L*1024*1024)throw new IOException("MP3 exceeds 180 MB");output.write(bytes,0,n);}
+        if(total<10000)throw new IOException("Incomplete MP3");
+        output.getFD().sync();
+      }
+      if(!partial.renameTo(target))throw new IOException("File move failed");
+    }finally{
+      if(connection!=null)connection.disconnect();
+      if(partial.exists())partial.delete();
+    }
+  }
   void download(Track t){File target=downloadFile(t);if(target.exists()){play(t);return;}
     new AlertDialog.Builder(this).setTitle("Offline MP3 ရယူရန်").setMessage("တရားတော်အသံဖိုင်ကို မူရင်း Website မှ ကိုယ်ပိုင်ဖုန်းထဲ Download လုပ်ပြီး Offline နားထောင်ရန် ဖြစ်ပါသည်။ Download ပမာဏကြီးနိုင်ပါတယ်။\n\n"+t.title).setPositiveButton("Download",(d,w)->{
     toast("Download စတင်နေပါပြီ…");background.execute(()->{File tmp=new File(target.getPath()+".part");try{URL url=new URL(t.url);HttpURLConnection c=(HttpURLConnection)url.openConnection();c.setConnectTimeout(18000);c.setReadTimeout(45000);c.setInstanceFollowRedirects(true);if(c.getResponseCode()!=200)throw new IOException("HTTP "+c.getResponseCode());long length=c.getContentLengthLong();if(length>180L*1024L*1024L)throw new IOException("Audio file too large");try(InputStream in=c.getInputStream();FileOutputStream out=new FileOutputStream(tmp)){byte[] bytes=new byte[32768];int n;long total=0;while((n=in.read(bytes))!=-1){total+=n;if(total>180L*1024L*1024L)throw new IOException("Audio limit exceeded");out.write(bytes,0,n);}if(total<10000)throw new IOException("File is unexpectedly small");}if(!tmp.renameTo(target))throw new IOException("File move failed");handler.post(()->{toast("MP3 Download ပြီးပါပြီ · Offline ဖွင့်နိုင်ပါပြီ");if(screen.equals("Collection"))show("Collection");});}catch(Exception e){tmp.delete();handler.post(()->toast("Download မအောင်မြင်: "+e.getMessage()));}});
@@ -999,7 +1059,7 @@ public class MainActivity extends DamaActivity {
         String message="Offline MP3 စာရင်း "+catalog.size()+" ပုဒ်\\nWebsite Pages: "+successes+" OK, "+errors+" failed\\nNew links: "+newTracks;
         if(!faults.isEmpty())message+="\\n\\nErrors:\\n"+android.text.TextUtils.join("\\n",faults);
         new AlertDialog.Builder(this).setTitle("DAMA RADIO • Sync Result").setMessage(message)
-          .setPositiveButton("OK",null).setNeutralButton("Website",(d,w)->open("https://www.dhammadownload.com/AudioInMyanmar.htm")).show();
+          .setPositiveButton("OK",null).setNegativeButton("↓ Offline Favorites",(d,w)->downloadFavoriteBatch()).setNeutralButton("Website",(d,w)->open("https://www.dhammadownload.com/AudioInMyanmar.htm")).show();
         if(screen.equals("Radio"))show("Radio");
       });
     });
