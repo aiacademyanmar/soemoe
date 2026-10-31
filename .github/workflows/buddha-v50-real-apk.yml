@@ -26,8 +26,10 @@ jobs:
           gradle-version: '8.9'
       - name: Install Android SDK using preinstalled sdkmanager
         run: |
-          echo 'y' | sdkmanager --licenses >/dev/null || true
-          sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" 'platforms;android-35' 'build-tools;35.0.0'
       - name: Restore original offline content from verified Buddha V1.6.5 GitHub artifact
         env:
           GH_TOKEN: ${{ github.token }}
