@@ -102,6 +102,7 @@ public class MainActivity extends Activity {
     getWindow().setStatusBarColor(royal);getWindow().setNavigationBarColor(royal);
     root=vertical();root.setBackgroundColor(bg());setContentView(root);
     LinearLayout head=vertical();head.setPadding(dp(19),dp(13),dp(18),dp(13));head.setBackgroundColor(royal);root.addView(head);
+    ImageView logo=new ImageView(this); logo.setImageResource(R.drawable.ic_tipitaka_logo); head.addView(logo,new LinearLayout.LayoutParams(dp(64),dp(64)));
     head.addView(label("☸  ပိဋကတ်သုံးပုံ",24,true,Color.WHITE));
     head.addView(label("MYANMAR TIPITAKA  ·  NATIVE READER",11,false,0xffe4cb9a));
     ScrollView scroll=new ScrollView(this);scroll.setFillViewport(true);
