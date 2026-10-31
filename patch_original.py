@@ -77,3 +77,15 @@ gr=gradle.read_text(encoding="utf-8")
 assert "versionCode 18" in gr
 gradle.write_text(gr.replace("versionCode 18","versionCode 19").replace("1.6.5.4-app-management","1.6.5.5-server-notices"),encoding="utf-8")
 print("R4.1 notifications fetch on Home open with no new UI navigation or layout.")
+
+
+# V1.6.6: visual-only More menu refinement; keep 11 original navigation actions.
+copyfile("more_patch/MoreOptionsDialogV166.java",src/"MoreOptionsDialog.java")
+more_text=(src/"MoreOptionsDialog.java").read_text(encoding="utf-8")
+assert "V1.6.6" in more_text and "for(int i=6;i<10;i++)" in more_text
+assert "MoreOptionsDialog.show(a, idx->{" in ui.read_text(encoding="utf-8")
+gradle=root/"app/build.gradle"
+gr=gradle.read_text(encoding="utf-8")
+assert "versionCode 19" in gr and "1.6.5.5-server-notices" in gr
+gradle.write_text(gr.replace("versionCode 19","versionCode 20").replace("1.6.5.5-server-notices","1.6.6"),encoding="utf-8")
+print("Buddha Psychology V1.6.6 original UI + better More panel, 11 actions intact.")
