@@ -107,7 +107,7 @@ public class TvActivity extends DamaActivity {
                 if((!v.id.matches("[A-Za-z0-9_-]{11}") && !safeMp4(v.mediaUrl))||!ids.add(v.id))continue;
                 videos.add(v);people.add(v.sayadaw);types.add(v.category);channels.add(v.source);}
             try(InputStream extra=getAssets().open("dhammadownload_mp4_pending.json")){
-                byte[] bytes=new byte[extra.available()];int count=0,n;
+                byte[] bytes=new byte[extra.available()];int count=0,readCount;
                 while(count<bytes.length && (n=extra.read(bytes,count,bytes.length-count))>0)count+=n;
                 JSONArray extraRows=new JSONArray(new String(bytes,0,count,java.nio.charset.StandardCharsets.UTF_8));
                 for(int i=0;i<extraRows.length();i++){
