@@ -137,6 +137,13 @@ jobs:
           assert len(p)==12973 and len({v['url'] for v in p})==12973
           print('Bundled',len(p),'offline MP3 links')
           PY
+      - name: Merge optional Dhammadownload publisher catalog into native MP3 assets
+        run: |
+          if [ -s imports/dhamma_media_catalog.json ]; then
+            python3 scripts/merge_dhamma_media.py --input imports/dhamma_media_catalog.json
+          else
+            echo "No crawled publisher catalog supplied: retaining unchanged V22 audio and TV datasets."
+          fi
       - name: Verify Player UI opens before network media setup
         run: |
           python3 - <<'PY'
@@ -356,7 +363,7 @@ jobs:
             vids=json.loads(z.read('assets/tv_catalog.json'))
             assert len(vids)==3264
             mp3=json.loads(gzip.decompress(z.read('assets/radio_catalog.dat')))
-            assert len(mp3)==12973
+            assert len(mp3)>=12973
             assert 'assets/portrait_credits.txt' in z.namelist()
           print('APK OK; catalog',len(b),'bytes',os.stat(path).st_size)
           PY
