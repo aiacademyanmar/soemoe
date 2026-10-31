@@ -24,9 +24,10 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
-      - uses: android-actions/setup-android@v3
-      - name: Android 35
-        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+      - name: Install Android SDK using preinstalled sdkmanager
+        run: |
+          echo 'y' | sdkmanager --licenses >/dev/null || true
+          sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
       - name: Restore original offline content from verified Buddha V1.6.5 GitHub artifact
         env:
           GH_TOKEN: ${{ github.token }}
