@@ -16,6 +16,8 @@ import android.view.Gravity;
 import android.widget.*;
 import org.json.*;
 import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
@@ -32,6 +34,7 @@ public class AudioLibraryActivity extends Activity {
   private final ArrayList<Item> catalog=new ArrayList<>();
   private Store db;
   private String pickedName="";
+  private static final String CATALOG_URL="https://raw.githubusercontent.com/aiacademyanmar/soemoe/build/myanmar-tipitaka-v1-20261030/tipitaka-app/app/src/main/assets/tipitaka_audio_catalog.json";
   private static class Item {
     String id,kind,category,title,url,source;
     Item(JSONObject o){
@@ -69,7 +72,8 @@ public class AudioLibraryActivity extends Activity {
   private void toast(String s){Toast.makeText(this,s,Toast.LENGTH_LONG).show();}
   private void loadCatalog(){
     catalog.clear();
-    try(InputStream in=getAssets().open("tipitaka_audio_catalog.json")){
+    File cached=new File(getFilesDir(),"tipitaka_audio_catalog_sync.json");
+    try(InputStream in=cached.exists()?new FileInputStream(cached):getAssets().open("tipitaka_audio_catalog.json")){
       ByteArrayOutputStream out=new ByteArrayOutputStream();byte[] bytes=new byte[4096];int k;
       while((k=in.read(bytes))!=-1)out.write(bytes,0,k);
       JSONObject root=new JSONObject(out.toString("UTF-8"));
@@ -89,7 +93,8 @@ public class AudioLibraryActivity extends Activity {
     status.addView(text("Sync = APK ထဲပါ Catalog ကို စစ်ဆေးအတည်ပြုခြင်း + ဖုန်းတွင်း MP3 စာရင်းပြန်တည်ဆောက်ခြင်း။ Remote website မှ အသံဖိုင်များ အလိုအလျောက်ကူးယူခြင်း မဟုတ်ပါ။",12,false,0xff765b35));
     progress=new ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal);progress.setMax(100);progress.setProgress(0);status.addView(progress);
     progressText=text("Sync မစရသေးပါ",13,true,0xff4d3e60);status.addView(progressText);
-    button(status,"⟳ Offline Catalog Sync",this::syncLocal);
+    button(status,"⟳ Local Offline Sync",this::syncLocal);
+    button(status,"☁ Research Link Catalog Update (Internet)",this::syncRemote);
     button(status,"＋ MP3 ကို ဖုန်းထဲ Offline ထည့်ရန်",this::pickAudio);
     EditText search=new EditText(this);search.setSingleLine(true);search.setHint("တရားခေါင်းစဉ် ရှာရန်");search.setText(query);status.addView(search);
     button(status,"ရှာဖွေမည်",()->{query=search.getText().toString().trim();show();});
@@ -177,6 +182,47 @@ public class AudioLibraryActivity extends Activity {
     }catch(Exception e){stopAudio();toast("MP3 ဖွင့်မရပါ: "+e.getMessage());}
   }
   private void stopAudio(){if(player!=null){try{player.stop();}catch(Exception ignored){}player.release();player=null;}}
+  private void syncRemote(){
+    progress.setProgress(2);progressText.setText("Online Catalog Update စစ်နေပါသည်…");
+    new Thread(()->{
+      File output=new File(getFilesDir(),"tipitaka_audio_catalog_sync.json");
+      File temporary=new File(getFilesDir(),"tipitaka_audio_catalog_pending.json");
+      HttpURLConnection connection=null;
+      try{
+        connection=(HttpURLConnection)new URL(CATALOG_URL).openConnection();
+        connection.setConnectTimeout(15000);connection.setReadTimeout(20000);
+        connection.setInstanceFollowRedirects(false);connection.setRequestProperty("Accept","application/json");
+        if(connection.getResponseCode()!=200)throw new IOException("HTTP "+connection.getResponseCode());
+        ByteArrayOutputStream bytes=new ByteArrayOutputStream();
+        try(InputStream input=connection.getInputStream()){
+          byte[] buffer=new byte[8192];int n;
+          while((n=input.read(buffer))!=-1){
+            if(bytes.size()+n>1024*1024)throw new IOException("Catalog too large");
+            bytes.write(buffer,0,n);
+          }
+        }
+        byte[] raw=bytes.toByteArray();
+        JSONObject parsed=new JSONObject(new String(raw,StandardCharsets.UTF_8));
+        JSONArray items=parsed.getJSONArray("items");
+        if(items.length()<1||items.length()>5000)throw new IOException("Invalid item count");
+        for(int i=0;i<items.length();i++){
+          JSONObject obj=items.getJSONObject(i);
+          String url=obj.getString("url");
+          if(!url.startsWith("https://"))throw new IOException("Unsafe source URL");
+          if(obj.optString("title").isEmpty())throw new IOException("Missing title");
+        }
+        try(FileOutputStream out=new FileOutputStream(temporary)){out.write(raw);}
+        if(!temporary.renameTo(output)){
+          try(FileOutputStream out=new FileOutputStream(output)){out.write(raw);}
+          temporary.delete();
+        }
+        runOnUiThread(()->{loadCatalog();show();toast("Catalog Update အောင်မြင် · "+items.length+" links · Offline Cache ရရှိပါပြီ။");});
+      }catch(Exception e){
+        temporary.delete();final String msg=e.getMessage();
+        runOnUiThread(()->{progress.setProgress(0);progressText.setText("Update မအောင်မြင်ပါ · Offline Catalog ဆက်သုံးနိုင်သည်");toast("Sync failed: "+msg);});
+      }finally{if(connection!=null)connection.disconnect();}
+    }).start();
+  }
   private void syncLocal(){
     progress.setProgress(10);progressText.setText("Offline Catalog စစ်ဆေးနေပါသည်…");
     int count=0;
