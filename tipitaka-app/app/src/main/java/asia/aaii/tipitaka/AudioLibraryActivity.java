@@ -216,7 +216,7 @@ public class AudioLibraryActivity extends Activity {
           try(FileOutputStream out=new FileOutputStream(output)){out.write(raw);}
           temporary.delete();
         }
-        runOnUiThread(()->{loadCatalog();show();toast("Catalog Update အောင်မြင် · "+items.length+" links · Offline Cache ရရှိပါပြီ။");});
+        runOnUiThread(()->{loadCatalog();show();toast("Catalog Update အောင်မြင် · "+items.length()+" links · Offline Cache ရရှိပါပြီ။");});
       }catch(Exception e){
         temporary.delete();final String msg=e.getMessage();
         runOnUiThread(()->{progress.setProgress(0);progressText.setText("Update မအောင်မြင်ပါ · Offline Catalog ဆက်သုံးနိုင်သည်");toast("Sync failed: "+msg);});
