@@ -35,6 +35,7 @@ public class DesignScreensActivity extends Activity {
     getWindow().setStatusBarColor(navy);getWindow().setNavigationBarColor(navy);
     root=column();root.setBackgroundColor(navy);setContentView(root);
     TextView banner=text("☸  MYANMAR TIPITAKA\n"+mm[page-1]+" · "+names[page-1],22,gold,true);
+    ImageView appLogo=new ImageView(this);appLogo.setImageResource(R.drawable.ic_tipitaka_logo);appLogo.setBackgroundColor(0xff251249);root.addView(appLogo,new LinearLayout.LayoutParams(-1,dp(88)));
     banner.setGravity(Gravity.CENTER);banner.setPadding(dp(15),dp(20),dp(15),dp(20));banner.setBackgroundColor(0xff251249);root.addView(banner);
     ScrollView sv=new ScrollView(this);root.addView(sv,new LinearLayout.LayoutParams(-1,0,1));content=column();sv.addView(content);
     if(page==1){LinearLayout c=card("ပိဋကတ်သုံးပုံ","Offline Native Reader · အင်တာနက်မလို");button(c,"စတင်ရန်",()->navigate(2));}
