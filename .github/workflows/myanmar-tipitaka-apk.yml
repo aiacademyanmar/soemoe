@@ -46,12 +46,12 @@ jobs:
       - name: Compile APK
         working-directory: tipitaka-app
         run: gradle --no-daemon --stacktrace assembleDebug
-      - name: Name V2.0 APK
-        run: cp tipitaka-app/app/build/outputs/apk/debug/app-debug.apk tipitaka-app/app/build/outputs/apk/debug/Myanmar-Tipitaka-Native-V2.0.apk
+      - name: Name V2.1 APK
+        run: cp tipitaka-app/app/build/outputs/apk/debug/app-debug.apk tipitaka-app/app/build/outputs/apk/debug/Myanmar-Tipitaka-Native-V2.1.apk
       - name: APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Myanmar-Tipitaka-Native-V2.0-Full-Offline-APK
-          path: tipitaka-app/app/build/outputs/apk/debug/Myanmar-Tipitaka-Native-V2.0.apk
+          name: Myanmar-Tipitaka-Native-V2.1-Full-Offline-APK
+          path: tipitaka-app/app/build/outputs/apk/debug/Myanmar-Tipitaka-Native-V2.1.apk
           if-no-files-found: error
           retention-days: 30
