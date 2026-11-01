@@ -57,6 +57,8 @@ public final class FooterNav {
             });
         }
         root.addView(footer,new LinearLayout.LayoutParams(-1,dp(activity,79)));
+    }
+
     private static void showAaiiPopup(Activity activity){
         final android.app.Dialog dialog=new android.app.Dialog(activity);
         LinearLayout panel=new LinearLayout(activity);
