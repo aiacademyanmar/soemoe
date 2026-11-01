@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="my">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#11152f">
+  <meta name="description" content="Buddha Psychology — စိတ်ကိုနားလည်၊ ဘဝကိုညှိနှိုင်း">
+  <title>Buddha Psychology | Telegram Mini App</title>
+  <link rel="stylesheet" href="./assets/app.css">
+  <script src="https://telegram.org/js/telegram-web-app.js?64"></script>
+</head>
+<body>
+<div class="app-shell">
+  <header class="topbar">
+    <div class="brand-mark" aria-hidden="true">☸</div>
+    <div class="brand-copy"><div class="eyebrow">BY AAII.ASIA</div><div class="brand-title">Buddha Psychology</div></div>
+    <button class="icon-button" id="refresh-button" aria-label="Refresh">↻</button>
+  </header>
+  <main>
+    <section class="screen active" id="screen-home">
+      <div class="hero-card">
+        <div class="hero-glow"></div>
+        <div class="hero-kicker">စိတ်ကိုနားလည်ခြင်း · နေ့စဉ်ဘဝတွင်အသုံးချခြင်း</div>
+        <h1>ဗုဒ္ဓ၏<br><span>စိတ်ပညာ</span></h1>
+        <p>စိတ်သဘောတရားကို လေ့လာပါ။<br>ညှိနှိုင်းသော ဘဝကို နေထိုင်ပါ။</p>
+        <button class="primary-button" data-go="library">လေ့လာမှု စတင်ရန် <span>→</span></button>
+        <div class="hero-orbit orbit-one"></div><div class="hero-orbit orbit-two"></div>
+      </div>
+      <div class="section-heading"><div><span class="eyebrow">EXPLORE</span><h2>လေ့လာရန် ကဏ္ဍများ</h2></div></div>
+      <div class="quick-grid">
+        <button class="quick-card" data-go="library"><span class="quick-icon">▤</span><b>စာအုပ်</b><small>အခန်း ၉ ခန်း</small></button>
+        <button class="quick-card" data-go="media"><span class="quick-icon">◉</span><b>Audio / Video</b><small>နားထောင်၊ ကြည့်ရှု</small></button>
+        <button class="quick-card" data-go="ai"><span class="quick-icon">✦</span><b>AI စိတ်ပညာ</b><small>လေ့လာရေးအထောက်အကူ</small></button>
+        <button class="quick-card" data-go="account"><span class="quick-icon">♙</span><b>ကျွန်ုပ်၏ Account</b><small>အကောင့်နှင့် အခွင့်အရေး</small></button>
+      </div>
+      <div class="feature-card"><div class="feature-icon">✧</div><div><span class="eyebrow">FEATURED BOOK</span><h3>ဗုဒ္ဓ၏ စိတ်ပညာ</h3><p>စာမျက်နှာ ၇၇ · အခန်း ၉ ခန်း · Soe Moe</p></div><button class="round-arrow" data-go="library" aria-label="Open book">→</button></div>
+      <p class="fine-print">ဤ Mini App သည် မူရင်း Website နှင့် ချိတ်ဆက်ထားသော လေ့လာရေးမျက်နှာပြင်ဖြစ်သည်။</p>
+    </section>
+    <section class="screen" id="screen-library">
+      <div class="page-heading"><span class="eyebrow">COMPLETE BOOK</span><h1>စာအုပ် Library</h1><p>ဗုဒ္ဓ၏ စိတ်ပညာ · အခန်း ၉ ခန်း</p></div>
+      <div class="book-banner"><div class="book-symbol">☸</div><div><b>ဗုဒ္ဓ၏ စိတ်ပညာ</b><small>Soe Moe · PDF စာမျက်နှာ ၇၇</small></div></div>
+      <div class="notice"><b>ဖတ်ရှုခွင့်</b><span>အခန်း ၁ — Free · အခန်း ၂ မှ ၉ — Premium</span></div>
+      <div id="chapter-list" class="chapter-list"><div class="loading">စာအုပ်စာရင်း ဖွင့်နေသည်…</div></div>
+    </section>
+    <section class="screen" id="screen-media">
+      <div class="page-heading"><span class="eyebrow">LISTEN & WATCH</span><h1>Audio / Video</h1><p>နားထောင်ပါ။ ကြည့်ရှုပါ။ ပြန်လည်ဆင်ခြင်ပါ။</p></div>
+      <div class="media-card"><div class="media-icon">◉</div><div><b>Audio Books</b><p>အသံဖိုင်များနှင့် တရားလေ့လာရေး</p><span class="status-pill">Library Sync ချိတ်ဆက်ရန်</span></div></div>
+      <div class="media-card"><div class="media-icon">▷</div><div><b>Video Books</b><p>Video သင်ခန်းစာများနှင့် အကြောင်းအရာများ</p><span class="status-pill">Library Sync ချိတ်ဆက်ရန်</span></div></div>
+      <p class="fine-print">Media ဖွင့်ခြင်းနှင့် Premium ခွင့်ပြုချက်ကို မူရင်း Server နှင့် ချိတ်ဆက်ပြီးမှ အသက်သွင်းမည်။</p>
+    </section>
+    <section class="screen" id="screen-ai">
+      <div class="page-heading"><span class="eyebrow">AI LEARNING</span><h1>AI စိတ်ပညာ</h1><p>မိမိ၏ စိတ်နှင့် ခံစားချက်များကို လေ့လာရန် အထောက်အကူ။</p></div>
+      <div class="ai-card"><div class="ai-orb">✦</div><h2>မိမိကိုယ်ကို သတိပြုလေ့လာပါ</h2><p>Mindfulness, Self-awareness နှင့် Reflective Practice များကို လေ့လာနိုင်ရန် ပြင်ဆင်ထားသည်။</p></div>
+      <div class="notice warning"><b>AI Service အခြေအနေ</b><span>Live AI API ကို မချိတ်ဆက်ရသေးပါ။ လက်ရှိသည် သင်ယူရေး Preview သာဖြစ်သည်။</span></div>
+      <p class="fine-print">ဤအကြောင်းအရာသည် ပညာရေးအတွက်သာဖြစ်ပြီး diagnosis, psychotherapy သို့မဟုတ် crisis care ကို အစားမထိုးပါ။</p>
+    </section>
+    <section class="screen" id="screen-membership">
+      <div class="page-heading"><span class="eyebrow">MEMBERSHIP</span><h1>အသင်းဝင်ခွင့်</h1><p>Premium အခွင့်အရေးကို မူရင်း Admin Server မှ စစ်ဆေးမည်။</p></div>
+      <div class="plan-card"><span class="eyebrow">FREE</span><h2>Free Explorer</h2><p>အခမဲ့အကြောင်းအရာများကို စတင်လေ့လာရန်။</p></div>
+      <div class="plan-card"><span class="eyebrow">LIFETIME</span><h2>Lifetime App</h2><p>မူရင်း Buddha Psychology App အခွင့်အရေး။</p></div>
+      <div class="plan-card"><span class="eyebrow">LIFETIME + BOOKS</span><h2>Lifetime App + Books</h2><p>App နှင့် စာအုပ်အခွင့်အရေး ပေါင်းစည်းထားသော Package။</p></div>
+      <div class="notice warning"><b>Telegram Checkout ကို ယာယီပိတ်ထားသည်</b><span>Telegram အတွင်း digital goods/services ရောင်းချရာတွင် Telegram Stars (XTR) ကို အသုံးပြုရသည်။ Stars ဈေးနှုန်း၊ order verification နှင့် refund flow မပြီးမချင်း ဝယ်ယူမှုမဖွင့်ပါ။</span></div>
+    </section>
+    <section class="screen" id="screen-account">
+      <div class="page-heading"><span class="eyebrow">MY ACCOUNT</span><h1>ကျွန်ုပ်၏ Account</h1><p>Telegram အကောင့်နှင့် Buddha Psychology အခွင့်အရေး။</p></div>
+      <div class="account-card"><div class="avatar" id="avatar">BP</div><div><b id="account-name">Telegram မှ ဖွင့်ပါ</b><small id="account-handle">Login မလုပ်ရသေးပါ</small></div></div>
+      <div class="account-row"><span>Telegram Login</span><b id="login-status">မချိတ်ဆက်ရသေး</b></div>
+      <div class="account-row"><span>Buddha Psychology Account</span><b id="link-status">မချိတ်ဆက်ရသေး</b></div>
+      <div class="account-row"><span>Premium Access</span><b id="premium-status">Server စစ်ဆေးရန်လို</b></div>
+      <div class="notice warning"><b>Account ချိတ်ဆက်မှု</b><span>လက်ရှိ Admin Server V5.3 ၏ အတည်ပြုထားသော account-link API ကို မစစ်ဆေးရသေးပါ။ Password သို့မဟုတ် License Code ကို ဤနေရာတွင် မထည့်ပါနှင့်။</span></div>
+      <button class="secondary-button" id="website-button">Official Website ဖွင့်ရန် ↗</button>
+    </section>
+  </main>
+  <nav class="bottom-nav" aria-label="Main navigation">
+    <button class="nav-item active" data-tab="home"><span>⌂</span><small>Home</small></button>
+    <button class="nav-item" data-tab="library"><span>▤</span><small>Library</small></button>
+    <button class="nav-item" data-tab="media"><span>◉</span><small>Media</small></button>
+    <button class="nav-item" data-tab="ai"><span>✦</span><small>AI</small></button>
+    <button class="nav-item" data-tab="account"><span>♙</span><small>Account</small></button>
+  </nav>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</div>
+<script src="./assets/app.js"></script>
+</body>
+</html>
