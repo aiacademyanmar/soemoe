@@ -1,0 +1,21 @@
+name: DAMA V22 Discover Exact 10000 Real MP3 Links
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+      - name: Decode existing V22 MP3 catalog
+        run: base64 -d app/src/main/assets/radio_catalog.dat.b64 > /tmp/dama_radio_baseline.dat
+      - name: Crawl real publisher MP3 URLs and require exactly 10000 new unique links
+        run: python3 scripts/collect_exact_10000_mp3.py --target 10000 --pages 2000 --baseline /tmp/dama_radio_baseline.dat --output imports/dhamma_10000_new.json
+      - name: Export verified listing (only if successful)
+        uses: actions/upload-artifact@v4
+        with:
+          name: DAMA-10000-New-MP3-Links-JSON
+          path: imports/dhamma_10000_new.json
+          if-no-files-found: error
