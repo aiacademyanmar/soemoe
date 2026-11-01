@@ -17,20 +17,21 @@ def main():
  radio=root/"app/src/main/assets/radio_catalog.dat"
  if not radio.exists():raise SystemExit("Run after base radio_catalog.dat decode")
  existing=load_json(radio);seen={i.get("url","").split("#")[0] for i in existing};added=0
- mp4=[];video_seen=set()
+ mp4=[];video_seen=set();duplicates=0;rejected=0
  for entry in rows:
   u=(entry.get("media_url") or "").strip();t=(entry.get("title") or urllib.parse.unquote(u.rsplit("/",1)[-1])).strip()[:220]
-  if not host_ok(u) or not t:continue
+  if not host_ok(u) or not t:rejected+=1;continue
   fmt=entry.get("format","").upper()
   source=entry.get("source_page","")
   if fmt=="MP3" and u.split("#")[0] not in seen:
    existing.append({"id":"DD-"+hashlib.sha256(u.encode()).hexdigest()[:16],"monk_id":0,"monk":"Dhammadownload","title":t,"category":"အခြား","url":u,"listing_url":source,"status":"publisher_index_link_not_stream_tested"})
    seen.add(u.split("#")[0]);added+=1
+  elif fmt=="MP3" and u.split("#")[0] in seen:duplicates+=1
   elif fmt=="MP4" and u.split("#")[0] not in video_seen:
    mp4.append({"title":t,"url":u,"source_url":source,"status":"publisher_index_link_not_stream_tested"});video_seen.add(u.split("#")[0])
  with gzip.open(radio,"wt",encoding="utf-8") as f:json.dump(existing,f,ensure_ascii=False,separators=(",",":"))
  # Direct MP4 links require a compatible native player; do not claim YouTube player support.
  target=root/"app/src/main/assets/dhammadownload_mp4_pending.json"
  target.write_text(json.dumps(mp4,ensure_ascii=False,separators=(",",":")),encoding="utf-8")
- print(f"Imported {added} new MP3 references, {len(mp4)} MP4 references awaiting native playback integration")
+ print(f"DAMA MP3 catalog total: {len(existing)}; new: {added}; already indexed: {duplicates}; rejected: {rejected}; MP4 references: {len(mp4)}")
 if __name__=="__main__":main()
