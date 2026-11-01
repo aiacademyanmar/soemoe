@@ -62,7 +62,8 @@ public final class SayadawDirectoryActivity extends DamaActivity {
     hero.addView(text("မှန်ကန်သောဓာတ်ပုံရှိသူများအတွက် Photo၊ မရသေးသူများအတွက် Illustration ပြထားပါတယ်။",12,MUTED,false));
     content.addView(hero,lp(-1,-2));
     LinearLayout metrics=horizontal();metrics.setPadding(0,dp(12),0,dp(9));
-    metric(metrics,"22","SAYADAWS");metric(metrics,"3","PHOTOS");metric(metrics,"19","ILLUSTRATED");content.addView(metrics);
+    int photoCount=0;for(JSONObject profile:people)if(photo(profile))photoCount++;
+    metric(metrics,String.valueOf(people.size()),"SAYADAWS");metric(metrics,String.valueOf(photoCount),"PHOTOS");metric(metrics,String.valueOf(people.size()-photoCount),"ILLUSTRATED");content.addView(metrics);
     query=new EditText(this);query.setSingleLine(true);query.setTextSize(14);query.setTextColor(IVORY);query.setHintTextColor(MUTED);query.setHint("⌕  ဆရာတော်အမည် ရှာရန်...");query.setPadding(dp(14),0,dp(13),0);query.setBackground(bg(0xff183e35,13,0xff9b7c4d));
     LinearLayout.LayoutParams qp=lp(-1,50);qp.setMargins(0,dp(8),0,dp(8));content.addView(query,qp);
     HorizontalScrollView rail=new HorizontalScrollView(this);rail.setHorizontalScrollBarEnabled(false);tabs=horizontal();rail.addView(tabs);content.addView(rail);addTabs();
