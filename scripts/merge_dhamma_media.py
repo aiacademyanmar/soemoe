@@ -10,7 +10,15 @@ def host_ok(url):
  return p.scheme=="https" and (p.hostname or "").lower() in {"dhammadownload.com","www.dhammadownload.com","ftp.dhammadownload.com"}
 def load_json(p):
  if not p.exists(): return []
- with (gzip.open(p,"rt",encoding="utf-8") if p.suffix==".gz" or p.suffix==".dat" else p.open(encoding="utf-8")) as f:return json.load(f)
+ with (gzip.open(p,"rt",encoding="utf-8") if p.suffix==".gz" or p.suffix==".dat" else p.open(encoding="utf-8")) as f: raw=f.read()
+ decoder=json.JSONDecoder();position=0;all_rows=[]
+ while position<len(raw):
+  while position<len(raw) and raw[position].isspace():position+=1
+  if position>=len(raw):break
+  parsed,end=decoder.raw_decode(raw,position)
+  if not isinstance(parsed,list):raise ValueError("Expected catalog array")
+  all_rows.extend(parsed);position=end
+ return all_rows
 def main():
  ap=argparse.ArgumentParser();ap.add_argument("--input",required=True);a=ap.parse_args()
  rows=load_json(pathlib.Path(a.input))
