@@ -99,6 +99,14 @@ public final class HomeActivity extends DamaActivity {
       "ဗုဒ္ဓ၏ စိတ်ပညာ\nသတိပဋ္ဌာန် • ဝိပဿနာ • စိတ်နှင့်အတွေးအခေါ်",
       "APP INFORMATION · APK DOWNLOAD · OFFICIAL AAII.ASIA",
       R.drawable.radio_meditation,"☸","https://aaii.asia/dama/psychology/");
+    addExternalModule(content,"07","AAII E-BOOK LIBRARY",
+      "စာကြည့်တိုက် • စာအုပ်ပေါင်း ၅ သောင်းကျော်\nမြန်မာ / အင်္ဂလိပ် စာအုပ်များ • စာအုပ်ရှာဖွေဖတ်ရှုရန်",
+      "50,000+ BOOKS · LIBRARY INFORMATION · DOWNLOADS",
+      R.drawable.radio_pattana,"▣","https://www.aaii.asia/edubooks/");
+    addExternalModule(content,"08","AAII ONLINE SCHOOL",
+      "အွန်လိုင်းစာသင်ကျောင်း • သင်ခန်းစာပေါင်း ၁ သိန်းကျော်\nသင်ခန်းစာများ • Online Learning • Courses",
+      "100,000+ LESSONS · COURSE INFORMATION · LEARNING",
+      R.drawable.tv_banner,"✦","https://aaii.asia/eduhome/");
     TextView donate=label("♡  ဓမ္မအလှူ ပံ့ပိုးကူညီရန် • DONATE BY AAII.ASIA",13,GOLD,true);
     donate.setGravity(Gravity.CENTER);donate.setPadding(d(10),d(14),d(10),d(14));donate.setBackground(fill(PANEL,13,0xffa7844b));
     LinearLayout.LayoutParams dp=size(-1,-2);dp.bottomMargin=d(12);content.addView(donate,dp);
