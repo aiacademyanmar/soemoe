@@ -145,7 +145,7 @@ jobs:
       - name: Merge optional Dhammadownload publisher catalog into native MP3 assets
         run: |
           if [ -s imports/dhamma_media_catalog.json ]; then
-            python3 scripts/merge_dhamma_media.py --input imports/dhamma_media_catalog.json
+            python3 scripts/merge_dhamma_media.py --input imports/dhamma_media_catalog.json --exact-new 10000
           else
             echo "No crawled publisher catalog supplied: retaining unchanged V22 audio and TV datasets."
           fi
