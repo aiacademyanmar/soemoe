@@ -1,8 +1,13 @@
 name: DAMA V22 Discover Exact 10000 Real MP3 Links
 on:
   workflow_dispatch:
+  push:
+    branches: [dama-v22-performance-only]
+    paths:
+      - '.github/workflows/discover-10000-mp3.yml'
+      - 'scripts/collect_exact_10000_mp3.py'
 permissions:
-  contents: read
+  contents: write
 jobs:
   discover:
     runs-on: ubuntu-latest
@@ -13,6 +18,25 @@ jobs:
         run: base64 -d app/src/main/assets/radio_catalog.dat.b64 > /tmp/dama_radio_baseline.dat
       - name: Crawl real publisher MP3 URLs and require exactly 10000 new unique links
         run: python3 scripts/collect_exact_10000_mp3.py --target 10000 --pages 2000 --baseline /tmp/dama_radio_baseline.dat --output imports/dhamma_10000_new.json
+      - name: Install exact 10000 new MP3 catalog into V22 import source
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          path=Path('imports/dhamma_10000_new.json')
+          incoming=json.loads(path.read_text(encoding='utf-8'))
+          assert len(incoming)==10000
+          old=Path('imports/dhamma_media_catalog.json')
+          current=json.loads(old.read_text(encoding='utf-8')) if old.exists() else []
+          seen={r['media_url'] for r in incoming}
+          merged=incoming + [r for r in current if r.get('media_url') not in seen]
+          old.write_text(json.dumps(merged,ensure_ascii=False,indent=2)+'\\n',encoding='utf-8')
+          print('New 10000 plus existing distinct links:',len(merged))
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add imports/dhamma_media_catalog.json
+          git commit -m 'Add exactly 10000 new crawled publisher MP3 links' && git push origin HEAD:dama-v22-performance-only
       - name: Export verified listing (only if successful)
         uses: actions/upload-artifact@v4
         with:
