@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Best effort download only explicitly documented Commons portraits.
-Asset fallbacks are symbolic lotuses and are not misrepresented as actual portraits.
+"""Retrieve small, credited real photos from documented Wikimedia Commons file pages.
+Do not label a generated illustration as a real portrait when the photo is unavailable.
 """
 from pathlib import Path
 from urllib.parse import quote
@@ -9,23 +9,28 @@ import requests
 from PIL import Image,ImageOps
 ROOT=Path(__file__).resolve().parents[1]
 TARGET=ROOT/'app/src/main/res/drawable-nodpi'
+TARGET.mkdir(parents=True,exist_ok=True)
 ITEMS=[
-  {'name':'mogok_sayadaw','file':'Mogok Sayadaw portrait.jpg','credit':'Wikimedia Commons, photographer unknown, purported public domain in Myanmar; https://commons.wikimedia.org/wiki/File:Mogok_Sayadaw_portrait.jpg'},
-  {'name':'mahasi_sayadaw','file':'Mahasi Sayadaw.jpg','credit':'Wikimedia Commons, photographer unknown, purported public domain in Myanmar; https://commons.wikimedia.org/wiki/File:Mahasi_Sayadaw.jpg'},
-  {'name':'nandamala_sayadaw','file':'Sayadaw nandamalabhivamsa.jpg','credit':'Wikimedia Commons, author Kiwiladi, CC BY-SA 4.0; https://commons.wikimedia.org/wiki/File:Sayadaw_nandamalabhivamsa.jpg'}
+  {'name':'mogok_sayadaw','file':'Mogok Sayadaw portrait.jpg','author':'Unknown photographer','license':'Public domain (Myanmar status; verify jurisdictions)','source':'https://commons.wikimedia.org/wiki/File:Mogok_Sayadaw_portrait.jpg'},
+  {'name':'mahasi_sayadaw','file':'Mahasi Sayadaw.jpg','author':'Unknown photographer','license':'Public domain (Myanmar status; verify jurisdictions)','source':'https://commons.wikimedia.org/wiki/File:Mahasi_Sayadaw.jpg'},
+  {'name':'nandamala_sayadaw','file':'Sayadaw nandamalabhivamsa.jpg','author':'Kiwiladi','license':'CC BY-SA 4.0','source':'https://commons.wikimedia.org/wiki/File:Sayadaw_nandamalabhivamsa.jpg'},
+  {'name':'sitagu_sayadaw','file':'Sitagu Sayadaw.jpg','author':'Pete Souza / The White House','license':'Public domain — US federal government','source':'https://commons.wikimedia.org/wiki/File:Sitagu_Sayadaw.jpg','profile_name_contains':'သီတဂူ'},
+  {'name':'paauk_sayadaw','file':'Venerable Pa-Auk Tawya Sayadaw Bhaddanta Āciṇṇa.jpg','author':'Paingpeace','license':'CC BY-SA 4.0','source':'https://commons.wikimedia.org/wiki/File:Venerable_Pa-Auk_Tawya_Sayadaw_Bhaddanta_Āciṇṇa.jpg','profile_name_contains':'ဖားအောက်'}
 ]
-for x in ITEMS:
+for item in ITEMS:
  try:
-  url='https://commons.wikimedia.org/wiki/Special:FilePath/'+quote(x['file'])+'?width=360'
-  data=requests.get(url,headers={'User-Agent':'DamaRadioApp/2.0 (educational catalog; https://github.com/aiacademyanmar/soemoe)'},timeout=25)
-  data.raise_for_status()
-  img=Image.open(io.BytesIO(data.content)).convert('RGB')
-  if img.width<90 or img.height<90:raise ValueError('image too small')
-  img=ImageOps.fit(img,(280,280),method=Image.Resampling.LANCZOS)
-  img.save(TARGET/(x['name']+'.jpg'),quality=85,optimize=True)
-  x['downloaded']=True
- except Exception as ex:
-  x['downloaded']=False;x['error']=str(ex)[:150]
- print(x['name'],'photo received' if x['downloaded'] else 'using symbolic fallback',flush=True)
+  url='https://commons.wikimedia.org/wiki/Special:FilePath/'+quote(item['file'])+'?width=400'
+  response=requests.get(url,headers={'User-Agent':'DamaLightGallery/22 (https://github.com/aiacademyanmar/soemoe; educational portrait attribution)'},timeout=35)
+  response.raise_for_status()
+  if len(response.content)>12_000_000:raise ValueError('photo too large')
+  photo=ImageOps.exif_transpose(Image.open(io.BytesIO(response.content))).convert('RGB')
+  if min(photo.size)<120:raise ValueError('image too small')
+  photo=ImageOps.fit(photo,(400,400),method=Image.Resampling.LANCZOS)
+  photo.save(TARGET/(item['name']+'.jpg'),quality=87,optimize=True)
+  item['downloaded']=True
+ except Exception as e:
+  item['downloaded']=False;item['error']=str(e)[:160]
+ print('PORTRAIT',item['name'],'OK' if item['downloaded'] else 'FALLBACK',flush=True)
 (ROOT/'photo_license_report.json').write_text(json.dumps(ITEMS,ensure_ascii=False,indent=2),encoding='utf8')
-(ROOT/'app/src/main/assets/portrait_credits.txt').write_text('\n'.join(x['name']+': '+x['credit']+' | downloaded='+str(x['downloaded']) for x in ITEMS)+'\n',encoding='utf8')
+credits=ROOT/'app/src/main/assets/portrait_credits.txt'
+credits.write_text('\n'.join(f"{p['name']}: {p['author']} | {p['license']} | {p['source']} | downloaded={p['downloaded']}" for p in ITEMS)+'\n',encoding='utf8')
