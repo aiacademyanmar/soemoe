@@ -1,0 +1,32 @@
+name: Buddha Psychology Telegram Ecosystem V1.0
+on:
+  push:
+    branches: [feature/buddha-psychology-telegram-v1.0]
+    paths: ['telegram-ecosystem/**', '.github/workflows/telegram-ecosystem-v1.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: curl, pdo, pdo_mysql
+      - name: PHP syntax
+        run: |
+          find telegram-ecosystem -type f -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: Telegram initData signature tests
+        run: php telegram-ecosystem/tests/auth_test.php
+      - name: Check Mini App assets
+        run: |
+          test -s telegram-ecosystem/public/miniapp/index.html
+          test -s telegram-ecosystem/public/miniapp/assets/app.css
+          test -s telegram-ecosystem/public/miniapp/assets/app.js
+      - name: Check additive schema and secret hygiene
+        run: |
+          grep -q 'CREATE TABLE IF NOT EXISTS bp_tg_users' telegram-ecosystem/database/schema.sql
+          ! find telegram-ecosystem -type f \\( -name 'config.php' -o -name '.env' \\) | grep .
