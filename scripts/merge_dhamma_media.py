@@ -9,18 +9,27 @@ def host_ok(url):
  p=urllib.parse.urlsplit(url)
  return p.scheme=="https" and (p.hostname or "").lower() in {"dhammadownload.com","www.dhammadownload.com","ftp.dhammadownload.com"}
 def load_json(p):
- if not p.exists(): return []
- with (gzip.open(p,"rt",encoding="utf-8") if p.suffix==".gz" or p.suffix==".dat" else p.open(encoding="utf-8")) as f: raw=f.read()
- decoder=json.JSONDecoder();position=0;all_rows=[]
- while position<len(raw):
-  while position<len(raw) and raw[position].isspace():position+=1
-  if position>=len(raw):break
-  parsed,end=decoder.raw_decode(raw,position)
-  if not isinstance(parsed,list):raise ValueError("Expected catalog array")
-  all_rows.extend(parsed);position=end
- return all_rows
+ if not p.exists():return []
+ with (gzip.open(p,"rt",encoding="utf-8") if p.suffix in {".gz",".dat"} else p.open(encoding="utf-8")) as f:
+  raw=f.read()
+ try:
+  items=json.loads(raw)
+  if not isinstance(items,list):raise ValueError("Catalog must be a JSON array")
+  return items
+ except json.JSONDecodeError:
+  # Recover concatenated JSON arrays from a previous GitHub import commit.
+  # Decode complete objects; reject unexpected non-JSON content.
+  decoder=json.JSONDecoder();i=0;items=[]
+  while i<len(raw):
+   if raw[i].isspace() or raw[i] in "[],":i+=1;continue
+   if raw[i]!="{":raise ValueError(f"Unexpected catalog character at offset {i}: {raw[i]!r}")
+   entry,end=decoder.raw_decode(raw,i)
+   if not isinstance(entry,dict):raise ValueError("Catalog entries must be JSON objects")
+   items.append(entry);i=end
+  if not items:raise ValueError("Empty or corrupt catalog")
+  return items
 def main():
- ap=argparse.ArgumentParser();ap.add_argument("--input",required=True);a=ap.parse_args()
+ ap=argparse.ArgumentParser();ap.add_argument("--input",required=True);ap.add_argument("--exact-new",type=int,default=0);a=ap.parse_args()
  rows=load_json(pathlib.Path(a.input))
  radio=root/"app/src/main/assets/radio_catalog.dat"
  if not radio.exists():raise SystemExit("Run after base radio_catalog.dat decode")
@@ -34,9 +43,11 @@ def main():
   if fmt=="MP3" and u.split("#")[0] not in seen:
    existing.append({"id":"DD-"+hashlib.sha256(u.encode()).hexdigest()[:16],"monk_id":0,"monk":"Dhammadownload","title":t,"category":"အခြား","url":u,"listing_url":source,"status":"publisher_index_link_not_stream_tested"})
    seen.add(u.split("#")[0]);added+=1
+   if a.exact_new and added==a.exact_new:break
   elif fmt=="MP3" and u.split("#")[0] in seen:duplicates+=1
   elif fmt=="MP4" and u.split("#")[0] not in video_seen:
    mp4.append({"title":t,"url":u,"source_url":source,"status":"publisher_index_link_not_stream_tested"});video_seen.add(u.split("#")[0])
+ if a.exact_new and added!=a.exact_new:raise SystemExit(f"Expected exactly {a.exact_new} fresh MP3 links, only {added} available")
  with gzip.open(radio,"wt",encoding="utf-8") as f:json.dump(existing,f,ensure_ascii=False,separators=(",",":"))
  # Direct MP4 links require a compatible native player; do not claim YouTube player support.
  target=root/"app/src/main/assets/dhammadownload_mp4_pending.json"
