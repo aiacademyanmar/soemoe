@@ -465,7 +465,7 @@ public class MainActivity extends DamaActivity {
   void quickTrackList(int max,boolean onlyFav){int i=0;ArrayList<Track> data; synchronized(catalog){data=new ArrayList<>(catalog.values());}for(Track t:data){if(onlyFav&&!favorites.contains(t.url))continue;if(i++>=max)break;LinearLayout r=trackRow(t);body.addView(r,lp(-1,77));body.addView(space(7));r.setOnClickListener(v->play(t));r.setOnLongClickListener(v->{trackActions(t);return true;});}if(i==0)body.addView(text("စာရင်းမရှိသေးပါ",12,MUTED,false));}
   void trackActions(Track t){
     String fav=favorites.contains(t.url)?"♥ Favorites မှဖယ်":"♡ Favorites ထည့်";
-    String downloaded=downloadFile(t).exists()?"Offline နားထောင်":"↓ Offline Download";
+    String downloaded=offlineReady(t)?"Offline နားထောင်":"↓ Offline Download";
     new AlertDialog.Builder(this).setTitle(t.title).setMessage(t.monk+"\n"+group(t.title))
       .setItems(new String[]{"▶  နားထောင်ရန်",fav,downloaded,
         "🔎 MP3 Link စစ်ဆေးရန်","↗ မူရင်း MP3 ဖွင့်ရန်","↗ ဆရာတော် Source Page"},(d,i)->{
@@ -608,7 +608,7 @@ public class MainActivity extends DamaActivity {
     background.execute(()->{
       try{
         if(generation!=playerGeneration)return;
-        if(saved.isFile())instance.setDataSource(saved.getAbsolutePath());
+        if(saved.isFile()&&saved.length()>10000)instance.setDataSource(saved.getAbsolutePath());
         else instance.setDataSource(MainActivity.this,Uri.parse(track.url));
         if(generation!=playerGeneration)return;
         instance.prepareAsync();
@@ -916,14 +916,24 @@ public class MainActivity extends DamaActivity {
   play(tracks.get(Math.max(0,Math.min(next,tracks.size()-1))));
 }
   void collection(){heading("သိမ်းထားသော တရားတော်များ");LinearLayout tabs=row();for(String mode:new String[]{"Favorites","Downloads","Recent"}){TextView b=click(mode,()->{libraryMode=mode;show("Collection");});tabs.addView(b,new LinearLayout.LayoutParams(0,-2,1));}body.addView(tabs);body.addView(space(15));
-    int found=0;for(Track t:new ArrayList<>(catalog.values())){boolean yes=libraryMode.equals("Favorites")?favorites.contains(t.url):libraryMode.equals("Downloads")?downloadFile(t).exists():recent.contains(t.url);if(!yes)continue;LinearLayout r=trackRow(t);body.addView(r,lp(-1,72));body.addView(space(8));r.setOnClickListener(v->play(t));r.setOnLongClickListener(v->{trackActions(t);return true;});found++;}if(found==0)body.addView(text("ဤကဏ္ဍတွင် မရှိသေးပါ။ တရားတော်ကို နားထောင်ပြီး Favorites/Download ပြုလုပ်နိုင်ပါတယ်။",13,MUTED,false));footnote();
+    // One directory scan replaces 22,973 individual filesystem checks on the UI thread.
+    final Set<String> readyFiles=new HashSet<>();
+    if(libraryMode.equals("Downloads")){
+      File[] files=offlineFolder().listFiles();
+      if(files!=null)for(File file:files)
+        if(file.isFile()&&file.getName().endsWith(".mp3")&&file.length()>10000)readyFiles.add(file.getName());
+    }
+    int found=0;for(Track t:new ArrayList<>(catalog.values())){boolean yes=libraryMode.equals("Favorites")?favorites.contains(t.url):libraryMode.equals("Downloads")?readyFiles.contains(offlineKey(t)):recent.contains(t.url);if(!yes)continue;LinearLayout r=trackRow(t);body.addView(r,lp(-1,72));body.addView(space(8));r.setOnClickListener(v->play(t));r.setOnLongClickListener(v->{trackActions(t);return true;});found++;}if(found==0)body.addView(text("ဤကဏ္ဍတွင် မရှိသေးပါ။ တရားတော်ကို နားထောင်ပြီး Favorites/Download ပြုလုပ်နိုင်ပါတယ်။",13,MUTED,false));footnote();
   }
-  File downloadFile(Track t){String key=Integer.toHexString(t.url.hashCode());File dir=new File(getExternalFilesDir(null),"DhammaMP3");if(!dir.exists())dir.mkdirs();return new File(dir,key+".mp3");}
+  File offlineFolder(){File storage=getExternalFilesDir(null);if(storage==null)storage=getFilesDir();File folder=new File(storage,"DhammaMP3");if(!folder.exists())folder.mkdirs();return folder;}
+  String offlineKey(Track t){return Integer.toHexString(t.url.hashCode())+".mp3";}
+  File downloadFile(Track t){return new File(offlineFolder(),offlineKey(t));}
+  boolean offlineReady(Track t){File stored=downloadFile(t);return stored.isFile()&&stored.length()>10000;}
   /** Download only explicitly chosen Favorites; never silently cache a 50k-link catalog. */
   void downloadFavoriteBatch(){
     ArrayList<Track> queue=new ArrayList<>();
     for(Track t:new ArrayList<>(catalog.values())){
-      if(favorites.contains(t.url) && !downloadFile(t).isFile())queue.add(t);
+      if(favorites.contains(t.url) && !offlineReady(t))queue.add(t);
     }
     if(queue.isEmpty()){toast("Favorites ထဲတွင် Download လုပ်ရန် MP3 မရှိပါ");return;}
     int limit=Math.min(queue.size(),20);
@@ -979,7 +989,7 @@ public class MainActivity extends DamaActivity {
       if(partial.exists())partial.delete();
     }
   }
-  void download(Track t){File target=downloadFile(t);if(target.exists()){play(t);return;}
+  void download(Track t){File target=downloadFile(t);if(offlineReady(t)){play(t);return;}
     new AlertDialog.Builder(this).setTitle("Offline MP3 ရယူရန်").setMessage("တရားတော်အသံဖိုင်ကို မူရင်း Website မှ ကိုယ်ပိုင်ဖုန်းထဲ Download လုပ်ပြီး Offline နားထောင်ရန် ဖြစ်ပါသည်။ Download ပမာဏကြီးနိုင်ပါတယ်။\n\n"+t.title).setPositiveButton("Download",(d,w)->{
     toast("Download စတင်နေပါပြီ…");background.execute(()->{File tmp=new File(target.getPath()+".part");try{URL url=new URL(t.url);HttpURLConnection c=(HttpURLConnection)url.openConnection();c.setConnectTimeout(18000);c.setReadTimeout(45000);c.setInstanceFollowRedirects(true);if(c.getResponseCode()!=200)throw new IOException("HTTP "+c.getResponseCode());long length=c.getContentLengthLong();if(length>180L*1024L*1024L)throw new IOException("Audio file too large");try(InputStream in=c.getInputStream();FileOutputStream out=new FileOutputStream(tmp)){byte[] bytes=new byte[32768];int n;long total=0;while((n=in.read(bytes))!=-1){total+=n;if(total>180L*1024L*1024L)throw new IOException("Audio limit exceeded");out.write(bytes,0,n);}if(total<10000)throw new IOException("File is unexpectedly small");}if(!tmp.renameTo(target))throw new IOException("File move failed");handler.post(()->{toast("MP3 Download ပြီးပါပြီ · Offline ဖွင့်နိုင်ပါပြီ");if(screen.equals("Collection"))show("Collection");});}catch(Exception e){tmp.delete();handler.post(()->toast("Download မအောင်မြင်: "+e.getMessage()));}});
     }).setNegativeButton("မလုပ်တော့ပါ",null).show();}
