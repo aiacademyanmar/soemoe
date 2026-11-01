@@ -11,7 +11,9 @@ def host_ok(url):
 def load_json(p):
  if not p.exists():return []
  with (gzip.open(p,"rt",encoding="utf-8") if p.suffix in {".gz",".dat"} else p.open(encoding="utf-8")) as f:
-  raw=f.read()
+  raw=f.read().strip()
+ # Old crawler workflow accidentally appended literal backslash-n after valid JSON.
+ if raw.endswith(chr(92)+"n"):raw=raw[:-2].rstrip()
  try:
   items=json.loads(raw)
   if not isinstance(items,list):raise ValueError("Catalog must be a JSON array")
