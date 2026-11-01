@@ -338,6 +338,49 @@ jobs:
           p.write_text(json.dumps(profiles,ensure_ascii=False),encoding='utf-8')
           print('New verified photo matches:',updated)
           PY
+      - name: QA actual Sayadaw photos, gallery counts and exact MP3 catalog
+        run: |
+          python3 - <<'PY'
+          import gzip, hashlib, json
+          from pathlib import Path
+          from PIL import Image
+          gallery=Path('app/src/main/assets/sayadaw_profiles_v20.json')
+          profiles=json.loads(gallery.read_text(encoding='utf-8'))
+          assert len(profiles)==22, f'Unexpected gallery size: {len(profiles)}'
+          photos=[p for p in profiles if p.get('status')=='photo']
+          illustrations=[p for p in profiles if p.get('status')!='photo']
+          assert len(photos)==5 and len(illustrations)==17, f'Photo/illustration mismatch: {len(photos)}/{len(illustrations)}'
+          assert len({p['id'] for p in profiles})==len(profiles)
+          assert len({p['android_drawable'] for p in photos})==len(photos), 'Duplicate photo resources'
+          required={'mogok_sayadaw','mahasi_sayadaw','nandamala_sayadaw','sitagu_sayadaw','paauk_sayadaw'}
+          assert {p['android_drawable'] for p in photos}==required, 'Missing expected Sayadaw profile photo'
+          report=json.loads(Path('photo_license_report.json').read_text(encoding='utf-8'))
+          metadata={p['name']:p for p in report}
+          entries=[]
+          for p in photos:
+              name=p['android_drawable']
+              resource=Path('app/src/main/res/drawable-nodpi')/(name+'.jpg')
+              assert resource.is_file() and resource.stat().st_size>7000, f'Missing/invalid portrait {resource}'
+              with Image.open(resource) as img:
+                  img.verify()
+              assert p.get('photo_source','').startswith('https://commons.wikimedia.org/wiki/'), name
+              assert p.get('photo_license') and p.get('photo_credit'), name
+              assert metadata[name]['downloaded'], name
+              entries.append(dict(name=p.get('name'),drawable=name,source=p['photo_source'],
+                  credit=p['photo_credit'],license=p['photo_license'],
+                  jpeg_bytes=resource.stat().st_size,
+                  sha256=hashlib.sha256(resource.read_bytes()).hexdigest()))
+          mp3=json.load(gzip.open('app/src/main/assets/radio_catalog.dat','rt',encoding='utf-8'))
+          urls=[item['url'] for item in mp3]
+          assert len(urls)==22973 and len(set(urls))==22973, f'MP3 catalog count/uniqueness mismatch: {len(urls)}'
+          summary=dict(release='DAMA LIGHT V22',sayadaw_profiles=len(profiles),
+              photo_count=len(photos),illustration_count=len(illustrations),
+              mp3_links=len(urls),photo_sources=entries,
+              validation='Build assets validated; individual Android device rendering and streaming not tested')
+          output=Path('v22_sayadaw_qa_report.json')
+          output.write_text(json.dumps(summary,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          print('DAMA V22 QA PASS: 22 Sayadaws; 5 actual photo resources; 17 illustrations; 22973 unique MP3 links')
+          PY
       - name: Validate V20 native navigation
         run: |
           grep -q 'SayadawDirectoryActivity.class' app/src/main/java/asia/aaii/dama/HomeActivity.java
@@ -397,7 +440,10 @@ jobs:
             vids=json.loads(z.read('assets/tv_catalog.json'))
             assert len(vids)==3264
             mp3=json.loads(gzip.decompress(z.read('assets/radio_catalog.dat')))
-            assert len(mp3)>=12973
+            assert len(mp3)==22973 and len({item['url'] for item in mp3})==22973
+            gallery=json.loads(z.read('assets/sayadaw_profiles_v20.json'))
+            assert len(gallery)==22 and sum(p.get('status')=='photo' for p in gallery)==5
+            assert len([p for p in gallery if p.get('status')!='photo'])==17
             assert 'assets/portrait_credits.txt' in z.namelist()
           print('APK OK; catalog',len(b),'bytes',os.stat(path).st_size)
           PY
@@ -408,6 +454,7 @@ jobs:
           path: |
             app/build/outputs/apk/debug/*.apk
             photo_license_report.json
+            v22_sayadaw_qa_report.json
             app/src/main/assets/portrait_credits.txt
             
           if-no-files-found: warn
