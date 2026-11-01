@@ -50,7 +50,17 @@ jobs:
           assert path.exists()
           photos=json.loads(path.read_text(encoding='utf-8'))
           print("PORTRAIT LICENSE REPORT:",[(p["name"],p["downloaded"]) for p in photos])
-          assert len(photos)==3
+          assert len(photos)>=3
+          PY
+      - name: Integrate verified portrait assets into existing Sayadaw gallery
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          report=json.loads(Path('photo_license_report.json').read_text(encoding='utf-8'))
+          profiles_path=Path('app/src/main/assets/sayadaw_profiles_v20.json')
+          # V20 bundled gallery is installed in a later step; apply update there instead.
+          print('Portrait candidates:',[(p['name'],p['downloaded']) for p in report])
           PY
       - name: Validate 1894 book entries and format metadata
         run: |
@@ -308,6 +318,25 @@ jobs:
           assert len(p)==22 and sum(x['status']=='photo' for x in p)==3
           assert len(list(Path('app/src/main/res/drawable-nodpi').glob('sayadaw_illus_*.jpg')))==16
           print('22 profiles and 16 illustration assets verified')
+          PY
+      - name: Apply successfully downloaded photos to original gallery profiles
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('app/src/main/assets/sayadaw_profiles_v20.json')
+          profiles=json.loads(p.read_text(encoding='utf-8'))
+          report=json.loads(Path('photo_license_report.json').read_text(encoding='utf-8'))
+          updated=0
+          for record in report:
+            if not record.get('downloaded') or not record.get('profile_name_contains'): continue
+            for person in profiles:
+              if record['profile_name_contains'] in person.get('name',''):
+                person.update(status='photo',android_drawable=record['name'],
+                  photo_credit=record['author'],photo_license=record['license'],photo_source=record['source'])
+                updated+=1
+          p.write_text(json.dumps(profiles,ensure_ascii=False),encoding='utf-8')
+          print('New verified photo matches:',updated)
           PY
       - name: Validate V20 native navigation
         run: |
