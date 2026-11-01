@@ -95,6 +95,10 @@ public final class HomeActivity extends DamaActivity {
       "365 Days · Offline Reading · Burmese TTS",R.drawable.radio_pattana,DailyVoiceActivity.class,"☀");
 
     addModule(content,"05","SAYADAW GALLERY","ဆရာတော် ၂၂ ပါး • Photo / Illustration\nProfile • စာအုပ် • MP3 • TV", "22 Profiles · 3 Source Photos · 19 Illustration Slots",R.drawable.radio_meditation,SayadawDirectoryActivity.class,"☸");
+    addExternalModule(content,"06","BUDDHA PSYCHOLOGY",
+      "ဗုဒ္ဓ၏ စိတ်ပညာ\nသတိပဋ္ဌာန် • ဝိပဿနာ • စိတ်နှင့်အတွေးအခေါ်",
+      "APP INFORMATION · APK DOWNLOAD · OFFICIAL AAII.ASIA",
+      R.drawable.radio_meditation,"☸","https://aaii.asia/dama/psychology/");
     TextView donate=label("♡  ဓမ္မအလှူ ပံ့ပိုးကူညီရန် • DONATE BY AAII.ASIA",13,GOLD,true);
     donate.setGravity(Gravity.CENTER);donate.setPadding(d(10),d(14),d(10),d(14));donate.setBackground(fill(PANEL,13,0xffa7844b));
     LinearLayout.LayoutParams dp=size(-1,-2);dp.bottomMargin=d(12);content.addView(donate,dp);
@@ -161,6 +165,31 @@ public final class HomeActivity extends DamaActivity {
     LinearLayout.LayoutParams fp=size(-1,144);fp.bottomMargin=d(12);into.addView(frame,fp);
     frame.setOnClickListener(v->openModule(target));
     frame.setContentDescription(title+" ဖွင့်ရန်");
+  }
+
+  private void addExternalModule(LinearLayout into,String number,String title,String explanation,
+      String footer,int background,String glyph,String url){
+    FrameLayout frame=new FrameLayout(this);frame.setBackground(fill(PANEL,17,0xff8c744c));frame.setClipToOutline(true);
+    ImageView art=new ImageView(this);art.setImageResource(background);art.setScaleType(ImageView.ScaleType.CENTER_CROP);
+    frame.addView(art,new FrameLayout.LayoutParams(-1,-1));
+    View overlay=new View(this);overlay.setBackground(new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,
+      new int[]{0xfb062c2b,0xe509302c,0x6a164337}));frame.addView(overlay,new FrameLayout.LayoutParams(-1,-1));
+    LinearLayout info=vertical();info.setPadding(d(18),d(12),d(12),d(9));
+    info.addView(label(number+"   "+glyph+"   "+title,17,GOLD,true));
+    TextView body=label(explanation,12,WHITE,false);body.setLineSpacing(d(3),1f);body.setPadding(0,d(7),0,d(3));info.addView(body);
+    TextView sub=label(footer,10,SOFT,false);sub.setPadding(0,d(5),0,0);info.addView(sub);
+    frame.addView(info,new FrameLayout.LayoutParams(-1,-1));
+    LinearLayout.LayoutParams fp=size(-1,144);fp.bottomMargin=d(12);into.addView(frame,fp);
+    frame.setOnClickListener(v->{
+      long now=android.os.SystemClock.elapsedRealtime();
+      if(now-lastOpenAt<350L)return;
+      lastOpenAt=now;
+      try{startActivity(new Intent(Intent.ACTION_VIEW,android.net.Uri.parse(url)));}
+      catch(android.content.ActivityNotFoundException e){
+        android.widget.Toast.makeText(this,"Official app information page cannot be opened.",android.widget.Toast.LENGTH_SHORT).show();
+      }
+    });
+    frame.setContentDescription(title+" • App Information and APK Download ဖွင့်ရန်");
   }
   private void go(int index){
     if(index==1)startActivity(new Intent(this,MainActivity.class));
