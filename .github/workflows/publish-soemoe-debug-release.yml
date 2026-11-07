@@ -1,0 +1,68 @@
+name: Publish Soe Moe Native Debug APK (Direct Link)
+
+on:
+  push:
+    branches:
+      - fix/soemoe-native-v2-0-1-icon
+    paths:
+      - '.github/workflows/publish-soemoe-debug-release.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  publish-debug-preview:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+      - name: Android SDK 35
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDKMGR="$(find "$ANDROID_HOME/cmdline-tools" -path '*/bin/sdkmanager' -type f | sort -r | head -1)"
+          test -x "$SDKMGR"
+          yes | "$SDKMGR" --licenses >/dev/null || true
+          "$SDKMGR" --install 'platforms;android-35' 'build-tools;35.0.0' 'platform-tools'
+      - name: Compile, test and build
+        working-directory: native-v2
+        run: |
+          gradle --no-daemon :app:testDebugUnitTest
+          gradle --no-daemon :app:assembleDebug
+      - name: Verify APK signing and application ID
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK=native-v2/app/build/outputs/apk/debug/app-debug.apk
+          test -s "$APK"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify "$APK"
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | grep -q "name='asia.aaii.soemoe'"
+          mkdir -p native-v2/dist
+          cp "$APK" native-v2/dist/SoeMoe-AI-Trainer-V2.0.1-Native-debug.apk
+          (cd native-v2/dist && sha256sum SoeMoe-AI-Trainer-V2.0.1-Native-debug.apk > SHA256SUMS.txt)
+      - name: Create GitHub prerelease with directly downloadable APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG=v2.0.1-native-debug
+          APK=native-v2/dist/SoeMoe-AI-Trainer-V2.0.1-Native-debug.apk
+          SUM=native-v2/dist/SHA256SUMS.txt
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$APK" "$SUM" --clobber
+          else
+            gh release create "$TAG" "$APK" "$SUM" \
+              --title "Soe Moe AI Trainer V2.0.1 (debug preview)" \
+              --notes "TEST-ONLY native Android debug APK. Teacher icon update. CI signed and unit tested. Samsung physical QA NOT RUN. Production BLOCKED. Offline sample curriculum, NOT full website sync." \
+              --prerelease \
+              --target "$GITHUB_SHA"
+          fi
+          gh release view "$TAG" --json url,assets
