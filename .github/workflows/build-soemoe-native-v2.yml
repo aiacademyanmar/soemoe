@@ -1,0 +1,65 @@
+name: Soe Moe AI Trainer V2 - True Native Android APK
+on:
+  workflow_dispatch:
+  push:
+    branches: [feature/soemoe-native-v2]
+    paths:
+      - 'native-v2/**'
+      - '.github/workflows/build-soemoe-native-v2.yml'
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    defaults:
+      run:
+        working-directory: native-v2
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+      - name: Android SDK Platform 35
+        shell: bash
+        run: |
+          set -euxo pipefail
+          SDKMGR="$(find "$ANDROID_HOME/cmdline-tools" -path '*/bin/sdkmanager' -type f | sort -r | head -1)"
+          test -x "$SDKMGR"
+          yes | "$SDKMGR" --licenses >/dev/null || true
+          "$SDKMGR" --install 'platforms;android-35' 'build-tools;35.0.0' 'platform-tools'
+      - name: Source & Native UI assertions
+        shell: bash
+        run: |
+          set -euxo pipefail
+          grep -q 'fun HomeScreen' app/src/main/java/asia/aaii/soemoe/MainActivity.kt
+          grep -q 'fun CourseListScreen' app/src/main/java/asia/aaii/soemoe/MainActivity.kt
+          grep -q 'fun LessonScreen' app/src/main/java/asia/aaii/soemoe/MainActivity.kt
+          grep -q 'fun ProfileScreen' app/src/main/java/asia/aaii/soemoe/MainActivity.kt
+          test -s app/src/main/res/drawable-nodpi/teacher_logo.png
+          test -s app/src/main/res/drawable-nodpi/teacher_portrait.jpg
+          if grep -R -n -E 'android.webkit.WebView|WebView\(' app/src/main/java; then exit 1; fi
+      - name: Kotlin unit tests
+        run: gradle --no-daemon --stacktrace :app:testDebugUnitTest
+      - name: Assemble native debug APK
+        run: gradle --no-daemon --stacktrace :app:assembleDebug
+      - name: Verify signature, package and SHA256
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p dist
+          cp app/build/outputs/apk/debug/app-debug.apk dist/SoeMoe-AI-Trainer-V2.0-Native-debug.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose dist/SoeMoe-AI-Trainer-V2.0-Native-debug.apk | tee dist/signing.txt
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging dist/SoeMoe-AI-Trainer-V2.0-Native-debug.apk | tee dist/metadata.txt
+          grep -q "name='asia.aaii.soemoe'" dist/metadata.txt
+          sha256sum dist/SoeMoe-AI-Trainer-V2.0-Native-debug.apk | tee dist/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SoeMoe-AI-Trainer-V2-Native-Debug-APK
+          path: native-v2/dist/
+          retention-days: 14
+          if-no-files-found: error

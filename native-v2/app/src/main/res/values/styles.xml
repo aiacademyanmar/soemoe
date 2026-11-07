@@ -1,0 +1,9 @@
+<resources>
+    <style name="Theme.SoeMoeAI" parent="android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">#111B57</item>
+        <item name="android:navigationBarColor">#FFFFFF</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowOptOutEdgeToEdgeEnforcement">true</item>
+    </style>
+</resources>
