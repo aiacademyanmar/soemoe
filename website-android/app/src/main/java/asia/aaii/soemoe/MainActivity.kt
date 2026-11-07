@@ -25,6 +25,9 @@ import android.webkit.WebViewClient
 import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.ImageButton
+import android.widget.ImageView
+import android.graphics.drawable.GradientDrawable
+import android.app.AlertDialog
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -35,6 +38,7 @@ class MainActivity : Activity() {
     private lateinit var web: WebView
     private lateinit var progress: ProgressBar
     private lateinit var offline: LinearLayout
+    private lateinit var teacherCard: LinearLayout
     private var chooser: android.webkit.ValueCallback<Array<Uri>>? = null
     private val fileRequest = 4099
     private var pageError = false
@@ -61,6 +65,7 @@ class MainActivity : Activity() {
             textSize = 13f
             setTextColor(Color.WHITE)
             typeface = Typeface.DEFAULT_BOLD
+            setOnClickListener { teacherCard.visibility = if (teacherCard.visibility == View.VISIBLE) View.GONE else View.VISIBLE }
         }, LinearLayout.LayoutParams(0, -2, 1f))
         bar.addView(icon(android.R.drawable.ic_menu_view, "Home") { web.loadUrl(home) })
         bar.addView(icon(android.R.drawable.ic_menu_revert, "Back") {
@@ -75,6 +80,8 @@ class MainActivity : Activity() {
             }
             startActivity(Intent.createChooser(i, "Share Soe Moe"))
         })
+        teacherCard = buildTeacherCard()
+        layout.addView(teacherCard, LinearLayout.LayoutParams(-1, dp(132)))
         progress = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
             max = 100
             visibility = View.GONE
@@ -155,6 +162,77 @@ class MainActivity : Activity() {
         if (savedInstanceState == null || web.restoreState(savedInstanceState) == null) {
             web.loadUrl(home)
         }
+    }
+
+
+    private fun buildTeacherCard(): LinearLayout {
+        return LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setBackgroundColor(Color.rgb(245, 247, 255))
+            setPadding(dp(12), dp(7), dp(12), dp(7))
+            val portrait = ImageView(this@MainActivity).apply {
+                setImageResource(R.drawable.teacher_portrait)
+                scaleType = ImageView.ScaleType.CENTER_CROP
+                contentDescription = "Teacher portrait — Soe Moe"
+                background = GradientDrawable().apply {
+                    cornerRadius = dp(14).toFloat()
+                    setColor(Color.rgb(228, 232, 245))
+                }
+                clipToOutline = true
+                setOnClickListener { showTeacherPortrait() }
+            }
+            addView(portrait, LinearLayout.LayoutParams(dp(86), dp(110)))
+            val bio = LinearLayout(this@MainActivity).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(dp(13), 0, 0, 0)
+            }
+            addView(bio, LinearLayout.LayoutParams(0, -2, 1f))
+            bio.addView(TextView(this@MainActivity).apply {
+                text = "SOE MOE"
+                textSize = 18f
+                setTextColor(dark)
+                typeface = Typeface.DEFAULT_BOLD
+            })
+            bio.addView(TextView(this@MainActivity).apply {
+                text = "AI Trainer • Teacher"
+                textSize = 13f
+                setTextColor(Color.rgb(78, 85, 114))
+            })
+            bio.addView(TextView(this@MainActivity).apply {
+                text = "Tap teacher photo to view"
+                textSize = 11f
+                setTextColor(Color.rgb(88, 92, 119))
+                setPadding(0, dp(3), 0, dp(4))
+            })
+            bio.addView(Button(this@MainActivity).apply {
+                text = "Explore Website"
+                textSize = 11f
+                isAllCaps = false
+                minHeight = 0
+                minimumHeight = 0
+                setPadding(dp(8),0,dp(8),0)
+                setOnClickListener {
+                    teacherCard.visibility = View.GONE
+                    web.loadUrl(home)
+                }
+            }, LinearLayout.LayoutParams(-1, dp(40)))
+        }
+    }
+
+    private fun showTeacherPortrait() {
+        val photo = ImageView(this).apply {
+            setImageResource(R.drawable.teacher_portrait)
+            adjustViewBounds = true
+            scaleType = ImageView.ScaleType.FIT_CENTER
+            setPadding(dp(12),dp(5),dp(12),dp(5))
+            contentDescription = "Full teacher portrait"
+        }
+        AlertDialog.Builder(this)
+            .setTitle("Soe Moe • AI Trainer")
+            .setView(photo)
+            .setPositiveButton("Close", null)
+            .show()
     }
 
     private fun createErrorView(): LinearLayout {
