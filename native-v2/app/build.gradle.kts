@@ -11,8 +11,8 @@ android {
         applicationId = "asia.aaii.soemoe"
         minSdk = 24
         targetSdk = 35
-        versionCode = 3
-        versionName = "2.0.0-native"
+        versionCode = 4
+        versionName = "2.0.1-native"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     buildTypes {

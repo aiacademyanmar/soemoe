@@ -1,6 +1,8 @@
 package asia.aaii.soemoe
 
 import android.content.Intent
+import android.content.ActivityNotFoundException
+import android.widget.Toast
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -96,6 +98,22 @@ object OfflineCatalog {
 }
 
 class MainActivity : ComponentActivity() {
+    /** Opening the browser is optional, and must not crash the native app. */
+    private fun openOfficialWebsite() {
+        val website = Uri.parse("https://soemoe.aaii.asia/")
+        try {
+            val browserIntent = Intent(Intent.ACTION_VIEW, website).apply {
+                addCategory(Intent.CATEGORY_BROWSABLE)
+            }
+            startActivity(browserIntent)
+        } catch (_: ActivityNotFoundException) {
+            Toast.makeText(this, "No browser available to open the website", Toast.LENGTH_LONG).show()
+        } catch (_: SecurityException) {
+            Toast.makeText(this, "The browser is blocked on this device", Toast.LENGTH_LONG).show()
+        } catch (_: Exception) {
+            Toast.makeText(this, "Unable to open external website", Toast.LENGTH_LONG).show()
+        }
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         @Suppress("DEPRECATION")
@@ -186,7 +204,7 @@ class MainActivity : ComponentActivity() {
                                     { screen = "certificates" },
                                     { screen = "books" }
                                 ) {
-                                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://soemoe.aaii.asia/")))
+                                    openOfficialWebsite()
                                 }
                             }
                         }

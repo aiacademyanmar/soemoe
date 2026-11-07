@@ -1,8 +1,8 @@
-name: Soe Moe AI Trainer V2 - True Native Android APK
+name: Soe Moe AI Trainer V2.0.1 - Teacher Icon Fix
 on:
   workflow_dispatch:
   push:
-    branches: [feature/soemoe-native-v2]
+    branches: [fix/soemoe-native-v2-0-1-icon]
     paths:
       - 'native-v2/**'
       - '.github/workflows/build-soemoe-native-v2.yml'
@@ -41,6 +41,10 @@ jobs:
           grep -q 'fun LessonScreen' app/src/main/java/asia/aaii/soemoe/MainActivity.kt
           grep -q 'fun ProfileScreen' app/src/main/java/asia/aaii/soemoe/MainActivity.kt
           test -s app/src/main/res/drawable-nodpi/teacher_logo.png
+          grep -q '@mipmap/ic_launcher' app/src/main/AndroidManifest.xml
+          grep -q 'teacher_icon_foreground' app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+          grep -q 'teacher_logo' app/src/main/res/drawable/teacher_icon_foreground.xml
+          grep -q 'openOfficialWebsite()' app/src/main/java/asia/aaii/soemoe/MainActivity.kt
           test -s app/src/main/res/drawable-nodpi/teacher_portrait.jpg
           if grep -R -n -E 'android.webkit.WebView|WebView\(' app/src/main/java; then exit 1; fi
       - name: Kotlin unit tests
@@ -52,14 +56,14 @@ jobs:
         run: |
           set -euxo pipefail
           mkdir -p dist
-          cp app/build/outputs/apk/debug/app-debug.apk dist/SoeMoe-AI-Trainer-V2.0-Native-debug.apk
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose dist/SoeMoe-AI-Trainer-V2.0-Native-debug.apk | tee dist/signing.txt
-          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging dist/SoeMoe-AI-Trainer-V2.0-Native-debug.apk | tee dist/metadata.txt
+          cp app/build/outputs/apk/debug/app-debug.apk dist/SoeMoe-AI-Trainer-V2.0.1-Native-debug.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose dist/SoeMoe-AI-Trainer-V2.0.1-Native-debug.apk | tee dist/signing.txt
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging dist/SoeMoe-AI-Trainer-V2.0.1-Native-debug.apk | tee dist/metadata.txt
           grep -q "name='asia.aaii.soemoe'" dist/metadata.txt
-          sha256sum dist/SoeMoe-AI-Trainer-V2.0-Native-debug.apk | tee dist/SHA256SUMS.txt
+          sha256sum dist/SoeMoe-AI-Trainer-V2.0.1-Native-debug.apk | tee dist/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: SoeMoe-AI-Trainer-V2-Native-Debug-APK
+          name: SoeMoe-AI-Trainer-V2.0.1-IconFix-Debug-APK
           path: native-v2/dist/
           retention-days: 14
           if-no-files-found: error
