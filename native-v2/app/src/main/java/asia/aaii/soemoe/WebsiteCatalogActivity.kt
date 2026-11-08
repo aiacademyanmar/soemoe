@@ -44,7 +44,7 @@ private data class SiteGroup(val id:String,val entries:List<SiteEntry>)
 private data class SiteData(val groups:List<SiteGroup>,val sections:List<SiteEntry>) {
     fun list(id:String)=groups.find{it.id==id}?.entries.orEmpty()
 }
-private fun JSONArray.toEntries():List<SiteEntry>=(0 until length()).map {i->
+private fun JSONArray.toEntries(): List<SiteEntry> = (0 until length()).map {i->
     val o=getJSONObject(i)
     SiteEntry(o.optString("id"),o.optString("title"),o.optString("text"),o.optString("url"),o.optString("source"))
 }
