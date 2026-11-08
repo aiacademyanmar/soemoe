@@ -1,0 +1,96 @@
+name: Soe Moe V2.1 True Native Website Catalog APK
+on:
+  push:
+    branches:
+      - feature/soemoe-native-v2-1-site-catalog
+    paths:
+      - 'native-v2/**'
+      - '.github/workflows/build-soemoe-v2-1-catalog.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build-release-preview:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+      - name: Install Android SDK 35
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDKMGR="$(find "$ANDROID_HOME/cmdline-tools" -path '*/bin/sdkmanager' -type f | sort -r | head -1)"
+          test -x "$SDKMGR"
+          yes | "$SDKMGR" --licenses >/dev/null || true
+          "$SDKMGR" --install 'platforms;android-35' 'build-tools;35.0.0' 'platform-tools'
+      - name: Validate website archive integrity
+        working-directory: native-v2
+        run: |
+          python3 - <<'PY'
+          import json, pathlib
+          p=pathlib.Path("app/src/main/assets/website_catalog.json")
+          data=json.loads(p.read_text(encoding="utf8"))
+          counts={g["id"]:len(g["items"]) for g in data["groups"]}
+          assert counts["courses"]==20,counts
+          assert counts["books"]==10,counts
+          assert counts["certificates"]==19,counts
+          assert counts["ai_projects"]>=9,counts
+          assert counts["projects"]>=13,counts
+          assert len(data["sections"])>=18
+          assert all(len(x["text"])>50 for x in data["groups"][0]["items"])
+          print("Website catalog:", counts,"sections:",len(data["sections"]))
+          PY
+          grep -q 'WebsiteCatalogActivity' app/src/main/AndroidManifest.xml
+          grep -q '@mipmap/ic_launcher' app/src/main/AndroidManifest.xml
+          grep -q 'R.drawable.teacher_logo' app/src/main/java/asia/aaii/soemoe/WebsiteCatalogActivity.kt
+          if grep -n -E 'android.webkit.WebView|WebView\(' app/src/main/java/asia/aaii/soemoe/WebsiteCatalogActivity.kt; then exit 1; fi
+      - name: Kotlin Unit Tests
+        working-directory: native-v2
+        run: gradle --no-daemon --stacktrace :app:testDebugUnitTest
+      - name: Assemble debug APK
+        working-directory: native-v2
+        run: gradle --no-daemon --stacktrace :app:assembleDebug
+      - name: Verify APK and embedded catalog
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p native-v2/dist
+          cp native-v2/app/build/outputs/apk/debug/app-debug.apk native-v2/dist/SoeMoe-AI-Trainer-V2.1-Native-Catalog-debug.apk
+          APK=native-v2/dist/SoeMoe-AI-Trainer-V2.1-Native-Catalog-debug.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "$APK" | tee native-v2/dist/signing.txt
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | tee native-v2/dist/metadata.txt
+          grep -q "name='asia.aaii.soemoe'" native-v2/dist/metadata.txt
+          unzip -l "$APK" | grep -q 'assets/website_catalog.json'
+          (cd native-v2/dist && sha256sum SoeMoe-AI-Trainer-V2.1-Native-Catalog-debug.apk > SHA256SUMS.txt)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SoeMoe-AI-Trainer-V2.1-Native-Catalog-APK
+          path: native-v2/dist/
+          if-no-files-found: error
+          retention-days: 14
+      - name: Publish prerelease direct APK
+        env:
+          GH_TOKEN: \${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG=v2.1.0-native-archive-debug
+          APK=native-v2/dist/SoeMoe-AI-Trainer-V2.1-Native-Catalog-debug.apk
+          SUM=native-v2/dist/SHA256SUMS.txt
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$APK" "$SUM" --clobber
+          else
+            gh release create "$TAG" "$APK" "$SUM" \
+              --title "Soe Moe AI Trainer V2.1 Native (September 2026 website archive)" \
+              --notes "TEST-ONLY APK. Native Compose, NOT WebView. Imported archived 20 class syllabus listings, 10 book descriptions, 19 certificate references, project portfolio and website text. Full eBooks, live website changes and accounts NOT included. Physical QA NOT RUN; production BLOCKED." \
+              --prerelease \
+              --target "$GITHUB_SHA"
+          fi
+          gh release view "$TAG" --json url,assets

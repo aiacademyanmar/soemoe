@@ -7,7 +7,7 @@
         android:theme="@style/Theme.SoeMoeAI"
         android:allowBackup="false"
         android:supportsRtl="true">
-        <activity android:name=".MainActivity" android:exported="true">
+        <activity android:name=".WebsiteCatalogActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
