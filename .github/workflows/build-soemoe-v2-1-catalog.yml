@@ -77,7 +77,7 @@ jobs:
           retention-days: 14
       - name: Publish prerelease direct APK
         env:
-          GH_TOKEN: \${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
